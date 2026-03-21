@@ -2,6 +2,17 @@
 
 This is the native Android implementation of the Boreal application.
 
+## Getting Started
+
+To build this project, you must provide the API URLs in your `local.properties` file. This file is git-ignored and used for environment-specific configuration.
+
+Add the following lines to your `local.properties` (create it if it doesn't exist in the project root):
+
+```properties
+BASE_URL_DEV="http://local-dev/..."
+BASE_URL_PROD="https://api-url..."
+```
+
 ## Code Quality
 
 This project enforces strict coding standards using `ktlint` for formatting and `detekt` for static analysis.

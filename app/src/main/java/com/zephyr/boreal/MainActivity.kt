@@ -14,7 +14,9 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.zephyr.boreal.ui.screens.MainScreen
 import com.zephyr.boreal.ui.theme.BorealColors
 import com.zephyr.boreal.ui.theme.BorealTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     installSplashScreen()

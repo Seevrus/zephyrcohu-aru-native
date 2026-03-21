@@ -15,9 +15,9 @@ class MainScreenTest {
 
   @Test
   fun mainScreen_displaysCorrectTitleAndTiles() {
-    // InstrumentationRegistry.getInstrumentation().targetContext provides access to the 
+    // InstrumentationRegistry.getInstrumentation().targetContext provides access to the
     // application's environment (resources, assets, etc.) while it's running on the device.
-    // It is used here to retrieve localized string resources (R.string.*) to ensure that 
+    // It is used here to retrieve localized string resources (R.string.*) to ensure that
     // the UI assertions match the actual values defined in strings.xml.
     val context = InstrumentationRegistry.getInstrumentation().targetContext
     val appTitle = context.getString(R.string.title_main)

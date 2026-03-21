@@ -46,6 +46,13 @@ style:
     ignoreNamedArgument: true
     ignoreEnums: true
 
+exceptions:
+  active: true
+  TooGenericExceptionCaught:
+    active: false
+  TooGenericExceptionThrown:
+    active: false
+
 Compose:
   active: true
   ComposableNaming:

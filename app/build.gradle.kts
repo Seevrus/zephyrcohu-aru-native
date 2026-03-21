@@ -1,8 +1,11 @@
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.kotlin.serialization)
+  alias(libs.plugins.ksp)
   alias(libs.plugins.ktlint)
   alias(libs.plugins.detekt)
+  alias(libs.plugins.hilt)
 }
 
 android {
@@ -17,12 +20,26 @@ android {
     versionName = "1.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    val baseUrlDev =
+      project.findProperty("BASE_URL_DEV") as? String
+        ?: "MISSING_BASE_URL_DEV"
+    val baseUrlProd =
+      project.findProperty("BASE_URL_PROD") as? String
+        ?: "MISSING_BASE_URL_PROD"
+
+    buildConfigField("String", "BASE_URL", "\"$baseUrlDev\"")
   }
 
   buildTypes {
     release {
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+
+      val baseUrlProd =
+        project.findProperty("BASE_URL_PROD") as? String
+          ?: "MISSING_BASE_URL_PROD"
+      buildConfigField("String", "BASE_URL", "\"$baseUrlProd\"")
     }
   }
   compileOptions {
@@ -32,6 +49,7 @@ android {
 
   buildFeatures {
     compose = true
+    buildConfig = true
   }
 }
 
@@ -64,6 +82,18 @@ dependencies {
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.foundation)
+  implementation(libs.androidx.hilt.navigation.compose)
+
+  // Hilt
+  implementation(libs.hilt.android)
+  ksp(libs.hilt.compiler)
+
+  // Retrofit & Networking
+  implementation(libs.retrofit)
+  implementation(libs.retrofit.converter.kotlinx)
+  implementation(libs.okhttp)
+  implementation(libs.okhttp.logging)
+  implementation(libs.kotlinx.serialization)
 
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
