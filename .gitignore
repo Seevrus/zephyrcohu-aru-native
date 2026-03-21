@@ -12,7 +12,3 @@
 *.apk
 *.aar
 *.jks
-
-# Skill Artifacts
-conventional-commits.skill
-/conventional-commits/
