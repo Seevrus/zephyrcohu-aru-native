@@ -51,6 +51,13 @@ android {
     compose = true
     buildConfig = true
   }
+
+  testOptions {
+    unitTests.isReturnDefaultValues = true
+    unitTests.all {
+      it.useJUnitPlatform()
+    }
+  }
 }
 
 ksp {
@@ -108,6 +115,7 @@ dependencies {
   implementation(libs.kotlinx.serialization)
 
   testImplementation(libs.junit)
+  testRuntimeOnly(libs.junit.launcher)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)
   androidTestImplementation(platform(libs.androidx.compose.bom))
