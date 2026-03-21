@@ -1,14 +1,12 @@
 plugins {
   alias(libs.plugins.android.application)
+  alias(libs.plugins.ktlint)
+  alias(libs.plugins.detekt)
 }
 
 android {
   namespace = "com.zephyr.boreal"
-  compileSdk {
-    version = release(36) {
-      minorApiLevel = 1
-    }
-  }
+  compileSdk = 36
 
   defaultConfig {
     applicationId = "com.zephyr.boreal"
@@ -32,6 +30,21 @@ android {
   }
 }
 
+ktlint {
+  android = true
+  ignoreFailures = false
+  reporters {
+    reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.PLAIN)
+    reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
+  }
+}
+
+detekt {
+  buildUponDefaultConfig = true
+  allRules = false
+  config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
+}
+
 dependencies {
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.core.splashscreen)
@@ -40,4 +53,5 @@ dependencies {
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)
+  detektPlugins(libs.detekt.compose)
 }
