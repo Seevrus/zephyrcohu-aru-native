@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Boreal</string>
+    <string name="title_main">Zephyr Boreal</string>
+    <string name="tile_storage">Rakodás</string>
+    <string name="tile_sell">Árulevétel</string>
+    <string name="tile_errands">Körök</string>
+    <string name="tile_receipts">Bizonylatok (%1$d)</string>
 </resources>

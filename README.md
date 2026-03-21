@@ -19,3 +19,33 @@ You can run the following commands to check or fix code quality issues:
 - **Auto-Fix Formatting**: `./gradlew ktlintFormat`
 - **Static Analysis**: `./gradlew detekt`
 - **Run All Checks**: `./gradlew ktlintCheck detekt`
+
+## Testing
+
+This project includes both local unit tests and instrumented (UI) tests.
+
+### Running All Tests
+To run both unit and instrumented tests (requires a connected device/emulator):
+```bash
+./gradlew test connectedCheck
+```
+
+### Local Unit Tests
+Located in `app/src/test`. To run all unit tests:
+```bash
+./gradlew test
+```
+To run a specific test file:
+```bash
+./gradlew test --tests "com.zephyr.boreal.ExampleUnitTest"
+```
+
+### Instrumented (UI) Tests
+Located in `app/src/androidTest`. Requires a connected device or emulator. To run all UI tests:
+```bash
+./gradlew connectedCheck
+```
+To run a specific test file:
+```bash
+./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.zephyr.boreal.MainActivityTest
+```
