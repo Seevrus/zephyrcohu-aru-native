@@ -53,6 +53,10 @@ android {
   }
 }
 
+ksp {
+  arg("room.generateKotlin", "true")
+}
+
 ktlint {
   android = true
   ignoreFailures = false
@@ -83,6 +87,14 @@ dependencies {
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.foundation)
   implementation(libs.androidx.hilt.navigation.compose)
+
+  // DataStore
+  implementation(libs.androidx.datastore.preferences)
+
+  // Room
+  implementation(libs.androidx.room.runtime)
+  implementation(libs.androidx.room.ktx)
+  ksp(libs.androidx.room.compiler)
 
   // Hilt
   implementation(libs.hilt.android)
