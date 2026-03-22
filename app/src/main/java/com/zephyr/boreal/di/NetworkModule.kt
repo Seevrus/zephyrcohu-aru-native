@@ -1,7 +1,13 @@
 package com.zephyr.boreal.di
 
 import com.zephyr.boreal.BuildConfig
-import com.zephyr.boreal.api.BorealApiService
+import com.zephyr.boreal.api.AuthApiService
+import com.zephyr.boreal.api.AuthInterceptor
+import com.zephyr.boreal.api.ItemApiService
+import com.zephyr.boreal.api.PartnerApiService
+import com.zephyr.boreal.api.ReceiptApiService
+import com.zephyr.boreal.api.RoundApiService
+import com.zephyr.boreal.api.StoreApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,13 +33,14 @@ object NetworkModule {
 
   @Provides
   @Singleton
-  fun provideOkHttpClient(): OkHttpClient {
+  fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
     val logging =
       HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
       }
     return OkHttpClient
       .Builder()
+      .addInterceptor(authInterceptor)
       .addInterceptor(logging)
       .build()
   }
@@ -55,5 +62,25 @@ object NetworkModule {
 
   @Provides
   @Singleton
-  fun provideApiService(retrofit: Retrofit): BorealApiService = retrofit.create(BorealApiService::class.java)
+  fun provideAuthApiService(retrofit: Retrofit): AuthApiService = retrofit.create(AuthApiService::class.java)
+
+  @Provides
+  @Singleton
+  fun provideStoreApiService(retrofit: Retrofit): StoreApiService = retrofit.create(StoreApiService::class.java)
+
+  @Provides
+  @Singleton
+  fun providePartnerApiService(retrofit: Retrofit): PartnerApiService = retrofit.create(PartnerApiService::class.java)
+
+  @Provides
+  @Singleton
+  fun provideItemApiService(retrofit: Retrofit): ItemApiService = retrofit.create(ItemApiService::class.java)
+
+  @Provides
+  @Singleton
+  fun provideRoundApiService(retrofit: Retrofit): RoundApiService = retrofit.create(RoundApiService::class.java)
+
+  @Provides
+  @Singleton
+  fun provideReceiptApiService(retrofit: Retrofit): ReceiptApiService = retrofit.create(ReceiptApiService::class.java)
 }
