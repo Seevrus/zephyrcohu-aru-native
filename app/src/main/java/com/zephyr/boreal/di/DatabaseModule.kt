@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.zephyr.boreal.data.local.BorealDatabase
 import com.zephyr.boreal.data.local.dao.ItemDao
+import com.zephyr.boreal.data.local.dao.OtherItemDao
 import com.zephyr.boreal.data.local.dao.PartnerDao
 import com.zephyr.boreal.data.local.dao.RoundDao
 import com.zephyr.boreal.data.local.dao.StoreDao
@@ -39,6 +40,9 @@ object DatabaseModule {
 
   @Provides
   fun provideItemDao(database: BorealDatabase): ItemDao = database.itemDao()
+
+  @Provides
+  fun provideOtherItemDao(database: BorealDatabase): OtherItemDao = database.otherItemDao()
 
   @Provides
   fun provideStoreDao(database: BorealDatabase): StoreDao = database.storeDao()

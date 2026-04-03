@@ -1,6 +1,10 @@
 package com.zephyr.boreal.api
 
+import com.zephyr.boreal.data.local.dao.UserDao
+import com.zephyr.boreal.store.core.ApplicationScope
 import com.zephyr.boreal.store.user.UserSessionStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import okhttp3.Interceptor
 import okhttp3.Response
 import javax.inject.Inject
@@ -11,6 +15,8 @@ class AuthInterceptor
   @Inject
   constructor(
     private val userSessionStore: UserSessionStore,
+    private val userDao: UserDao,
+    @param:ApplicationScope private val scope: CoroutineScope,
   ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
       val userState = userSessionStore.userState.value
@@ -26,6 +32,15 @@ class AuthInterceptor
         requestBuilder.addHeader("Authorization", "Bearer $it")
       }
 
-      return chain.proceed(requestBuilder.build())
+      val response = chain.proceed(requestBuilder.build())
+
+      if (response.code == java.net.HttpURLConnection.HTTP_UNAUTHORIZED) {
+        scope.launch {
+          userSessionStore.clearSession()
+          userDao.clearUser()
+        }
+      }
+
+      return response
     }
   }

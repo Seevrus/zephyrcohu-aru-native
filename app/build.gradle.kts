@@ -115,6 +115,9 @@ dependencies {
   implementation(libs.kotlinx.serialization)
 
   testImplementation(libs.junit)
+  testImplementation(libs.mockwebserver)
+  testImplementation(libs.kotlinx.coroutines.test)
+  testImplementation(libs.mockito.kotlin)
   testRuntimeOnly(libs.junit.launcher)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)

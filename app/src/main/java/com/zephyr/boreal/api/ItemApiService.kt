@@ -3,6 +3,7 @@ package com.zephyr.boreal.api
 import com.zephyr.boreal.api.dto.request.SaveSelectedItemsRequestDto
 import com.zephyr.boreal.api.dto.request.SellSelectedItemsRequestDto
 import com.zephyr.boreal.api.dto.response.ItemsResponseDto
+import com.zephyr.boreal.api.dto.response.OtherItemsResponseDto
 import com.zephyr.boreal.api.dto.response.PriceListResponseDto
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -13,7 +14,7 @@ interface ItemApiService {
   suspend fun getItems(): ItemsResponseDto
 
   @GET("other_items")
-  suspend fun getOtherItems(): ItemsResponseDto
+  suspend fun getOtherItems(): OtherItemsResponseDto
 
   @GET("price_lists")
   suspend fun getPriceLists(): PriceListResponseDto

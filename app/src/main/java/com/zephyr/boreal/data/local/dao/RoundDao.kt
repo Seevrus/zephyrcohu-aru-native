@@ -4,7 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.zephyr.boreal.data.local.entities.RoundEntity
+import com.zephyr.boreal.data.local.RoundEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

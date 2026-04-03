@@ -10,8 +10,6 @@ data class Round(
   val roundFinished: String?,
   val lastSerialNumber: Int?,
   val receipts: List<RoundReceipt> = emptyList(),
-  val createdAt: String,
-  val updatedAt: String,
 )
 
 data class RoundUser(

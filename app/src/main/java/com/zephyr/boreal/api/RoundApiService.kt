@@ -1,7 +1,7 @@
 package com.zephyr.boreal.api
 
-import com.zephyr.boreal.api.dto.request.FinishRoundRequestWrapperDto
-import com.zephyr.boreal.api.dto.request.StartRoundRequestWrapperDto
+import com.zephyr.boreal.api.dto.request.FinishRoundRequestDto
+import com.zephyr.boreal.api.dto.request.StartRoundRequestDto
 import com.zephyr.boreal.api.dto.response.RoundResponseDto
 import com.zephyr.boreal.api.dto.response.RoundsResponseDto
 import retrofit2.http.Body
@@ -14,11 +14,11 @@ interface RoundApiService {
 
   @POST("rounds/start")
   suspend fun startRound(
-    @Body request: StartRoundRequestWrapperDto,
+    @Body request: StartRoundRequestDto,
   ): RoundResponseDto
 
   @POST("rounds/finish")
   suspend fun finishRound(
-    @Body request: FinishRoundRequestWrapperDto,
+    @Body request: FinishRoundRequestDto,
   ): RoundResponseDto
 }

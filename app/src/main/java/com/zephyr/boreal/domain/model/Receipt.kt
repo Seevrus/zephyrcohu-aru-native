@@ -18,7 +18,7 @@ data class Receipt(
   val fulfillmentDate: String, // yyyy-MM-dd
   val invoiceType: InvoiceType,
   val paidDate: String, // yyyy-MM-dd
-  val user: ReceiptUser,
+  val user: ReceiptUser?,
   val items: List<ReceiptItem> = emptyList(),
   val otherItems: List<ReceiptOtherItem> = emptyList(),
   val quantity: Double,

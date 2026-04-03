@@ -4,7 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.zephyr.boreal.data.local.entities.PartnerEntity
+import com.zephyr.boreal.data.local.PartnerEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

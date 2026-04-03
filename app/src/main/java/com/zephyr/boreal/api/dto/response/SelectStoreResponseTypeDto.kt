@@ -1,0 +1,22 @@
+package com.zephyr.boreal.api.dto.response
+
+import com.zephyr.boreal.domain.model.UserRole
+import com.zephyr.boreal.domain.model.UserState
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class SelectStoreResponseTypeDto(
+  val id: Int,
+  val userName: String,
+  val state: UserState,
+  val name: String,
+  val phoneNumber: String? = null,
+  val isDev: Boolean,
+  val roles: List<UserRole>,
+  val storeInUseId: Int? = null,
+  val storeOwnedId: Int? = null,
+  val lastActive: String,
+  val createdAt: String,
+  val updatedAt: String,
+  val company: CompanyDto,
+)

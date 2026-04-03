@@ -82,4 +82,7 @@ enum class UserRole {
 
   @SerialName("NP")
   NEW_PARTNER,
+
+  @SerialName("password")
+  PASSWORD_EXPIRED,
 }

@@ -1,73 +1,93 @@
 package com.zephyr.boreal.data.repository
 
-import com.zephyr.boreal.api.BorealApiService
-import com.zephyr.boreal.data.local.UserDao
-import com.zephyr.boreal.data.local.UserEntity
+import com.zephyr.boreal.api.AuthApiService
+import com.zephyr.boreal.api.dto.request.LoginRequestDto
+import com.zephyr.boreal.data.local.dao.UserDao
+import com.zephyr.boreal.data.mapper.toDomain
+import com.zephyr.boreal.data.mapper.toEntity
+import com.zephyr.boreal.domain.model.User
+import com.zephyr.boreal.domain.model.UserRole
+import com.zephyr.boreal.store.user.StoredToken
+import com.zephyr.boreal.store.user.UserSessionStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Domain model for User.
- */
-data class User(
-  val id: String,
-  val name: String,
-  val email: String,
-)
-
 @Singleton
 class UserRepository
   @Inject
   constructor(
-    private val apiService: BorealApiService,
+    private val apiService: AuthApiService,
     private val userDao: UserDao,
+    private val userSessionStore: UserSessionStore,
   ) : BaseRepository() {
-/**
-     * Login action.
-     * Simple setter/action wrapper (no persistence required for the action itself).
-     */
-    suspend fun login(credentials: Any): ApiResource<User> =
+    suspend fun login(
+      company: String,
+      username: String,
+      password: String,
+    ): ApiResource<User> =
       try {
-        apiService.login(credentials)
-        // In real app, we would map response to User and save to DB
-        // val user = response.toDomain()
-        // userDao.insertUser(user.toEntity())
-        ApiResource.Success(User("1", "Demo User", "user@example.com"))
+        val credentials = LoginRequestDto(userName = "$username@$company", password = password)
+        val response = apiService.login(credentials)
+
+        // Save to store immediately as per plan
+        userSessionStore.updateSession(
+          deviceId = userSessionStore.userState.value.deviceId, // Preserve device ID
+          token =
+            StoredToken(
+              token = response.token.accessToken,
+              isPasswordExpired = response.token.abilities.contains(UserRole.PASSWORD_EXPIRED),
+              expiresAt = response.token.expiresAt ?: "",
+            ),
+        )
+
+        // Save to Room
+        userDao.insertUser(response.toEntity())
+
+        ApiResource.Success(response.toDomain())
       } catch (e: Exception) {
         ApiResource.Error(e.localizedMessage ?: "Login failed")
       }
 
-/**
-     * Logout action.
-     */
     suspend fun logout(): ApiResource<Unit> =
       try {
+        apiService.logout()
         userDao.clearUser()
+        userSessionStore.clearSession()
         ApiResource.Success(Unit)
       } catch (e: Exception) {
+        // Even if API fails, we clear local session
+        userDao.clearUser()
+        userSessionStore.clearSession()
         ApiResource.Error(e.localizedMessage ?: "Logout failed")
       }
 
-    /**
-     * Fetcher for user data with persistence and background refresh.
-     */
     fun getCurrentUser(): Flow<ApiResource<User?>> =
       networkBoundResource(
         query = {
           userDao.getUser().map { entity ->
-            entity?.let { User(it.id, it.name, it.email) }
+            entity?.toDomain()
           }
         },
         fetch = {
-          apiService.checkToken()
-          // Simulate fetching updated user details
-          UserEntity("1", "Demo User (Updated)", "user@example.com")
+          val response = apiService.checkToken()
+
+          // Update session if needed (e.g., password expired)
+          userSessionStore.updateSession(
+            deviceId = userSessionStore.userState.value.deviceId,
+            token =
+              StoredToken(
+                token = response.token.accessToken,
+                isPasswordExpired = response.token.abilities.contains(UserRole.PASSWORD_EXPIRED),
+                expiresAt = response.token.expiresAt ?: "",
+              ),
+          )
+          response
         },
-        saveFetchResult = { entity ->
-          userDao.insertUser(entity)
+        saveFetchResult = { response ->
+          userDao.insertUser(response.toEntity())
         },
-        shouldFetch = { it != null }, // Example: fetch if we have a cached user to verify token
+        shouldFetch = { it != null },
       )
   }
