@@ -23,6 +23,7 @@ private val DarkColorScheme =
 fun BorealTheme(content: @Composable () -> Unit) {
   MaterialTheme(
     colorScheme = DarkColorScheme,
+    typography = BorealTypography,
     content = content,
   )
 }
