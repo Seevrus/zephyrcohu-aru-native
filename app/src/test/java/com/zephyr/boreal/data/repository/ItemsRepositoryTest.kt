@@ -3,8 +3,12 @@ package com.zephyr.boreal.data.repository
 import com.zephyr.boreal.api.ItemApiService
 import com.zephyr.boreal.api.dto.response.OtherItemResponseDataDto
 import com.zephyr.boreal.api.dto.response.OtherItemsResponseDto
+import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.ItemDao
 import com.zephyr.boreal.data.local.dao.OtherItemDao
+import com.zephyr.boreal.network.ConnectivityObserver
+import com.zephyr.boreal.store.user.UserSessionStore
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -19,10 +23,36 @@ class ItemsRepositoryTest {
   private val apiService: ItemApiService = mock()
   private val itemDao: ItemDao = mock()
   private val otherItemDao: OtherItemDao = mock()
+  private val connectivityObserver: ConnectivityObserver = mock()
+  private val userSessionStore: UserSessionStore = mock()
+  private val cacheMetadataDao: CacheMetadataDao = mock()
 
   @BeforeEach
   fun setUp() {
-    repository = ItemsRepository(apiService, itemDao, otherItemDao)
+    val stateFlow =
+      MutableStateFlow(
+        com.zephyr.boreal.store.user.UserState(
+          deviceId = "test-device",
+          storedToken =
+            com.zephyr.boreal.store.user.StoredToken(
+              token = "mock_token",
+              isPasswordExpired = false,
+              expiresAt = "2099-01-01T00:00:00Z",
+            ),
+        ),
+      )
+    whenever(userSessionStore.userState).thenReturn(stateFlow)
+    val connectivityFlow = MutableStateFlow(true)
+    whenever(connectivityObserver.isInternetReachable).thenReturn(connectivityFlow)
+    repository =
+      ItemsRepository(
+        apiService,
+        itemDao,
+        otherItemDao,
+        cacheMetadataDao,
+        connectivityObserver,
+        userSessionStore,
+      )
   }
 
   @Test

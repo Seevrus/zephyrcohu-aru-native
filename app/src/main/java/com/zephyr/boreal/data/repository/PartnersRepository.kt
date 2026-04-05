@@ -3,6 +3,7 @@ package com.zephyr.boreal.data.repository
 import com.zephyr.boreal.api.PartnerApiService
 import com.zephyr.boreal.api.dto.request.SearchTaxNumberDataDto
 import com.zephyr.boreal.api.dto.request.SearchTaxNumberRequestDto
+import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.PartnerDao
 import com.zephyr.boreal.data.mapper.toDomain
 import com.zephyr.boreal.data.mapper.toEntity
@@ -10,6 +11,8 @@ import com.zephyr.boreal.domain.model.LocationType
 import com.zephyr.boreal.domain.model.Partner
 import com.zephyr.boreal.domain.model.PartnerList
 import com.zephyr.boreal.domain.model.TaxPayer
+import com.zephyr.boreal.network.ConnectivityObserver
+import com.zephyr.boreal.store.user.UserSessionStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.text.Collator
@@ -23,7 +26,10 @@ class PartnersRepository
   constructor(
     private val apiService: PartnerApiService,
     private val partnerDao: PartnerDao,
-  ) : BaseRepository() {
+    cacheMetadataDao: CacheMetadataDao,
+    connectivityObserver: ConnectivityObserver,
+    userSessionStore: UserSessionStore,
+  ) : BaseRepository(connectivityObserver, userSessionStore, cacheMetadataDao) {
     fun getPartners(): Flow<ApiResource<List<Partner>>> =
       networkBoundResource(
         query = {
@@ -44,6 +50,7 @@ class PartnersRepository
         saveFetchResult = { dtos ->
           partnerDao.insertPartners(dtos.map { it.toEntity() })
         },
+        queryKey = "get_partners",
       )
 
     suspend fun getPartnerLists(): ApiResource<List<PartnerList>> =

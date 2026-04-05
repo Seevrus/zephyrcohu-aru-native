@@ -4,9 +4,11 @@ import com.zephyr.boreal.api.AuthApiService
 import com.zephyr.boreal.api.dto.response.CompanyDto
 import com.zephyr.boreal.api.dto.response.LoginResponseDto
 import com.zephyr.boreal.api.dto.response.TokenDto
+import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.UserDao
 import com.zephyr.boreal.domain.model.UserRole
 import com.zephyr.boreal.domain.model.UserState
+import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.user.UserSessionStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
@@ -25,6 +27,8 @@ class UserRepositoryTest {
   private val apiService: AuthApiService = mock()
   private val userDao: UserDao = mock()
   private val userSessionStore: UserSessionStore = mock()
+  private val connectivityObserver: ConnectivityObserver = mock()
+  private val cacheMetadataDao: CacheMetadataDao = mock()
 
   private val mockLoginResponse =
     LoginResponseDto(
@@ -48,11 +52,20 @@ class UserRepositoryTest {
   fun setUp() {
     val stateFlow =
       MutableStateFlow(
-        com.zephyr.boreal.store.user
-          .UserState(deviceId = "test-device"),
+        com.zephyr.boreal.store.user.UserState(
+          deviceId = "test-device",
+          storedToken =
+            com.zephyr.boreal.store.user.StoredToken(
+              token = "mock_token",
+              isPasswordExpired = false,
+              expiresAt = "2099-01-01T00:00:00Z",
+            ),
+        ),
       )
     whenever(userSessionStore.userState).thenReturn(stateFlow)
-    repository = UserRepository(apiService, userDao, userSessionStore)
+    val connectivityFlow = MutableStateFlow(true)
+    whenever(connectivityObserver.isInternetReachable).thenReturn(connectivityFlow)
+    repository = UserRepository(apiService, userDao, connectivityObserver, userSessionStore, cacheMetadataDao)
   }
 
   @Test

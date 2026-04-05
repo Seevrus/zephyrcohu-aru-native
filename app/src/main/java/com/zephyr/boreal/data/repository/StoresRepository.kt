@@ -3,11 +3,14 @@ package com.zephyr.boreal.data.repository
 import com.zephyr.boreal.api.StoreApiService
 import com.zephyr.boreal.api.dto.request.SelectStoreDataDto
 import com.zephyr.boreal.api.dto.request.SelectStoreRequestDto
+import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.StoreDao
 import com.zephyr.boreal.data.mapper.toDomain
 import com.zephyr.boreal.data.mapper.toEntity
 import com.zephyr.boreal.domain.model.Store
 import com.zephyr.boreal.domain.model.User
+import com.zephyr.boreal.network.ConnectivityObserver
+import com.zephyr.boreal.store.user.UserSessionStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -19,7 +22,10 @@ class StoresRepository
   constructor(
     private val apiService: StoreApiService,
     private val storeDao: StoreDao,
-  ) : BaseRepository() {
+    connectivityObserver: ConnectivityObserver,
+    userSessionStore: UserSessionStore,
+    cacheMetadataDao: CacheMetadataDao,
+  ) : BaseRepository(connectivityObserver, userSessionStore, cacheMetadataDao) {
     fun getStores(): Flow<ApiResource<List<Store>>> =
       networkBoundResource(
         query = {
@@ -33,6 +39,7 @@ class StoresRepository
         saveFetchResult = { dtos ->
           storeDao.insertStores(dtos.map { it.toEntity() })
         },
+        queryKey = "get_stores",
       )
 
     suspend fun selectStore(storeId: Int): ApiResource<User> =

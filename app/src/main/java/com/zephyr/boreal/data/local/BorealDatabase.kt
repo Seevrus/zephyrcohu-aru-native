@@ -8,6 +8,7 @@ import com.zephyr.boreal.data.local.converters.PartnerConverters
 import com.zephyr.boreal.data.local.converters.RoundConverters
 import com.zephyr.boreal.data.local.converters.StoreConverters
 import com.zephyr.boreal.data.local.converters.UserConverters
+import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.ItemDao
 import com.zephyr.boreal.data.local.dao.OtherItemDao
 import com.zephyr.boreal.data.local.dao.PartnerDao
@@ -23,8 +24,9 @@ import com.zephyr.boreal.data.local.dao.UserDao
     OtherItemEntity::class,
     StoreEntity::class,
     RoundEntity::class,
+    CacheMetadataEntity::class,
   ],
-  version = 9,
+  version = 10,
   exportSchema = false,
 )
 @TypeConverters(
@@ -46,4 +48,6 @@ abstract class BorealDatabase : RoomDatabase() {
   abstract fun storeDao(): StoreDao
 
   abstract fun roundDao(): RoundDao
+
+  abstract fun cacheMetadataDao(): CacheMetadataDao
 }

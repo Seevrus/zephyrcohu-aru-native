@@ -1,5 +1,6 @@
 package com.zephyr.boreal.di
 
+import android.content.Context
 import com.zephyr.boreal.BuildConfig
 import com.zephyr.boreal.api.AuthApiService
 import com.zephyr.boreal.api.AuthInterceptor
@@ -8,10 +9,15 @@ import com.zephyr.boreal.api.PartnerApiService
 import com.zephyr.boreal.api.ReceiptApiService
 import com.zephyr.boreal.api.RoundApiService
 import com.zephyr.boreal.api.StoreApiService
+import com.zephyr.boreal.network.AndroidConnectivityObserver
+import com.zephyr.boreal.network.ConnectivityObserver
+import com.zephyr.boreal.store.core.ApplicationScope
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -23,6 +29,13 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+  @Provides
+  @Singleton
+  fun provideConnectivityObserver(
+    @ApplicationContext context: Context,
+    @ApplicationScope scope: CoroutineScope,
+  ): ConnectivityObserver = AndroidConnectivityObserver(context, scope)
+
   @Provides
   @Singleton
   fun provideJson(): Json =

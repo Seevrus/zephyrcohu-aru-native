@@ -2,11 +2,13 @@ package com.zephyr.boreal.data.repository
 
 import com.zephyr.boreal.api.AuthApiService
 import com.zephyr.boreal.api.dto.request.LoginRequestDto
+import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.UserDao
 import com.zephyr.boreal.data.mapper.toDomain
 import com.zephyr.boreal.data.mapper.toEntity
 import com.zephyr.boreal.domain.model.User
 import com.zephyr.boreal.domain.model.UserRole
+import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.user.StoredToken
 import com.zephyr.boreal.store.user.UserSessionStore
 import kotlinx.coroutines.flow.Flow
@@ -20,8 +22,10 @@ class UserRepository
   constructor(
     private val apiService: AuthApiService,
     private val userDao: UserDao,
-    private val userSessionStore: UserSessionStore,
-  ) : BaseRepository() {
+    connectivityObserver: ConnectivityObserver,
+    userSessionStore: UserSessionStore,
+    cacheMetadataDao: CacheMetadataDao,
+  ) : BaseRepository(connectivityObserver, userSessionStore, cacheMetadataDao) {
     suspend fun login(
       company: String,
       username: String,
@@ -89,5 +93,6 @@ class UserRepository
           userDao.insertUser(response.toEntity())
         },
         shouldFetch = { it != null },
+        queryKey = "get_current_user",
       )
   }

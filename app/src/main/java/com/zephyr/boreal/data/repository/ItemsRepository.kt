@@ -3,6 +3,7 @@ package com.zephyr.boreal.data.repository
 import com.zephyr.boreal.api.ItemApiService
 import com.zephyr.boreal.api.dto.request.SaveSelectedItemsRequestDto
 import com.zephyr.boreal.api.dto.request.SellSelectedItemsRequestDto
+import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.ItemDao
 import com.zephyr.boreal.data.local.dao.OtherItemDao
 import com.zephyr.boreal.data.mapper.toDomain
@@ -10,6 +11,8 @@ import com.zephyr.boreal.data.mapper.toEntity
 import com.zephyr.boreal.domain.model.Item
 import com.zephyr.boreal.domain.model.OtherItem
 import com.zephyr.boreal.domain.model.PriceList
+import com.zephyr.boreal.network.ConnectivityObserver
+import com.zephyr.boreal.store.user.UserSessionStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -22,7 +25,10 @@ class ItemsRepository
     private val apiService: ItemApiService,
     private val itemDao: ItemDao,
     private val otherItemDao: OtherItemDao,
-  ) : BaseRepository() {
+    cacheMetadataDao: CacheMetadataDao,
+    connectivityObserver: ConnectivityObserver,
+    userSessionStore: UserSessionStore,
+  ) : BaseRepository(connectivityObserver, userSessionStore, cacheMetadataDao) {
     fun getItems(): Flow<ApiResource<List<Item>>> =
       networkBoundResource(
         query = {
@@ -36,6 +42,7 @@ class ItemsRepository
         saveFetchResult = { dtos ->
           itemDao.insertItems(dtos.map { it.toEntity() })
         },
+        queryKey = "get_items",
       )
 
     fun getOtherItems(): Flow<ApiResource<List<OtherItem>>> =
@@ -51,6 +58,7 @@ class ItemsRepository
         saveFetchResult = { dtos ->
           otherItemDao.insertOtherItems(dtos.map { it.toEntity() })
         },
+        queryKey = "get_other_items",
       )
 
     suspend fun getPriceLists(): ApiResource<List<PriceList>> =

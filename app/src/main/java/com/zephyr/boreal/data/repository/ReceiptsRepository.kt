@@ -7,9 +7,12 @@ import com.zephyr.boreal.api.dto.request.CreateOrdersRequestDto
 import com.zephyr.boreal.api.dto.request.CreateReceiptRequestDataDto
 import com.zephyr.boreal.api.dto.request.CreateReceiptsRequestDto
 import com.zephyr.boreal.api.dto.request.OrderRequestDataDto
+import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.mapper.toDomain
 import com.zephyr.boreal.domain.model.CreatedOrder
 import com.zephyr.boreal.domain.model.Receipt
+import com.zephyr.boreal.network.ConnectivityObserver
+import com.zephyr.boreal.store.user.UserSessionStore
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,7 +21,10 @@ class ReceiptsRepository
   @Inject
   constructor(
     private val apiService: ReceiptApiService,
-  ) : BaseRepository() {
+    cacheMetadataDao: CacheMetadataDao,
+    connectivityObserver: ConnectivityObserver,
+    userSessionStore: UserSessionStore,
+  ) : BaseRepository(connectivityObserver, userSessionStore, cacheMetadataDao) {
     suspend fun createReceipt(request: CreateReceiptRequestDataDto): ApiResource<Receipt> =
       try {
         val response = apiService.createReceipt(CreateReceiptsRequestDto(listOf(request)))

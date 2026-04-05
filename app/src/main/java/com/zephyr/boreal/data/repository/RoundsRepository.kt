@@ -5,10 +5,13 @@ import com.zephyr.boreal.api.dto.request.FinishRoundRequestDataDto
 import com.zephyr.boreal.api.dto.request.FinishRoundRequestDto
 import com.zephyr.boreal.api.dto.request.StartRoundRequestDataDto
 import com.zephyr.boreal.api.dto.request.StartRoundRequestDto
+import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.RoundDao
 import com.zephyr.boreal.data.mapper.toDomain
 import com.zephyr.boreal.data.mapper.toEntity
 import com.zephyr.boreal.domain.model.Round
+import com.zephyr.boreal.network.ConnectivityObserver
+import com.zephyr.boreal.store.user.UserSessionStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -20,7 +23,10 @@ class RoundsRepository
   constructor(
     private val apiService: RoundApiService,
     private val roundDao: RoundDao,
-  ) : BaseRepository() {
+    connectivityObserver: ConnectivityObserver,
+    userSessionStore: UserSessionStore,
+    cacheMetadataDao: CacheMetadataDao,
+  ) : BaseRepository(connectivityObserver, userSessionStore, cacheMetadataDao) {
     fun getRounds(): Flow<ApiResource<List<Round>>> =
       networkBoundResource(
         query = {
@@ -37,6 +43,7 @@ class RoundsRepository
         saveFetchResult = { dtos ->
           roundDao.insertRounds(dtos.map { it.toEntity() })
         },
+        queryKey = "get_rounds",
       )
 
     suspend fun startRound(request: StartRoundRequestDataDto): ApiResource<Round> =

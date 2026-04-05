@@ -3,6 +3,7 @@ package com.zephyr.boreal.di
 import android.content.Context
 import androidx.room.Room
 import com.zephyr.boreal.data.local.BorealDatabase
+import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.ItemDao
 import com.zephyr.boreal.data.local.dao.OtherItemDao
 import com.zephyr.boreal.data.local.dao.PartnerDao
@@ -49,4 +50,7 @@ object DatabaseModule {
 
   @Provides
   fun provideRoundDao(database: BorealDatabase): RoundDao = database.roundDao()
+
+  @Provides
+  fun provideCacheMetadataDao(database: BorealDatabase): CacheMetadataDao = database.cacheMetadataDao()
 }

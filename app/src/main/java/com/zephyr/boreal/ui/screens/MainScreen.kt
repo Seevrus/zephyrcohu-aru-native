@@ -12,11 +12,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -24,30 +21,34 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.zephyr.boreal.R
 import com.zephyr.boreal.ui.components.BorealTile
 import com.zephyr.boreal.ui.components.LoadingIndicator
 import com.zephyr.boreal.ui.components.TileVariant
 import com.zephyr.boreal.ui.theme.BorealColors
 import com.zephyr.boreal.ui.theme.BorealFontSizes
-import kotlinx.coroutines.delay
 
 @Composable
-fun getTiles(numberOfReceipts: Int): List<TileData> =
-  listOf(
+fun getTiles(
+  numberOfReceipts: Int,
+  isLoggedIn: Boolean,
+): List<TileData> {
+  val defaultVariant = if (isLoggedIn) TileVariant.NEUTRAL else TileVariant.DISABLED
+  return listOf(
     TileData(
       stringResource(R.string.tile_storage),
-      TileVariant.OK,
+      if (isLoggedIn) TileVariant.OK else TileVariant.DISABLED,
       ImageVector.vectorResource(R.drawable.truck_solid_full),
     ),
     TileData(
       stringResource(R.string.tile_sell),
-      TileVariant.WARNING,
+      if (isLoggedIn) TileVariant.WARNING else TileVariant.DISABLED,
       ImageVector.vectorResource(R.drawable.cart_arrow_down_solid_full),
     ),
     TileData(
       stringResource(R.string.tile_errands),
-      TileVariant.NEUTRAL,
+      defaultVariant,
       ImageVector.vectorResource(R.drawable.rectangle_list_solid_full),
     ),
     TileData(
@@ -56,20 +57,19 @@ fun getTiles(numberOfReceipts: Int): List<TileData> =
       ImageVector.vectorResource(R.drawable.receipt_solid_full),
     ),
   )
-
-private const val FONT_WARM_UP_DELAY_MS = 1000L
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(modifier: Modifier = Modifier) {
-  val tiles = getTiles(numberOfReceipts = 0)
-  var isReady by remember { mutableStateOf(false) }
+fun MainScreen(
+  modifier: Modifier = Modifier,
+  viewModel: MainViewModel = hiltViewModel(),
+) {
+  val appState by viewModel.appState.collectAsState()
 
-  LaunchedEffect(Unit) {
-    // Brief warm-up to allow downloadable fonts to fetch and avoid visual "jump"
-    delay(FONT_WARM_UP_DELAY_MS)
-    isReady = true
-  }
+  val isLoggedIn = (appState as? AppStartState.Ready)?.isLoggedIn ?: false
+  val isReady = appState is AppStartState.Ready
+  val tiles = getTiles(numberOfReceipts = 0, isLoggedIn = isLoggedIn)
 
   Scaffold(
     modifier = modifier,
