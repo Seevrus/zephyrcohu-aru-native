@@ -1,0 +1,73 @@
+package com.zephyr.boreal.ui.screens
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.zephyr.boreal.R
+import com.zephyr.boreal.ui.components.BorealTopAppBar
+import com.zephyr.boreal.ui.components.ErrorCard
+import com.zephyr.boreal.ui.theme.BorealColors
+
+@Composable
+fun AppLockedScreen(
+  modifier: Modifier = Modifier,
+  onNavigateToMain: () -> Unit = {},
+  viewModel: MainViewModel = hiltViewModel(),
+) {
+  val appState by viewModel.appState.collectAsState()
+
+  val canUseApp = (appState as? AppStartState.Ready)?.canUseApp
+  val userName = (appState as? AppStartState.Ready)?.userName ?: ""
+
+  AppLockedScreenContent(
+    userName = userName,
+    canUseApp = canUseApp,
+    onNavigateToMain = onNavigateToMain,
+    modifier = modifier,
+  )
+}
+
+@Composable
+fun AppLockedScreenContent(
+  userName: String,
+  canUseApp: Boolean?,
+  onNavigateToMain: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  LaunchedEffect(canUseApp) {
+    if (canUseApp == true) {
+      onNavigateToMain()
+    }
+  }
+
+  Scaffold(
+    modifier = modifier,
+    topBar = {
+      BorealTopAppBar(
+        title = stringResource(R.string.title_main),
+      )
+    },
+    containerColor = BorealColors.Background,
+  ) { innerPadding ->
+    Box(
+      modifier =
+        Modifier
+          .padding(innerPadding)
+          .fillMaxSize(),
+      contentAlignment = Alignment.TopCenter,
+    ) {
+      ErrorCard(
+        message = stringResource(R.string.app_locked_message, userName),
+      )
+    }
+  }
+}

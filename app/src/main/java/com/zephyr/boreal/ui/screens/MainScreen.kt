@@ -6,12 +6,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -19,15 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.zephyr.boreal.R
 import com.zephyr.boreal.ui.components.BorealTile
+import com.zephyr.boreal.ui.components.BorealTopAppBar
 import com.zephyr.boreal.ui.components.LoadingIndicator
 import com.zephyr.boreal.ui.components.TileVariant
 import com.zephyr.boreal.ui.theme.BorealColors
-import com.zephyr.boreal.ui.theme.BorealFontSizes
 
 @Composable
 fun getTiles(
@@ -63,30 +60,46 @@ fun getTiles(
 @Composable
 fun MainScreen(
   modifier: Modifier = Modifier,
+  onNavigateToAppLocked: () -> Unit = {},
   viewModel: MainViewModel = hiltViewModel(),
 ) {
   val appState by viewModel.appState.collectAsState()
 
-  val isLoggedIn = (appState as? AppStartState.Ready)?.isLoggedIn ?: false
   val isReady = appState is AppStartState.Ready
+  val isLoggedIn = (appState as? AppStartState.Ready)?.isLoggedIn ?: false
+  val canUseApp = (appState as? AppStartState.Ready)?.canUseApp
+
+  MainScreenContent(
+    isReady = isReady,
+    isLoggedIn = isLoggedIn,
+    canUseApp = canUseApp,
+    onNavigateToAppLocked = onNavigateToAppLocked,
+    modifier = modifier,
+  )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainScreenContent(
+  isReady: Boolean,
+  isLoggedIn: Boolean,
+  canUseApp: Boolean?,
+  onNavigateToAppLocked: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  LaunchedEffect(isLoggedIn, canUseApp) {
+    if (isLoggedIn && canUseApp == false) {
+      onNavigateToAppLocked()
+    }
+  }
+
   val tiles = getTiles(numberOfReceipts = 0, isLoggedIn = isLoggedIn)
 
   Scaffold(
     modifier = modifier,
     topBar = {
-      CenterAlignedTopAppBar(
-        colors =
-          TopAppBarDefaults.topAppBarColors(
-            containerColor = BorealColors.Background,
-            titleContentColor = BorealColors.White,
-          ),
-        title = {
-          Text(
-            stringResource(R.string.title_main),
-            fontSize = BorealFontSizes.Title,
-            fontWeight = FontWeight.Bold,
-          )
-        },
+      BorealTopAppBar(
+        title = stringResource(R.string.title_main),
       )
     },
     containerColor = BorealColors.Background,

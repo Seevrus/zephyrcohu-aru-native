@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
@@ -12,6 +14,12 @@ android {
   namespace = "com.zephyr.boreal"
   compileSdk = 36
 
+  val localProperties = Properties()
+  val localPropertiesFile = rootProject.file("local.properties")
+  if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+  }
+
   defaultConfig {
     applicationId = "com.zephyr.boreal"
     minSdk = 29
@@ -22,13 +30,15 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
     val baseUrlDev =
-      project.findProperty("BASE_URL_DEV") as? String
+      localProperties.getProperty("BASE_URL_DEV")
+        ?: project.findProperty("BASE_URL_DEV") as? String
         ?: "MISSING_BASE_URL_DEV"
     val baseUrlProd =
-      project.findProperty("BASE_URL_PROD") as? String
+      localProperties.getProperty("BASE_URL_PROD")
+        ?: project.findProperty("BASE_URL_PROD") as? String
         ?: "MISSING_BASE_URL_PROD"
 
-    buildConfigField("String", "BASE_URL", "\"$baseUrlDev\"")
+    buildConfigField("String", "BASE_URL", baseUrlDev)
   }
 
   buildTypes {
@@ -37,9 +47,10 @@ android {
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
 
       val baseUrlProd =
-        project.findProperty("BASE_URL_PROD") as? String
+        localProperties.getProperty("BASE_URL_PROD")
+          ?: project.findProperty("BASE_URL_PROD") as? String
           ?: "MISSING_BASE_URL_PROD"
-      buildConfigField("String", "BASE_URL", "\"$baseUrlProd\"")
+      buildConfigField("String", "BASE_URL", baseUrlProd)
     }
   }
   compileOptions {
@@ -94,6 +105,7 @@ dependencies {
   implementation(libs.androidx.compose.ui.text.google.fonts)
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.foundation)
+  implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.hilt.navigation.compose)
 
   // DataStore

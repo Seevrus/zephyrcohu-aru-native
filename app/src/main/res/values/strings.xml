@@ -5,4 +5,5 @@
     <string name="tile_sell">Árulevétel</string>
     <string name="tile_errands">Körök</string>
     <string name="tile_receipts">Bizonylatok (%1$d)</string>
+    <string name="app_locked_message">A(z) %1$s felhasználó nem rendelkezik az alkalmazás használatához szükséges jogosultságokkal. További információért kérem keresse az adminisztrátort.</string>
 </resources>

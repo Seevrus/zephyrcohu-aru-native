@@ -1,11 +1,13 @@
 package com.zephyr.boreal.ui.screens
 
+import com.zephyr.boreal.data.repository.UserRepository
 import com.zephyr.boreal.store.user.StoredToken
 import com.zephyr.boreal.store.user.UserSessionStore
 import com.zephyr.boreal.store.user.UserState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
@@ -26,11 +28,13 @@ import org.mockito.kotlin.whenever
 class MainViewModelTest {
   private val userSessionStore: UserSessionStore = mock()
   private val cacheMetadataDao: com.zephyr.boreal.data.local.dao.CacheMetadataDao = mock()
+  private val userRepository: UserRepository = mock()
   private val testDispatcher = StandardTestDispatcher()
 
   @BeforeEach
   fun setUp() {
     Dispatchers.setMain(testDispatcher)
+    whenever(userRepository.getCurrentUser()).thenReturn(emptyFlow())
   }
 
   @AfterEach
@@ -44,7 +48,7 @@ class MainViewModelTest {
       val userStateFlow = MutableStateFlow(UserState())
       whenever(userSessionStore.userState).thenReturn(userStateFlow)
 
-      val viewModel = MainViewModel(userSessionStore, cacheMetadataDao)
+      val viewModel = MainViewModel(userSessionStore, cacheMetadataDao, userRepository)
 
       assertEquals(AppStartState.Reconciling, viewModel.appState.value)
       // Since it's in viewModelScope.launch, it might have already started or finished.
@@ -70,7 +74,7 @@ class MainViewModelTest {
         )
       whenever(userSessionStore.userState).thenReturn(userStateFlow)
 
-      val viewModel = MainViewModel(userSessionStore, cacheMetadataDao)
+      val viewModel = MainViewModel(userSessionStore, cacheMetadataDao, userRepository)
 
       assertEquals(AppStartState.Reconciling, viewModel.appState.value)
 
@@ -87,7 +91,7 @@ class MainViewModelTest {
       val userStateFlow = MutableStateFlow(UserState())
       whenever(userSessionStore.userState).thenReturn(userStateFlow)
 
-      val viewModel = MainViewModel(userSessionStore, cacheMetadataDao)
+      val viewModel = MainViewModel(userSessionStore, cacheMetadataDao, userRepository)
 
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
 
@@ -113,7 +117,7 @@ class MainViewModelTest {
         )
       whenever(userSessionStore.userState).thenReturn(userStateFlow)
 
-      val viewModel = MainViewModel(userSessionStore, cacheMetadataDao)
+      val viewModel = MainViewModel(userSessionStore, cacheMetadataDao, userRepository)
 
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
 

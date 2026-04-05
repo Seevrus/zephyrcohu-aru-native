@@ -3,6 +3,9 @@ package com.zephyr.boreal.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zephyr.boreal.data.local.dao.CacheMetadataDao
+import com.zephyr.boreal.data.repository.ApiResource
+import com.zephyr.boreal.data.repository.UserRepository
+import com.zephyr.boreal.domain.model.canUseApp
 import com.zephyr.boreal.store.user.UserSessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -17,6 +20,8 @@ sealed class AppStartState {
 
   data class Ready(
     val isLoggedIn: Boolean,
+    val canUseApp: Boolean? = null,
+    val userName: String? = null,
   ) : AppStartState()
 }
 
@@ -26,6 +31,7 @@ class MainViewModel
   constructor(
     private val userSessionStore: UserSessionStore,
     private val cacheMetadataDao: CacheMetadataDao,
+    private val userRepository: UserRepository,
   ) : ViewModel() {
     companion object {
       const val FONT_WARMUP_DELAY_MS = 1000L
@@ -43,11 +49,40 @@ class MainViewModel
         // Wait for font warmup (this replaces the UI delay)
         delay(FONT_WARMUP_DELAY_MS)
 
-        userSessionStore.userState.collect { userState ->
-          val isLoggedIn =
-            userState.storedToken?.token != null &&
-              userState.storedToken.isPasswordExpired != true
-          _appState.value = AppStartState.Ready(isLoggedIn = isLoggedIn)
+        launch {
+          userSessionStore.userState.collect { userState ->
+            val isLoggedIn =
+              userState.storedToken?.token != null &&
+                userState.storedToken.isPasswordExpired != true
+
+            // Only update isLoggedIn if not overriding user data
+            _appState.value =
+              when (val currentState = _appState.value) {
+                is AppStartState.Ready -> currentState.copy(isLoggedIn = isLoggedIn)
+                AppStartState.Reconciling -> AppStartState.Ready(isLoggedIn = isLoggedIn)
+              }
+          }
+        }
+
+        launch {
+          userRepository.getCurrentUser().collect { resource ->
+            val user = (resource as? ApiResource.Success)?.data
+
+            _appState.value =
+              when (val currentState = _appState.value) {
+                is AppStartState.Ready ->
+                  currentState.copy(
+                    canUseApp = user?.canUseApp,
+                    userName = user?.userName,
+                  )
+                AppStartState.Reconciling ->
+                  AppStartState.Ready(
+                    isLoggedIn = false,
+                    canUseApp = user?.canUseApp,
+                    userName = user?.userName,
+                  )
+              }
+          }
         }
       }
     }
