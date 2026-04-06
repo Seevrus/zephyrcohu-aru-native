@@ -6,4 +6,10 @@
     <string name="tile_errands">Körök</string>
     <string name="tile_receipts">Bizonylatok (%1$d)</string>
     <string name="app_locked_message">A(z) %1$s felhasználó nem rendelkezik az alkalmazás használatához szükséges jogosultságokkal. További információért kérem keresse az adminisztrátort.</string>
+    <string name="title_settings">Beállítások</string>
+    <string name="tile_login">Bejelentkezés</string>
+    <string name="tile_change_password">Jelszó megváltoztatása</string>
+    <string name="tile_print_settings">Nyomtatási beállítások</string>
+    <string name="tile_logout">Kijelentkezés</string>
+    <string name="settings_icon_description">Beállítások</string>
 </resources>

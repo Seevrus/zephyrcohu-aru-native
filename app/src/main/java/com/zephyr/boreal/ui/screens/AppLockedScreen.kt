@@ -15,12 +15,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.zephyr.boreal.R
 import com.zephyr.boreal.ui.components.BorealTopAppBar
 import com.zephyr.boreal.ui.components.ErrorCard
+import com.zephyr.boreal.ui.components.SettingsButton
 import com.zephyr.boreal.ui.theme.BorealColors
 
 @Composable
 fun AppLockedScreen(
   modifier: Modifier = Modifier,
   onNavigateToMain: () -> Unit = {},
+  onNavigateToSettings: () -> Unit = {},
   viewModel: MainViewModel = hiltViewModel(),
 ) {
   val appState by viewModel.appState.collectAsState()
@@ -32,6 +34,7 @@ fun AppLockedScreen(
     userName = userName,
     canUseApp = canUseApp,
     onNavigateToMain = onNavigateToMain,
+    onNavigateToSettings = onNavigateToSettings,
     modifier = modifier,
   )
 }
@@ -41,6 +44,7 @@ fun AppLockedScreenContent(
   userName: String,
   canUseApp: Boolean?,
   onNavigateToMain: () -> Unit,
+  onNavigateToSettings: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   LaunchedEffect(canUseApp) {
@@ -54,6 +58,9 @@ fun AppLockedScreenContent(
     topBar = {
       BorealTopAppBar(
         title = stringResource(R.string.title_main),
+        actions = {
+          SettingsButton(onClick = onNavigateToSettings)
+        },
       )
     },
     containerColor = BorealColors.Background,

@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.zephyr.boreal.ui.theme.BorealColors
 
@@ -21,7 +22,7 @@ fun LoadingIndicator(
   message: String? = null,
 ) {
   Column(
-    modifier = modifier.padding(16.dp),
+    modifier = modifier.padding(16.dp).testTag("loading_indicator"),
     horizontalAlignment = Alignment.CenterHorizontally,
     verticalArrangement = Arrangement.Center,
   ) {

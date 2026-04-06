@@ -16,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.zephyr.boreal.ui.screens.AppLockedScreen
 import com.zephyr.boreal.ui.screens.MainScreen
+import com.zephyr.boreal.ui.screens.SettingsScreen
 import com.zephyr.boreal.ui.theme.BorealColors
 import com.zephyr.boreal.ui.theme.BorealTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -45,6 +46,9 @@ class MainActivity : ComponentActivity() {
                     popUpTo(0) { inclusive = true }
                   }
                 },
+                onNavigateToSettings = {
+                  navController.navigate("settings")
+                },
               )
             }
             composable("app_locked") {
@@ -54,7 +58,13 @@ class MainActivity : ComponentActivity() {
                     popUpTo(0) { inclusive = true }
                   }
                 },
+                onNavigateToSettings = {
+                  navController.navigate("settings")
+                },
               )
+            }
+            composable("settings") {
+              SettingsScreen()
             }
           }
         }

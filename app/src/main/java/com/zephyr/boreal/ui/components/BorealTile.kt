@@ -34,8 +34,8 @@ import com.zephyr.boreal.ui.theme.BorealColors
 fun BorealTile(
   title: String,
   variant: TileVariant,
-  icon: ImageVector,
   modifier: Modifier = Modifier,
+  icon: ImageVector? = null,
   onClick: () -> Unit = {},
 ) {
   val (backgroundColor, rippleColor) = getTileColors(variant)
@@ -61,7 +61,7 @@ fun BorealTile(
 @Composable
 private fun TileContent(
   title: String,
-  icon: ImageVector,
+  icon: ImageVector?,
   rippleColor: Color,
   onClick: () -> Unit,
 ) {
@@ -76,19 +76,21 @@ private fun TileContent(
         ),
     verticalAlignment = Alignment.CenterVertically,
   ) {
-    Box(
-      modifier =
-        Modifier
-          .width(72.dp)
-          .fillMaxHeight(),
-      contentAlignment = Alignment.Center,
-    ) {
-      Icon(
-        imageVector = icon,
-        contentDescription = null,
-        tint = Color.White,
-        modifier = Modifier.size(50.dp),
-      )
+    if (icon != null) {
+      Box(
+        modifier =
+          Modifier
+            .width(72.dp)
+            .fillMaxHeight(),
+        contentAlignment = Alignment.Center,
+      ) {
+        Icon(
+          imageVector = icon,
+          contentDescription = null,
+          tint = Color.White,
+          modifier = Modifier.size(50.dp),
+        )
+      }
     }
 
     Text(

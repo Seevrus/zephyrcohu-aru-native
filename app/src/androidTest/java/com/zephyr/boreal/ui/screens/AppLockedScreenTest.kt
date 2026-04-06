@@ -2,6 +2,7 @@ package com.zephyr.boreal.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.platform.app.InstrumentationRegistry
 import com.zephyr.boreal.R
@@ -19,6 +20,7 @@ class AppLockedScreenTest {
     val userName = "TestUser"
     val appTitle = context.getString(R.string.title_main)
     val expectedMessage = context.getString(R.string.app_locked_message, userName)
+    val settingsDescription = context.getString(R.string.settings_icon_description)
 
     composeTestRule.setContent {
       BorealTheme {
@@ -26,6 +28,7 @@ class AppLockedScreenTest {
           userName = userName,
           canUseApp = false,
           onNavigateToMain = {},
+          onNavigateToSettings = {},
         )
       }
     }
@@ -35,6 +38,9 @@ class AppLockedScreenTest {
 
     // Assert localized error message with user name
     composeTestRule.onNodeWithText(expectedMessage).assertIsDisplayed()
+
+    // Assert Settings Icon
+    composeTestRule.onNodeWithContentDescription(settingsDescription).assertIsDisplayed()
   }
 
   @Test
@@ -47,6 +53,7 @@ class AppLockedScreenTest {
           userName = "TestUser",
           canUseApp = true,
           onNavigateToMain = { navigateCalled = true },
+          onNavigateToSettings = {},
         )
       }
     }

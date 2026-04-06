@@ -2,6 +2,7 @@ package com.zephyr.boreal.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.platform.app.InstrumentationRegistry
 import com.zephyr.boreal.R
@@ -25,6 +26,7 @@ class MainScreenTest {
     val unloadingTitle = context.getString(R.string.tile_sell)
     val routesTitle = context.getString(R.string.tile_errands)
     val documentsTitle = context.getString(R.string.tile_receipts, 0)
+    val settingsDescription = context.getString(R.string.settings_icon_description)
 
     composeTestRule.setContent {
       BorealTheme {
@@ -40,5 +42,8 @@ class MainScreenTest {
     composeTestRule.onNodeWithText(unloadingTitle).assertIsDisplayed()
     composeTestRule.onNodeWithText(routesTitle).assertIsDisplayed()
     composeTestRule.onNodeWithText(documentsTitle).assertIsDisplayed()
+
+    // Assert Settings Icon
+    composeTestRule.onNodeWithContentDescription(settingsDescription).assertIsDisplayed()
   }
 }

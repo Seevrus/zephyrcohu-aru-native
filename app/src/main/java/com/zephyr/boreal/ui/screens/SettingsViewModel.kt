@@ -1,0 +1,60 @@
+package com.zephyr.boreal.ui.screens
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.zephyr.boreal.data.repository.ApiResource
+import com.zephyr.boreal.data.repository.UserRepository
+import com.zephyr.boreal.domain.model.UserState
+import com.zephyr.boreal.store.user.UserSessionStore
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+data class SettingsState(
+  val isLoggedIn: Boolean = false,
+  val isIdle: Boolean = false,
+  val isPasswordExpired: Boolean = false,
+  val isLoading: Boolean = false,
+)
+
+@HiltViewModel
+class SettingsViewModel
+  @Inject
+  constructor(
+    private val userSessionStore: UserSessionStore,
+    private val userRepository: UserRepository,
+  ) : ViewModel() {
+    private val _state = MutableStateFlow(SettingsState())
+    val state: StateFlow<SettingsState> = _state.asStateFlow()
+
+    init {
+      viewModelScope.launch {
+        combine(
+          userSessionStore.userState,
+          userRepository.getCurrentUser(),
+        ) { userState, resource ->
+          val user = resource.getOrNull()
+          val storedToken = userState.storedToken
+          val token = storedToken?.token
+
+          val isLoggedIn = token != null && user != null && !storedToken.isTokenExpired
+          val isIdle = user?.state == UserState.IDLE
+          val isPasswordExpired = storedToken?.isPasswordExpired == true
+          val isLoading = resource is ApiResource.Loading
+
+          SettingsState(
+            isLoggedIn = isLoggedIn,
+            isIdle = isIdle,
+            isPasswordExpired = isPasswordExpired,
+            isLoading = isLoading,
+          )
+        }.collect { newState ->
+          _state.value = newState
+        }
+      }
+    }
+  }

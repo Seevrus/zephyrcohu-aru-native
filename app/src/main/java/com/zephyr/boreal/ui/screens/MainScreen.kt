@@ -23,6 +23,7 @@ import com.zephyr.boreal.R
 import com.zephyr.boreal.ui.components.BorealTile
 import com.zephyr.boreal.ui.components.BorealTopAppBar
 import com.zephyr.boreal.ui.components.LoadingIndicator
+import com.zephyr.boreal.ui.components.SettingsButton
 import com.zephyr.boreal.ui.components.TileVariant
 import com.zephyr.boreal.ui.theme.BorealColors
 
@@ -61,6 +62,7 @@ fun getTiles(
 fun MainScreen(
   modifier: Modifier = Modifier,
   onNavigateToAppLocked: () -> Unit = {},
+  onNavigateToSettings: () -> Unit = {},
   viewModel: MainViewModel = hiltViewModel(),
 ) {
   val appState by viewModel.appState.collectAsState()
@@ -74,6 +76,7 @@ fun MainScreen(
     isLoggedIn = isLoggedIn,
     canUseApp = canUseApp,
     onNavigateToAppLocked = onNavigateToAppLocked,
+    onNavigateToSettings = onNavigateToSettings,
     modifier = modifier,
   )
 }
@@ -85,6 +88,7 @@ fun MainScreenContent(
   isLoggedIn: Boolean,
   canUseApp: Boolean?,
   onNavigateToAppLocked: () -> Unit,
+  onNavigateToSettings: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   LaunchedEffect(isLoggedIn, canUseApp) {
@@ -100,6 +104,9 @@ fun MainScreenContent(
     topBar = {
       BorealTopAppBar(
         title = stringResource(R.string.title_main),
+        actions = {
+          SettingsButton(onClick = onNavigateToSettings)
+        },
       )
     },
     containerColor = BorealColors.Background,
