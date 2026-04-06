@@ -16,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.zephyr.boreal.ui.screens.AppLockedScreen
 import com.zephyr.boreal.ui.screens.MainScreen
+import com.zephyr.boreal.ui.screens.PrintSettingsScreen
 import com.zephyr.boreal.ui.screens.SettingsScreen
 import com.zephyr.boreal.ui.theme.BorealColors
 import com.zephyr.boreal.ui.theme.BorealTheme
@@ -30,6 +31,7 @@ class MainActivity : ComponentActivity() {
       navigationBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
     )
     super.onCreate(savedInstanceState)
+
     setContent {
       BorealTheme {
         Surface(
@@ -64,7 +66,18 @@ class MainActivity : ComponentActivity() {
               )
             }
             composable("settings") {
-              SettingsScreen()
+              SettingsScreen(
+                onNavigateToPrintSettings = {
+                  navController.navigate("print_settings")
+                },
+              )
+            }
+            composable("print_settings") {
+              PrintSettingsScreen(
+                onNavigateBack = {
+                  navController.popBackStack()
+                },
+              )
             }
           }
         }

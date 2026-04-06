@@ -69,7 +69,7 @@ fun SettingsScreenContent(
     modifier = modifier,
     topBar = {
       BorealTopAppBar(
-        title = stringResource(R.string.title_settings),
+        title = stringResource(R.string.screen_settings_title),
       )
     },
     containerColor = BorealColors.Background,

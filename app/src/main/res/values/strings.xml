@@ -1,15 +1,46 @@
 <resources>
     <string name="app_name">Boreal</string>
-    <string name="title_main">Zephyr Boreal</string>
-    <string name="tile_storage">Rakodás</string>
-    <string name="tile_sell">Árulevétel</string>
-    <string name="tile_errands">Körök</string>
+    <string name="screen_main_title">Zephyr Boreal</string>
+    <string name="tile_loading">Rakodás</string>
+    <string name="tile_unloading">Árulevétel</string>
+    <string name="tile_rounds">Körök</string>
     <string name="tile_receipts">Bizonylatok (%1$d)</string>
     <string name="app_locked_message">A(z) %1$s felhasználó nem rendelkezik az alkalmazás használatához szükséges jogosultságokkal. További információért kérem keresse az adminisztrátort.</string>
-    <string name="title_settings">Beállítások</string>
+    <string name="screen_settings_title">Beállítások</string>
+    <string name="screen_print_title">Nyomtatás</string>
     <string name="tile_login">Bejelentkezés</string>
     <string name="tile_change_password">Jelszó megváltoztatása</string>
     <string name="tile_print_settings">Nyomtatási beállítások</string>
     <string name="tile_logout">Kijelentkezés</string>
     <string name="settings_icon_description">Beállítások</string>
+
+    <!-- Print Settings -->
+    <string name="print_settings_permission_error">Nincs Bluetooth jogosultság! Kérem engedélyezze az alkalmazás beállításaiban a nyomtatáshoz.</string>
+    <string name="print_settings_open_settings">Beállítások megnyitása</string>
+    <string name="print_settings_bluetooth_off_error">A Bluetooth jelenleg ki van kapcsolva. Kérem kapcsolja be a nyomtatáshoz.</string>
+    <string name="print_settings_enable_bluetooth">Bluetooth bekapcsolása</string>
+    <string name="print_settings_no_paired_devices">Nincs párosított Bluetooth eszköz. Kérem párosítsa a nyomtatót a beállításokban.</string>
+    <string name="print_settings_printer_label">Nyomtató</string>
+    <string name="print_settings_mode_label">Rakjegyzék típusa</string>
+    <string name="print_settings_mode_changes">Változások</string>
+    <string name="print_settings_mode_full">Teljes</string>
+    <string name="print_settings_save">Mentés</string>
+
+    <!-- UI Components -->
+    <string name="dropdown_default_placeholder">Kérem válasszon…</string>
+
+    <!-- Printer -->
+    <string name="printer_error_bluetooth_not_supported">Bluetooth nem támogatott ezen az eszközön.</string>
+    <string name="printer_error_not_connected">Nyomtató nincs csatlakoztatva.</string>
+    <string name="printer_log_connection_error">Kapcsolódási hiba: %1$s</string>
+    <string name="printer_log_disconnection_error">Leválasztási hiba: %1$s</string>
+    <string name="printer_log_mock_print">MOCK PRINT: %1$s</string>
+    <string name="printer_log_printing_error">Nyomtatási hiba: %1$s</string>
+    <string name="printer_log_battery_low">Akkumulátor alacsony: %1$b</string>
+    <string name="printer_log_paper_out">Nincs papír: %1$b</string>
+    <string name="printer_log_overheated">Túlhevült: %1$b</string>
+
+    <!-- Bluetooth -->
+    <string name="bluetooth_unknown_device">Ismeretlen eszköz</string>
+    <string name="bluetooth_dev_test_device">Fejlesztői teszt</string>
 </resources>

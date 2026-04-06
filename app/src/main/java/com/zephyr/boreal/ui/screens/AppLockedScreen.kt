@@ -57,7 +57,7 @@ fun AppLockedScreenContent(
     modifier = modifier,
     topBar = {
       BorealTopAppBar(
-        title = stringResource(R.string.title_main),
+        title = stringResource(R.string.screen_main_title),
         actions = {
           SettingsButton(onClick = onNavigateToSettings)
         },

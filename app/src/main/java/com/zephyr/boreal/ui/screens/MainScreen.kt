@@ -35,17 +35,17 @@ fun getTiles(
   val defaultVariant = if (isLoggedIn) TileVariant.NEUTRAL else TileVariant.DISABLED
   return listOf(
     TileData(
-      stringResource(R.string.tile_storage),
+      stringResource(R.string.tile_loading),
       if (isLoggedIn) TileVariant.OK else TileVariant.DISABLED,
       ImageVector.vectorResource(R.drawable.truck_solid_full),
     ),
     TileData(
-      stringResource(R.string.tile_sell),
+      stringResource(R.string.tile_unloading),
       if (isLoggedIn) TileVariant.WARNING else TileVariant.DISABLED,
       ImageVector.vectorResource(R.drawable.cart_arrow_down_solid_full),
     ),
     TileData(
-      stringResource(R.string.tile_errands),
+      stringResource(R.string.tile_rounds),
       defaultVariant,
       ImageVector.vectorResource(R.drawable.rectangle_list_solid_full),
     ),
@@ -103,7 +103,7 @@ fun MainScreenContent(
     modifier = modifier,
     topBar = {
       BorealTopAppBar(
-        title = stringResource(R.string.title_main),
+        title = stringResource(R.string.screen_main_title),
         actions = {
           SettingsButton(onClick = onNavigateToSettings)
         },

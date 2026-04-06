@@ -31,7 +31,8 @@ class SettingsViewModelTest {
 
   private val userStateFlow =
     MutableStateFlow(
-      com.zephyr.boreal.store.user.UserState(),
+      com.zephyr.boreal.store.user
+        .UserState(),
     )
   private val currentUserFlow = MutableStateFlow<ApiResource<User>>(ApiResource.Loading())
 
@@ -64,7 +65,8 @@ class SettingsViewModelTest {
       val token = StoredToken("valid", false, "2099-01-01T00:00:00Z")
 
       userStateFlow.value =
-        com.zephyr.boreal.store.user.UserState(storedToken = token)
+        com.zephyr.boreal.store.user
+          .UserState(storedToken = token)
       currentUserFlow.value = ApiResource.Success(user)
 
       runCurrent()
@@ -83,7 +85,8 @@ class SettingsViewModelTest {
       val token = StoredToken("valid", false, "2000-01-01T00:00:00Z")
 
       userStateFlow.value =
-        com.zephyr.boreal.store.user.UserState(storedToken = token)
+        com.zephyr.boreal.store.user
+          .UserState(storedToken = token)
       currentUserFlow.value = ApiResource.Success(user)
 
       runCurrent()
@@ -111,7 +114,9 @@ class SettingsViewModelTest {
       val user = mockUser(UserState.ON_ROUND)
       val token = StoredToken("valid", false, "2099-01-01T00:00:00Z")
 
-      userStateFlow.value = com.zephyr.boreal.store.user.UserState(storedToken = token)
+      userStateFlow.value =
+        com.zephyr.boreal.store.user
+          .UserState(storedToken = token)
       currentUserFlow.value = ApiResource.Success(user)
 
       runCurrent()

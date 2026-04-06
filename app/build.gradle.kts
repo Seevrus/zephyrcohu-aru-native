@@ -139,5 +139,8 @@ dependencies {
   debugImplementation(libs.androidx.compose.ui.tooling)
   debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+  // Print SDK
+  implementation(files("libs/datecs/datecs-sdk-lite-4.3.35.jar"))
+
   detektPlugins(libs.detekt.compose)
 }
