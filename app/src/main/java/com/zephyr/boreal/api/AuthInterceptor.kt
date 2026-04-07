@@ -1,6 +1,5 @@
 package com.zephyr.boreal.api
 
-import com.zephyr.boreal.data.local.dao.UserDao
 import com.zephyr.boreal.store.core.ApplicationScope
 import com.zephyr.boreal.store.user.UserSessionStore
 import kotlinx.coroutines.CoroutineScope
@@ -15,7 +14,6 @@ class AuthInterceptor
   @Inject
   constructor(
     private val userSessionStore: UserSessionStore,
-    private val userDao: UserDao,
     @param:ApplicationScope private val scope: CoroutineScope,
   ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -37,7 +35,8 @@ class AuthInterceptor
       if (response.code == java.net.HttpURLConnection.HTTP_UNAUTHORIZED) {
         scope.launch {
           userSessionStore.clearSession()
-          userDao.clearUser()
+          // We intentionally DO NOT clear UserDao here, so the app can show a "Log Back" screen
+          // with the user's name and company already filled in.
         }
       }
 

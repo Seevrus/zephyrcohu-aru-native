@@ -1,6 +1,5 @@
 package com.zephyr.boreal.api
 
-import com.zephyr.boreal.data.local.dao.UserDao
 import com.zephyr.boreal.store.user.StoredToken
 import com.zephyr.boreal.store.user.UserSessionStore
 import com.zephyr.boreal.store.user.UserState
@@ -25,15 +24,13 @@ class AuthInterceptorTest {
   private lateinit var mockWebServer: MockWebServer
   private lateinit var interceptor: AuthInterceptor
   private val userSessionStore: UserSessionStore = mock()
-  private val userDao: UserDao = mock()
   private val testDispatcher = StandardTestDispatcher()
   private val testScope = TestScope(testDispatcher)
 
   @BeforeEach
   fun setUp() {
     mockWebServer = MockWebServer()
-    mockWebServer.start()
-    interceptor = AuthInterceptor(userSessionStore, userDao, testScope)
+    interceptor = AuthInterceptor(userSessionStore, testScope)
   }
 
   @AfterEach
@@ -91,6 +88,5 @@ class AuthInterceptorTest {
       testDispatcher.scheduler.advanceUntilIdle()
 
       verify(userSessionStore).clearSession()
-      verify(userDao).clearUser()
     }
 }
