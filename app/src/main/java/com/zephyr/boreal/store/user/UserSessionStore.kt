@@ -37,7 +37,7 @@ class UserSessionStore
           val expiresAt = preferences[EXPIRES_AT]
 
           val storedToken =
-            if (token != null && isPasswordExpired != null && expiresAt != null) {
+            if (token != null && isPasswordExpired != null) {
               StoredToken(
                 token = token,
                 isPasswordExpired = isPasswordExpired,
@@ -71,7 +71,9 @@ class UserSessionStore
         if (token != null) {
           preferences[TOKEN] = token.token
           preferences[IS_PASSWORD_EXPIRED] = token.isPasswordExpired
-          preferences[EXPIRES_AT] = token.expiresAt
+          token.expiresAt?.let {
+            preferences[EXPIRES_AT] = it
+          } ?: preferences.remove(EXPIRES_AT)
         } else {
           preferences.remove(TOKEN)
           preferences.remove(IS_PASSWORD_EXPIRED)

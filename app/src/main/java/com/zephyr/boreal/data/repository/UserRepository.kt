@@ -42,7 +42,7 @@ class UserRepository
             StoredToken(
               token = response.token.accessToken,
               isPasswordExpired = response.token.abilities.contains(UserRole.PASSWORD_EXPIRED),
-              expiresAt = response.token.expiresAt ?: "",
+              expiresAt = response.token.expiresAt,
             ),
         )
 
@@ -84,7 +84,7 @@ class UserRepository
               StoredToken(
                 token = response.token.accessToken,
                 isPasswordExpired = response.token.abilities.contains(UserRole.PASSWORD_EXPIRED),
-                expiresAt = response.token.expiresAt ?: "",
+                expiresAt = response.token.expiresAt,
               ),
           )
           response

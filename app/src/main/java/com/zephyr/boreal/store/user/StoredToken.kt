@@ -5,11 +5,11 @@ import java.time.Instant
 data class StoredToken(
   val token: String,
   val isPasswordExpired: Boolean,
-  val expiresAt: String,
+  val expiresAt: String?,
 ) {
   val isTokenExpired: Boolean
     get() =
       runCatching {
-        Instant.parse(expiresAt).isBefore(Instant.now())
+        expiresAt?.let { Instant.parse(it).isBefore(Instant.now()) } ?: false
       }.getOrDefault(true)
 }

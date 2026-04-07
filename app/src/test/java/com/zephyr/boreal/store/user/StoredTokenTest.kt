@@ -24,6 +24,13 @@ class StoredTokenTest {
   }
 
   @Test
+  fun isTokenExpired_returnsFalse_whenExpiresAtIsNull() {
+    val token = StoredToken("token", false, null)
+
+    assertFalse(token.isTokenExpired)
+  }
+
+  @Test
   fun isTokenExpired_returnsTrue_whenExpiresAtIsMalformed() {
     val malformedDate = "not-a-date"
     val token = StoredToken("token", false, malformedDate)
