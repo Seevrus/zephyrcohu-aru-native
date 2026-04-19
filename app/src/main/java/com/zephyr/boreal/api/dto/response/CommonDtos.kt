@@ -8,6 +8,12 @@ data class UserRoleDto(
 ) // Using string for enum-like values from TS
 
 @Serializable
+data class PartialCompanyDto(
+  val id: Int,
+  val name: String,
+)
+
+@Serializable
 data class CompanyDto(
   val id: Int,
   val code: String,

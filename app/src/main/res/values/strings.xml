@@ -14,6 +14,27 @@
     <string name="tile_logout">Kijelentkezés</string>
     <string name="settings_icon_description">Beállítások</string>
 
+    <!-- Login -->
+    <string name="screen_login_title">Bejelentkezés</string>
+    <string name="login_welcome_message">Üdvözöljük a Zephyr Boreal áruforgalmi alkalmazásban! Kérem jelentkezzen be.</string>
+    <string name="login_relogin_message">A rendszer tétlenség miatt kijelentkeztett Önt. Kérem, adja meg újból a jelszavát.</string>
+    <string name="login_loading_message">Bejelentkezés folyamatban…</string>
+    <string name="login_company_label">Cég</string>
+    <string name="login_username_label">Felhasználónév</string>
+    <string name="login_password_label">Jelszó</string>
+    <string name="login_button_label">Bejelentkezés</string>
+    <string name="login_error_invalid_credentials">Hibás felhasználónév / jelszó!</string>
+    <string name="login_error_invalid_format">A felhasználónév vagy jelszó formátuma nem megfelelő.</string>
+    <string name="login_error_already_logged_in">Ezzel a felhasználóval egy másik eszközről már bejelentkeztek.</string>
+    <string name="login_error_locked">Túl sok sikertelen bejelentkezési kísérlet miatt a felhasználót zároltuk.</string>
+    <string name="login_error_unexpected">Váratlan hiba lépett fel a bejelentkezés során.</string>
+
+    <string name="company_akro_bekes">Akro-Békés</string>
+    <string name="company_hunland_walnut">Hunland Walnut</string>
+    <string name="company_teszt_ceg">TESZT CÉG</string>
+
+    <string name="main_login_prompt">A program használatának megkezdéséhez kérem jelentkezzen be.</string>
+
     <!-- Print Settings -->
     <string name="print_settings_permission_error">Nincs Bluetooth jogosultság! Kérem engedélyezze az alkalmazás beállításaiban a nyomtatáshoz.</string>
     <string name="print_settings_open_settings">Beállítások megnyitása</string>

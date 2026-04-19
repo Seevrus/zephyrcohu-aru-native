@@ -3,6 +3,7 @@ package com.zephyr.boreal.data.repository
 import com.zephyr.boreal.api.AuthApiService
 import com.zephyr.boreal.api.dto.response.CompanyDto
 import com.zephyr.boreal.api.dto.response.LoginResponseDto
+import com.zephyr.boreal.api.dto.response.PartialCompanyDto
 import com.zephyr.boreal.api.dto.response.TokenDto
 import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.UserDao
@@ -44,7 +45,7 @@ class UserRepositoryTest {
       lastActive = "2026-04-03T10:00:00Z",
       createdAt = "2026-04-03T09:00:00Z",
       updatedAt = "2026-04-03T09:00:00Z",
-      company = CompanyDto(3, "C3", "Company 3", "HU", "1000", "B", "A", "F", "V", "I", "B"),
+      company = PartialCompanyDto(3, "Company 3"),
       token = TokenDto("Bearer", "mocked_token", listOf(UserRole.ADMIN)),
     )
 
@@ -65,25 +66,33 @@ class UserRepositoryTest {
     whenever(userSessionStore.userState).thenReturn(stateFlow)
     val connectivityFlow = MutableStateFlow(true)
     whenever(connectivityObserver.isInternetReachable).thenReturn(connectivityFlow)
-    repository = UserRepository(apiService, userDao, connectivityObserver, userSessionStore, cacheMetadataDao)
+    repository =
+      UserRepository(
+        apiService,
+        userDao,
+        connectivityObserver,
+        userSessionStore,
+        cacheMetadataDao,
+        mock(),
+      )
   }
 
   @Test
   fun `login should update session and save to dao on success`() =
     runTest {
-      whenever(apiService.login(any())).thenReturn(mockLoginResponse)
+      whenever(apiService.login(any(), any())).thenReturn(mockLoginResponse)
 
       val result = repository.login("company", "test", "password")
 
       assertTrue(result is ApiResource.Success)
-      verify(userSessionStore).updateSession(eq("test-device"), any())
+      verify(userSessionStore).updateSession(any(), any())
       verify(userDao).insertUser(any())
     }
 
   @Test
   fun `login should return error on failure`() =
     runTest {
-      whenever(apiService.login(any())).thenThrow(RuntimeException("Network error"))
+      whenever(apiService.login(any(), any())).thenThrow(RuntimeException("Network error"))
 
       val result = repository.login("company", "test", "password")
 

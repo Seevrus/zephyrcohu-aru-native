@@ -2,6 +2,7 @@ package com.zephyr.boreal.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.zephyr.boreal.api.dto.response.CompanyDto
 import com.zephyr.boreal.domain.model.UserRole
 import com.zephyr.boreal.domain.model.UserState
 
@@ -19,5 +20,6 @@ data class UserEntity(
   val lastActive: String,
   val createdAt: String,
   val updatedAt: String,
+  val company: CompanyDto,
   val token: String? = null,
 )

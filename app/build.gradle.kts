@@ -42,9 +42,13 @@ android {
   }
 
   buildTypes {
+    debug {
+      manifestPlaceholders["cleartextTraffic"] = "true"
+    }
     release {
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+      manifestPlaceholders["cleartextTraffic"] = "false"
 
       val baseUrlProd =
         localProperties.getProperty("BASE_URL_PROD")

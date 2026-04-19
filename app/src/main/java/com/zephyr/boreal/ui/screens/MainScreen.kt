@@ -22,6 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.zephyr.boreal.R
 import com.zephyr.boreal.ui.components.BorealTile
 import com.zephyr.boreal.ui.components.BorealTopAppBar
+import com.zephyr.boreal.ui.components.InfoCard
 import com.zephyr.boreal.ui.components.LoadingIndicator
 import com.zephyr.boreal.ui.components.SettingsButton
 import com.zephyr.boreal.ui.components.TileVariant
@@ -63,6 +64,7 @@ fun MainScreen(
   modifier: Modifier = Modifier,
   onNavigateToAppLocked: () -> Unit = {},
   onNavigateToSettings: () -> Unit = {},
+  onNavigateToLogin: () -> Unit = {},
   viewModel: MainViewModel = hiltViewModel(),
 ) {
   val appState by viewModel.appState.collectAsState()
@@ -77,6 +79,7 @@ fun MainScreen(
     canUseApp = canUseApp,
     onNavigateToAppLocked = onNavigateToAppLocked,
     onNavigateToSettings = onNavigateToSettings,
+    onNavigateToLogin = onNavigateToLogin,
     modifier = modifier,
   )
 }
@@ -89,6 +92,7 @@ fun MainScreenContent(
   canUseApp: Boolean?,
   onNavigateToAppLocked: () -> Unit,
   onNavigateToSettings: () -> Unit,
+  onNavigateToLogin: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   LaunchedEffect(isLoggedIn, canUseApp) {
@@ -129,6 +133,16 @@ fun MainScreenContent(
             .padding(innerPadding)
             .fillMaxSize(),
       ) {
+        if (!isLoggedIn) {
+          item {
+            InfoCard(
+              message = stringResource(R.string.main_login_prompt),
+              modifier = Modifier.padding(bottom = 16.dp),
+              onClick = onNavigateToLogin,
+            )
+          }
+        }
+
         items(tiles) { tile ->
           BorealTile(
             title = tile.title,

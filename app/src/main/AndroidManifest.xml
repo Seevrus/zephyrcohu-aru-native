@@ -17,7 +17,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/boreal_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Boreal.Splash">
+        android:theme="@style/Theme.Boreal.Splash"
+        android:usesCleartextTraffic="${cleartextTraffic}">
 
         <activity
             android:name=".MainActivity"

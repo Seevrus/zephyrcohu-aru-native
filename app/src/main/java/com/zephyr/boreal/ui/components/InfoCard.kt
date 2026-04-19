@@ -1,5 +1,6 @@
 package com.zephyr.boreal.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,19 +23,29 @@ import com.zephyr.boreal.ui.theme.BorealFontSizes
 import com.zephyr.boreal.ui.theme.NunitoSansFamily
 
 @Composable
-fun ErrorCard(
+fun InfoCard(
   message: String,
   modifier: Modifier = Modifier,
+  onClick: (() -> Unit)? = null,
 ) {
-  Card(
-    modifier =
+  val cardModifier =
+    if (onClick != null) {
       modifier
         .fillMaxWidth()
-        .padding(vertical = 16.dp),
+        .padding(vertical = 16.dp)
+        .clickable(onClick = onClick)
+    } else {
+      modifier
+        .fillMaxWidth()
+        .padding(vertical = 16.dp)
+    }
+
+  Card(
+    modifier = cardModifier,
     shape = RoundedCornerShape(8.dp),
     colors =
       CardDefaults.cardColors(
-        containerColor = BorealColors.Error,
+        containerColor = BorealColors.Neutral,
         contentColor = BorealColors.White,
       ),
   ) {
@@ -51,8 +62,8 @@ fun ErrorCard(
         fontSize = BorealFontSizes.Body,
       )
       Icon(
-        imageVector = ImageVector.vectorResource(id = R.drawable.error_exclamation),
-        contentDescription = "error_icon",
+        imageVector = ImageVector.vectorResource(id = R.drawable.info_outlined),
+        contentDescription = "info_icon",
         modifier =
           Modifier
             .padding(start = 4.dp)

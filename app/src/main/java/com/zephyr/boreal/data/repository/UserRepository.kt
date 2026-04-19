@@ -1,5 +1,7 @@
 package com.zephyr.boreal.data.repository
 
+import android.content.Context
+import com.zephyr.boreal.R
 import com.zephyr.boreal.api.AuthApiService
 import com.zephyr.boreal.api.dto.request.LoginRequestDto
 import com.zephyr.boreal.data.local.dao.CacheMetadataDao
@@ -11,8 +13,10 @@ import com.zephyr.boreal.domain.model.UserRole
 import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.user.StoredToken
 import com.zephyr.boreal.store.user.UserSessionStore
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,6 +29,7 @@ class UserRepository
     connectivityObserver: ConnectivityObserver,
     userSessionStore: UserSessionStore,
     cacheMetadataDao: CacheMetadataDao,
+    @param:ApplicationContext private val context: Context,
   ) : BaseRepository(connectivityObserver, userSessionStore, cacheMetadataDao) {
     suspend fun login(
       company: String,
@@ -32,12 +37,13 @@ class UserRepository
       password: String,
     ): ApiResource<User> =
       try {
+        val deviceId = UUID.randomUUID().toString()
         val credentials = LoginRequestDto(userName = "$username@$company", password = password)
-        val response = apiService.login(credentials)
+        val response = apiService.login(deviceId, credentials)
 
-        // Save to store immediately as per plan
+        // Save session data (including the device ID used) upon success
         userSessionStore.updateSession(
-          deviceId = userSessionStore.userState.value.deviceId, // Preserve device ID
+          deviceId = deviceId,
           token =
             StoredToken(
               token = response.token.accessToken,
@@ -50,8 +56,18 @@ class UserRepository
         userDao.insertUser(response.toEntity())
 
         ApiResource.Success(response.toDomain())
+      } catch (e: retrofit2.HttpException) {
+        val errorMessage =
+          when (e.code()) {
+            401 -> context.getString(R.string.login_error_invalid_credentials)
+            422 -> context.getString(R.string.login_error_invalid_format)
+            423 -> context.getString(R.string.login_error_already_logged_in)
+            429 -> context.getString(R.string.login_error_locked)
+            else -> e.response()?.errorBody()?.string() ?: context.getString(R.string.login_error_unexpected)
+          }
+        ApiResource.Error(errorMessage)
       } catch (e: Exception) {
-        ApiResource.Error(e.localizedMessage ?: "Login failed")
+        ApiResource.Error(e.localizedMessage ?: context.getString(R.string.login_error_unexpected))
       }
 
     suspend fun logout(): ApiResource<Unit> =
@@ -77,7 +93,7 @@ class UserRepository
         fetch = {
           val response = apiService.checkToken()
 
-          // Update session if needed (e.g., password expired)
+          // Update session if needed (e.g., password expired), preserving current device ID
           userSessionStore.updateSession(
             deviceId = userSessionStore.userState.value.deviceId,
             token =

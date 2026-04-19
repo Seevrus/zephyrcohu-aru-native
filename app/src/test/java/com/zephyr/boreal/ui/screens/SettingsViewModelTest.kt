@@ -2,6 +2,7 @@ package com.zephyr.boreal.ui.screens
 
 import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.UserRepository
+import com.zephyr.boreal.domain.model.Company
 import com.zephyr.boreal.domain.model.User
 import com.zephyr.boreal.domain.model.UserState
 import com.zephyr.boreal.store.user.StoredToken
@@ -139,5 +140,19 @@ class SettingsViewModelTest {
       lastActive = "",
       createdAt = "",
       updatedAt = "",
+      company =
+        Company(
+          id = 1,
+          code = "002",
+          name = "Test Company",
+          country = "HU",
+          postalCode = "1000",
+          city = "City",
+          address = "Address",
+          felir = "AA0000000",
+          vatNumber = "123",
+          iban = "HU1234567890",
+          bankAccount = "456",
+        ),
     )
 }

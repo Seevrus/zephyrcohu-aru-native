@@ -13,6 +13,7 @@ data class User(
   val lastActive: String,
   val createdAt: String,
   val updatedAt: String,
+  val company: Company,
 )
 
 val User.canAddPartner: Boolean

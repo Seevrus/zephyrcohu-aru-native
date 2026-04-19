@@ -20,7 +20,11 @@ class AuthInterceptor
       val userState = userSessionStore.userState.value
       val originalRequest = chain.request()
 
-      val requestBuilder = originalRequest.newBuilder()
+      val requestBuilder =
+        originalRequest
+          .newBuilder()
+          .header("Content-Type", "application/json")
+          .header("Accept", "application/json")
 
       userState.deviceId?.let {
         requestBuilder.addHeader("X-Device-Id", it)

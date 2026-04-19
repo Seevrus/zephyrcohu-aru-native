@@ -10,6 +10,13 @@
 ## Git & Commits
 - Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
 
+## Testing Conventions
+- Use `any()` in Unit Tests when:
+  - **Stubbing:** The specific input values are irrelevant to the behavior being tested (e.g., `whenever(api.call(any())).thenReturn(...)`).
+  - **Verification:** You only need to confirm a method was executed, but the data it received is not the focus of the current test.
+- Prefer explicit values, `eq()`, or `argumentCaptor` when:
+  - Testing data transformation, mapping logic, or ensuring correct parameters are passed between layers (e.g., Repository to DAO).
+
 ## AI Instructions
 - Always run `./gradlew ktlintFormat` before finishing a task that involves Kotlin changes.
 - Ensure `./gradlew detekt` passes before declaring a task complete.

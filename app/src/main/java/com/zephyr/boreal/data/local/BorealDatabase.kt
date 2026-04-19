@@ -26,7 +26,7 @@ import com.zephyr.boreal.data.local.dao.UserDao
     RoundEntity::class,
     CacheMetadataEntity::class,
   ],
-  version = 10,
+  version = 11,
   exportSchema = false,
 )
 @TypeConverters(

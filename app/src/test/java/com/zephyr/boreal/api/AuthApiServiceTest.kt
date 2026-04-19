@@ -54,11 +54,12 @@ class AuthApiServiceTest : BaseApiTest() {
       enqueueResponse(body = mockResponseBody)
 
       val request = LoginRequestDto("testuser", "password")
-      val response = service.login(request)
+      val response = service.login("device-123", request)
 
       val recordedRequest = mockWebServer.takeRequest()
       assertEquals("POST", recordedRequest.method)
       assertEquals("/users/login", recordedRequest.path)
+      assertEquals("device-123", recordedRequest.getHeader("X-Device-Id"))
 
       // We check that the response parsed correctly
       assertEquals(1, response.id)

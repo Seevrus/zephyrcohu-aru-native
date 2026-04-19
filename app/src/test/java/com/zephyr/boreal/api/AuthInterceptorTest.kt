@@ -62,6 +62,8 @@ class AuthInterceptorTest {
       val recordedRequest = mockWebServer.takeRequest()
       assertEquals("Bearer token-abc", recordedRequest.getHeader("Authorization"))
       assertEquals("device-123", recordedRequest.getHeader("X-Device-Id"))
+      assertEquals("application/json", recordedRequest.getHeader("Content-Type"))
+      assertEquals("application/json", recordedRequest.getHeader("Accept"))
     }
 
   @Test

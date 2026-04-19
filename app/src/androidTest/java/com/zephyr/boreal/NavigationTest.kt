@@ -1,8 +1,10 @@
 package com.zephyr.boreal
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Surface
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
@@ -11,6 +13,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.test.platform.app.InstrumentationRegistry
 import com.zephyr.boreal.R
 import com.zephyr.boreal.ui.screens.AppLockedScreenContent
+import com.zephyr.boreal.ui.screens.LoginScreenContent
+import com.zephyr.boreal.ui.screens.LoginUiState
 import com.zephyr.boreal.ui.screens.MainScreenContent
 import com.zephyr.boreal.ui.theme.BorealTheme
 import org.junit.Assert.assertEquals
@@ -46,7 +50,7 @@ class NavigationTest {
               )
             }
             composable("main") {
-              // Main Screen Mock
+              Box {}
             }
           }
         }
@@ -80,10 +84,11 @@ class NavigationTest {
                   }
                 },
                 onNavigateToSettings = {},
+                onNavigateToLogin = {},
               )
             }
             composable("app_locked") {
-              // App Locked Mock
+              Box {}
             }
           }
         }
@@ -95,6 +100,82 @@ class NavigationTest {
     // Assert that we are on "app_locked" and backstack is empty
     composeTestRule.runOnIdle {
       assertEquals("app_locked", navController.currentDestination?.route)
+      assert(navController.previousBackStackEntry == null)
+    }
+  }
+
+  @Test
+  fun navigation_fromMainToLogin() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    val loginPrompt = context.getString(R.string.main_login_prompt)
+
+    composeTestRule.setContent {
+      BorealTheme {
+        Surface {
+          navController = rememberNavController()
+          NavHost(navController = navController as androidx.navigation.NavHostController, startDestination = "main") {
+            composable("main") {
+              MainScreenContent(
+                isReady = true,
+                isLoggedIn = false,
+                canUseApp = null,
+                onNavigateToAppLocked = {},
+                onNavigateToSettings = {},
+                onNavigateToLogin = {
+                  navController.navigate("login")
+                },
+              )
+            }
+            composable("login") {
+              Box {}
+            }
+          }
+        }
+      }
+    }
+
+    composeTestRule.onNodeWithText(loginPrompt).performClick()
+
+    composeTestRule.runOnIdle {
+      assertEquals("login", navController.currentDestination?.route)
+    }
+  }
+
+  @Test
+  fun navigationReplacement_fromLoginToMain_clearsBackstack() {
+    composeTestRule.setContent {
+      BorealTheme {
+        Surface {
+          navController = rememberNavController()
+          NavHost(navController = navController as androidx.navigation.NavHostController, startDestination = "login") {
+            composable("login") {
+              LoginScreenContent(
+                uiState = LoginUiState(isInternetReachable = true, userName = "abc", password = "123"),
+                onCompanyCodeChange = {},
+                onUserNameChange = {},
+                onPasswordChange = {},
+                onLogin = {
+                  navController.navigate("main") {
+                    popUpTo(0) { inclusive = true }
+                  }
+                },
+              )
+            }
+            composable("main") {
+              Box {}
+            }
+          }
+        }
+      }
+    }
+
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    val loginButtonLabel = context.getString(R.string.login_button_label)
+
+    composeTestRule.onNodeWithText(loginButtonLabel).performClick()
+
+    composeTestRule.runOnIdle {
+      assertEquals("main", navController.currentDestination?.route)
       assert(navController.previousBackStackEntry == null)
     }
   }
@@ -118,10 +199,11 @@ class NavigationTest {
                 onNavigateToSettings = {
                   navController.navigate("settings")
                 },
+                onNavigateToLogin = {},
               )
             }
             composable("settings") {
-              // Settings Screen Mock
+              Box {}
             }
           }
         }
@@ -159,7 +241,7 @@ class NavigationTest {
               )
             }
             composable("settings") {
-              // Settings Screen Mock
+              Box {}
             }
           }
         }
