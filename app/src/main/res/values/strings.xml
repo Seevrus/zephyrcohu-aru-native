@@ -64,4 +64,5 @@
     <!-- Bluetooth -->
     <string name="bluetooth_unknown_device">Ismeretlen eszköz</string>
     <string name="bluetooth_dev_test_device">Fejlesztői teszt</string>
+    <string name="offline_warning">Az alkalmazás jelenleg internetkapcsolat nélkül működik.</string>
 </resources>

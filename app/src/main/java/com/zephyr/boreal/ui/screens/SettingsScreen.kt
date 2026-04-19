@@ -19,6 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.zephyr.boreal.R
 import com.zephyr.boreal.ui.components.BorealTile
 import com.zephyr.boreal.ui.components.BorealTopAppBar
+import com.zephyr.boreal.ui.components.InfoCard
 import com.zephyr.boreal.ui.components.LoadingIndicator
 import com.zephyr.boreal.ui.components.TileVariant
 import com.zephyr.boreal.ui.theme.BorealColors
@@ -39,6 +40,7 @@ fun SettingsScreen(
     isLoggedIn = state.isLoggedIn,
     isIdle = state.isIdle,
     isLoading = state.isLoading,
+    isInternetReachable = state.isInternetReachable,
     onNavigateToLogin = onNavigateToLogin,
     onNavigateToChangePassword = onNavigateToChangePassword,
     onNavigateToPrintSettings = onNavigateToPrintSettings,
@@ -53,6 +55,7 @@ fun SettingsScreenContent(
   isLoggedIn: Boolean,
   isIdle: Boolean,
   isLoading: Boolean,
+  isInternetReachable: Boolean,
   onNavigateToLogin: () -> Unit = {},
   onNavigateToChangePassword: () -> Unit = {},
   onNavigateToPrintSettings: () -> Unit = {},
@@ -63,6 +66,7 @@ fun SettingsScreenContent(
     getSettingsTiles(
       isLoggedIn = isLoggedIn,
       isIdle = isIdle,
+      isInternetReachable = isInternetReachable,
     )
 
   Scaffold(
@@ -85,33 +89,62 @@ fun SettingsScreenContent(
         LoadingIndicator()
       }
     } else {
-      LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        modifier =
-          Modifier
-            .padding(innerPadding)
-            .fillMaxSize(),
-      ) {
-        items(tiles) { tile ->
-          val onClick =
-            when (tile.title) {
-              stringResource(R.string.tile_login) -> onNavigateToLogin
-              stringResource(R.string.tile_change_password) -> onNavigateToChangePassword
-              stringResource(R.string.tile_print_settings) -> onNavigateToPrintSettings
-              stringResource(R.string.tile_logout) -> onLogout
-              else -> {
-                {}
-              }
-            }
+      SettingsScreenList(
+        isInternetReachable = isInternetReachable,
+        tiles = tiles,
+        onNavigateToLogin = onNavigateToLogin,
+        onNavigateToChangePassword = onNavigateToChangePassword,
+        onNavigateToPrintSettings = onNavigateToPrintSettings,
+        onLogout = onLogout,
+        modifier = Modifier.padding(innerPadding),
+      )
+    }
+  }
+}
 
-          BorealTile(
-            title = tile.title,
-            variant = tile.variant,
-            modifier = Modifier.padding(bottom = 16.dp),
-            onClick = onClick,
-          )
-        }
+@Composable
+private fun SettingsScreenList(
+  isInternetReachable: Boolean,
+  tiles: List<SettingsTileData>,
+  onNavigateToLogin: () -> Unit,
+  onNavigateToChangePassword: () -> Unit,
+  onNavigateToPrintSettings: () -> Unit,
+  onLogout: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  LazyColumn(
+    contentPadding = PaddingValues(16.dp),
+    modifier = modifier.fillMaxSize(),
+  ) {
+    if (!isInternetReachable) {
+      item {
+        InfoCard(
+          message = stringResource(R.string.offline_warning),
+          modifier = Modifier.padding(bottom = 16.dp),
+        )
       }
+    }
+
+    items(tiles) { tile ->
+      val onClick =
+        when (tile.title) {
+          stringResource(R.string.tile_login) -> onNavigateToLogin
+          stringResource(R.string.tile_change_password) -> onNavigateToChangePassword
+          stringResource(R.string.tile_print_settings) -> onNavigateToPrintSettings
+          stringResource(R.string.tile_logout) -> onLogout
+          else -> {
+            {}
+          }
+        }
+
+      val finalOnClick = if (tile.variant == TileVariant.DISABLED) ({}) else onClick
+
+      BorealTile(
+        title = tile.title,
+        variant = tile.variant,
+        modifier = Modifier.padding(bottom = 16.dp),
+        onClick = finalOnClick,
+      )
     }
   }
 }
@@ -125,19 +158,35 @@ data class SettingsTileData(
 fun getSettingsTiles(
   isLoggedIn: Boolean,
   isIdle: Boolean,
+  isInternetReachable: Boolean,
 ): List<SettingsTileData> {
   val tiles = mutableListOf<SettingsTileData>()
 
   if (!isLoggedIn) {
-    tiles.add(SettingsTileData(stringResource(R.string.tile_login)))
+    tiles.add(
+      SettingsTileData(
+        title = stringResource(R.string.tile_login),
+        variant = if (isInternetReachable) TileVariant.NEUTRAL else TileVariant.DISABLED,
+      ),
+    )
   } else {
-    tiles.add(SettingsTileData(stringResource(R.string.tile_change_password)))
+    tiles.add(
+      SettingsTileData(
+        title = stringResource(R.string.tile_change_password),
+        variant = if (isInternetReachable) TileVariant.NEUTRAL else TileVariant.DISABLED,
+      ),
+    )
   }
 
   tiles.add(SettingsTileData(stringResource(R.string.tile_print_settings)))
 
   if (isLoggedIn && isIdle) {
-    tiles.add(SettingsTileData(stringResource(R.string.tile_logout)))
+    tiles.add(
+      SettingsTileData(
+        title = stringResource(R.string.tile_logout),
+        variant = if (isInternetReachable) TileVariant.NEUTRAL else TileVariant.DISABLED,
+      ),
+    )
   }
 
   return tiles

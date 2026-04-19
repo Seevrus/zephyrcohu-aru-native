@@ -6,12 +6,14 @@ import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.UserRepository
 import com.zephyr.boreal.domain.model.canUseApp
+import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.user.UserSessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,6 +24,7 @@ sealed class AppStartState {
     val isLoggedIn: Boolean,
     val canUseApp: Boolean? = null,
     val userName: String? = null,
+    val isInternetReachable: Boolean = true,
   ) : AppStartState()
 }
 
@@ -32,6 +35,7 @@ class MainViewModel
     private val userSessionStore: UserSessionStore,
     private val cacheMetadataDao: CacheMetadataDao,
     private val userRepository: UserRepository,
+    private val connectivityObserver: ConnectivityObserver,
   ) : ViewModel() {
     companion object {
       const val FONT_WARMUP_DELAY_MS = 1000L
@@ -50,7 +54,12 @@ class MainViewModel
         delay(FONT_WARMUP_DELAY_MS)
 
         launch {
-          userSessionStore.userState.collect { userState ->
+          combine(
+            userSessionStore.userState,
+            connectivityObserver.isInternetReachable,
+          ) { userState, isOnline ->
+            userState to isOnline
+          }.collect { (userState, isOnline) ->
             val isLoggedIn =
               userState.storedToken?.token != null &&
                 userState.storedToken.isPasswordExpired != true
@@ -58,8 +67,12 @@ class MainViewModel
             // Only update isLoggedIn if not overriding user data
             _appState.value =
               when (val currentState = _appState.value) {
-                is AppStartState.Ready -> currentState.copy(isLoggedIn = isLoggedIn)
-                AppStartState.Reconciling -> AppStartState.Ready(isLoggedIn = isLoggedIn)
+                is AppStartState.Ready -> currentState.copy(isLoggedIn = isLoggedIn, isInternetReachable = isOnline)
+                AppStartState.Reconciling ->
+                  AppStartState.Ready(
+                    isLoggedIn = isLoggedIn,
+                    isInternetReachable = isOnline,
+                  )
               }
           }
         }
@@ -80,6 +93,7 @@ class MainViewModel
                     isLoggedIn = false,
                     canUseApp = user?.canUseApp,
                     userName = user?.userName,
+                    isInternetReachable = connectivityObserver.isInternetReachable.value,
                   )
               }
           }

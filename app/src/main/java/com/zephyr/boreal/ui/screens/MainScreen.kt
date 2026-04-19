@@ -70,13 +70,16 @@ fun MainScreen(
   val appState by viewModel.appState.collectAsState()
 
   val isReady = appState is AppStartState.Ready
-  val isLoggedIn = (appState as? AppStartState.Ready)?.isLoggedIn ?: false
-  val canUseApp = (appState as? AppStartState.Ready)?.canUseApp
+  val readyState = appState as? AppStartState.Ready
+  val isLoggedIn = readyState?.isLoggedIn ?: false
+  val canUseApp = readyState?.canUseApp
+  val isInternetReachable = readyState?.isInternetReachable ?: true
 
   MainScreenContent(
     isReady = isReady,
     isLoggedIn = isLoggedIn,
     canUseApp = canUseApp,
+    isInternetReachable = isInternetReachable,
     onNavigateToAppLocked = onNavigateToAppLocked,
     onNavigateToSettings = onNavigateToSettings,
     onNavigateToLogin = onNavigateToLogin,
@@ -90,6 +93,7 @@ fun MainScreenContent(
   isReady: Boolean,
   isLoggedIn: Boolean,
   canUseApp: Boolean?,
+  isInternetReachable: Boolean,
   onNavigateToAppLocked: () -> Unit,
   onNavigateToSettings: () -> Unit,
   onNavigateToLogin: () -> Unit,
@@ -126,32 +130,55 @@ fun MainScreenContent(
         LoadingIndicator()
       }
     } else {
-      LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        modifier =
-          Modifier
-            .padding(innerPadding)
-            .fillMaxSize(),
-      ) {
-        if (!isLoggedIn) {
-          item {
-            InfoCard(
-              message = stringResource(R.string.main_login_prompt),
-              modifier = Modifier.padding(bottom = 16.dp),
-              onClick = onNavigateToLogin,
-            )
-          }
-        }
+      MainScreenList(
+        isLoggedIn = isLoggedIn,
+        isInternetReachable = isInternetReachable,
+        tiles = tiles,
+        onNavigateToLogin = onNavigateToLogin,
+        modifier = Modifier.padding(innerPadding),
+      )
+    }
+  }
+}
 
-        items(tiles) { tile ->
-          BorealTile(
-            title = tile.title,
-            variant = tile.variant,
-            icon = tile.icon,
-            modifier = Modifier.padding(bottom = 16.dp),
-          )
-        }
+@Composable
+private fun MainScreenList(
+  isLoggedIn: Boolean,
+  isInternetReachable: Boolean,
+  tiles: List<TileData>,
+  onNavigateToLogin: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  LazyColumn(
+    contentPadding = PaddingValues(16.dp),
+    modifier = modifier.fillMaxSize(),
+  ) {
+    if (!isInternetReachable) {
+      item {
+        InfoCard(
+          message = stringResource(R.string.offline_warning),
+          modifier = Modifier.padding(bottom = 16.dp),
+        )
       }
+    }
+
+    if (!isLoggedIn && isInternetReachable) {
+      item {
+        InfoCard(
+          message = stringResource(R.string.main_login_prompt),
+          modifier = Modifier.padding(bottom = 16.dp),
+          onClick = onNavigateToLogin,
+        )
+      }
+    }
+
+    items(tiles) { tile ->
+      BorealTile(
+        title = tile.title,
+        variant = tile.variant,
+        icon = tile.icon,
+        modifier = Modifier.padding(bottom = 16.dp),
+      )
     }
   }
 }

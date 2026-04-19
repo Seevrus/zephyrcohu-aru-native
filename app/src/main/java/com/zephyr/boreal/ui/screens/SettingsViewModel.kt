@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.UserRepository
 import com.zephyr.boreal.domain.model.UserState
+import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.user.UserSessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ data class SettingsState(
   val isIdle: Boolean = false,
   val isPasswordExpired: Boolean = false,
   val isLoading: Boolean = false,
+  val isInternetReachable: Boolean = true,
 )
 
 @HiltViewModel
@@ -27,6 +29,7 @@ class SettingsViewModel
   constructor(
     private val userSessionStore: UserSessionStore,
     private val userRepository: UserRepository,
+    private val connectivityObserver: ConnectivityObserver,
   ) : ViewModel() {
     private val isLoggingOut = MutableStateFlow(false)
     private val _state = MutableStateFlow(SettingsState())
@@ -37,8 +40,9 @@ class SettingsViewModel
         combine(
           userSessionStore.userState,
           userRepository.getCurrentUser(),
+          connectivityObserver.isInternetReachable,
           isLoggingOut,
-        ) { userState, resource, loggingOut ->
+        ) { userState, resource, isOnline, loggingOut ->
           val user = resource.getOrNull()
           val storedToken = userState.storedToken
           val token = storedToken?.token
@@ -53,6 +57,7 @@ class SettingsViewModel
             isIdle = isIdle,
             isPasswordExpired = isPasswordExpired,
             isLoading = isLoading,
+            isInternetReachable = isOnline,
           )
         }.collect { newState ->
           _state.value = newState

@@ -5,6 +5,7 @@ import com.zephyr.boreal.data.repository.UserRepository
 import com.zephyr.boreal.domain.model.Company
 import com.zephyr.boreal.domain.model.User
 import com.zephyr.boreal.domain.model.UserState
+import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.user.StoredToken
 import com.zephyr.boreal.store.user.UserSessionStore
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +29,7 @@ import org.mockito.kotlin.whenever
 class SettingsViewModelTest {
   private val userSessionStore: UserSessionStore = mock()
   private val userRepository: UserRepository = mock()
+  private val connectivityObserver: ConnectivityObserver = mock()
   private val testDispatcher = StandardTestDispatcher()
 
   private val userStateFlow =
@@ -36,12 +38,14 @@ class SettingsViewModelTest {
         .UserState(),
     )
   private val currentUserFlow = MutableStateFlow<ApiResource<User>>(ApiResource.Loading())
+  private val isInternetReachableFlow = MutableStateFlow(true)
 
   @BeforeEach
   fun setUp() {
     Dispatchers.setMain(testDispatcher)
     whenever(userSessionStore.userState).thenReturn(userStateFlow)
     whenever(userRepository.getCurrentUser()).thenReturn(currentUserFlow)
+    whenever(connectivityObserver.isInternetReachable).thenReturn(isInternetReachableFlow)
   }
 
   @AfterEach
@@ -52,7 +56,7 @@ class SettingsViewModelTest {
   @Test
   fun `initially should have default state`() =
     runTest {
-      val viewModel = SettingsViewModel(userSessionStore, userRepository)
+      val viewModel = SettingsViewModel(userSessionStore, userRepository, connectivityObserver)
 
       assertEquals(SettingsState(), viewModel.state.value)
     }
@@ -60,7 +64,7 @@ class SettingsViewModelTest {
   @Test
   fun `should be logged in when token is valid and user is available`() =
     runTest {
-      val viewModel = SettingsViewModel(userSessionStore, userRepository)
+      val viewModel = SettingsViewModel(userSessionStore, userRepository, connectivityObserver)
 
       val user = mockUser(UserState.IDLE)
       val token = StoredToken("valid", false, "2099-01-01T00:00:00Z")
@@ -80,7 +84,7 @@ class SettingsViewModelTest {
   @Test
   fun `should not be logged in when token is expired`() =
     runTest {
-      val viewModel = SettingsViewModel(userSessionStore, userRepository)
+      val viewModel = SettingsViewModel(userSessionStore, userRepository, connectivityObserver)
 
       val user = mockUser(UserState.IDLE)
       val token = StoredToken("valid", false, "2000-01-01T00:00:00Z")
@@ -98,7 +102,7 @@ class SettingsViewModelTest {
   @Test
   fun `should reflect loading state from repository`() =
     runTest {
-      val viewModel = SettingsViewModel(userSessionStore, userRepository)
+      val viewModel = SettingsViewModel(userSessionStore, userRepository, connectivityObserver)
 
       currentUserFlow.value = ApiResource.Loading()
 
@@ -110,7 +114,7 @@ class SettingsViewModelTest {
   @Test
   fun `should reflect idle state from user`() =
     runTest {
-      val viewModel = SettingsViewModel(userSessionStore, userRepository)
+      val viewModel = SettingsViewModel(userSessionStore, userRepository, connectivityObserver)
 
       val user = mockUser(UserState.ON_ROUND)
       val token = StoredToken("valid", false, "2099-01-01T00:00:00Z")
