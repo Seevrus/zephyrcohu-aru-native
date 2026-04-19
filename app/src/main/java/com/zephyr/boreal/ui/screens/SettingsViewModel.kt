@@ -28,6 +28,7 @@ class SettingsViewModel
     private val userSessionStore: UserSessionStore,
     private val userRepository: UserRepository,
   ) : ViewModel() {
+    private val isLoggingOut = MutableStateFlow(false)
     private val _state = MutableStateFlow(SettingsState())
     val state: StateFlow<SettingsState> = _state.asStateFlow()
 
@@ -36,7 +37,8 @@ class SettingsViewModel
         combine(
           userSessionStore.userState,
           userRepository.getCurrentUser(),
-        ) { userState, resource ->
+          isLoggingOut,
+        ) { userState, resource, loggingOut ->
           val user = resource.getOrNull()
           val storedToken = userState.storedToken
           val token = storedToken?.token
@@ -44,7 +46,7 @@ class SettingsViewModel
           val isLoggedIn = token != null && user != null && !storedToken.isTokenExpired
           val isIdle = user?.state == UserState.IDLE
           val isPasswordExpired = storedToken?.isPasswordExpired == true
-          val isLoading = resource is ApiResource.Loading
+          val isLoading = resource is ApiResource.Loading || loggingOut
 
           SettingsState(
             isLoggedIn = isLoggedIn,
@@ -55,6 +57,15 @@ class SettingsViewModel
         }.collect { newState ->
           _state.value = newState
         }
+      }
+    }
+
+    fun logout(onSuccess: () -> Unit) {
+      viewModelScope.launch {
+        isLoggingOut.value = true
+        userRepository.logout()
+        isLoggingOut.value = false
+        onSuccess()
       }
     }
   }

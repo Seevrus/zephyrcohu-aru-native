@@ -75,11 +75,13 @@ class UserRepository
         apiService.logout()
         userDao.clearUser()
         userSessionStore.clearSession()
+        cacheMetadataDao.clearCacheMetadata("get_current_user")
         ApiResource.Success(Unit)
       } catch (e: Exception) {
         // Even if API fails, we clear local session
         userDao.clearUser()
         userSessionStore.clearSession()
+        cacheMetadataDao.clearCacheMetadata("get_current_user")
         ApiResource.Error(e.localizedMessage ?: "Logout failed")
       }
 

@@ -97,6 +97,11 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
         onNavigateToPrintSettings = {
           navController.navigate("print_settings")
         },
+        onLogout = {
+          navController.navigate("main") {
+            popUpTo(0) { inclusive = true }
+          }
+        },
       )
     }
     composable("print_settings") {

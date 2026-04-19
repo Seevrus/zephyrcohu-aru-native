@@ -42,7 +42,7 @@ fun SettingsScreen(
     onNavigateToLogin = onNavigateToLogin,
     onNavigateToChangePassword = onNavigateToChangePassword,
     onNavigateToPrintSettings = onNavigateToPrintSettings,
-    onLogout = onLogout,
+    onLogout = { viewModel.logout(onLogout) },
     modifier = modifier,
   )
 }

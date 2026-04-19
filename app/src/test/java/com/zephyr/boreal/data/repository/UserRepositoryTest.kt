@@ -1,7 +1,6 @@
 package com.zephyr.boreal.data.repository
 
 import com.zephyr.boreal.api.AuthApiService
-import com.zephyr.boreal.api.dto.response.CompanyDto
 import com.zephyr.boreal.api.dto.response.LoginResponseDto
 import com.zephyr.boreal.api.dto.response.PartialCompanyDto
 import com.zephyr.boreal.api.dto.response.TokenDto
@@ -18,7 +17,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -101,7 +99,7 @@ class UserRepositoryTest {
     }
 
   @Test
-  fun `logout should clear session and dao`() =
+  fun `logout should clear session, dao and cache metadata`() =
     runTest {
       val result = repository.logout()
 
@@ -109,6 +107,7 @@ class UserRepositoryTest {
       verify(apiService).logout()
       verify(userSessionStore).clearSession()
       verify(userDao).clearUser()
+      verify(cacheMetadataDao).clearCacheMetadata("get_current_user")
     }
 
   @Test
