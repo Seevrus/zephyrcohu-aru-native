@@ -65,4 +65,17 @@
     <string name="bluetooth_unknown_device">Ismeretlen eszköz</string>
     <string name="bluetooth_dev_test_device">Fejlesztői teszt</string>
     <string name="offline_warning">Az alkalmazás jelenleg internetkapcsolat nélkül működik.</string>
+
+    <!-- Change Password -->
+    <string name="change_password_title">Új jelszó</string>
+    <string name="change_password_rules">Az új jelszóra vonatkozó szabályok:\n• Megengedett karakterek: angol ábécé kis- és nagybetűi és arab számjegyek\n• Pontosan 10 karakter hosszúságú\n• Nem egyezhet meg a korábbi 10 jelszóval</string>
+    <string name="change_password_button">Jelszó megváltoztatása</string>
+    <string name="change_password_loading">Jelszóváltoztatás folyamatban…</string>
+    <string name="change_password_success">Jelszó megváltoztatása sikeres.</string>
+    <string name="change_password_error_400">A jelszó nem egyezhet meg a korábbi 10 jelszóval.</string>
+    <string name="change_password_error_401">A jelszó megváltoztatásához újra be kell jelentkeznie.</string>
+    <string name="change_password_error_422">A jelszó formátuma nem megfelelő.</string>
+    <string name="change_password_error_unexpected">Váratlan hiba lépett fel a jelszóváltoztatás során.</string>
+    <string name="change_password_expired_warning">Az Ön jelszava lejárt, kérem változtassa meg.</string>
+    <string name="change_password_invalid_format">A választott jelszó nem felel meg a szabályoknak.</string>
 </resources>

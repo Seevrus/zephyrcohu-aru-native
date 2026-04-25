@@ -65,6 +65,7 @@ fun MainScreen(
   onNavigateToAppLocked: () -> Unit = {},
   onNavigateToSettings: () -> Unit = {},
   onNavigateToLogin: () -> Unit = {},
+  onNavigateToChangePassword: () -> Unit = {},
   viewModel: MainViewModel = hiltViewModel(),
 ) {
   val appState by viewModel.appState.collectAsState()
@@ -74,15 +75,18 @@ fun MainScreen(
   val isLoggedIn = readyState?.isLoggedIn ?: false
   val canUseApp = readyState?.canUseApp
   val isInternetReachable = readyState?.isInternetReachable ?: true
+  val isPasswordExpired = readyState?.isPasswordExpired ?: false
 
   MainScreenContent(
     isReady = isReady,
     isLoggedIn = isLoggedIn,
     canUseApp = canUseApp,
     isInternetReachable = isInternetReachable,
+    isPasswordExpired = isPasswordExpired,
     onNavigateToAppLocked = onNavigateToAppLocked,
     onNavigateToSettings = onNavigateToSettings,
     onNavigateToLogin = onNavigateToLogin,
+    onNavigateToChangePassword = onNavigateToChangePassword,
     modifier = modifier,
   )
 }
@@ -94,9 +98,11 @@ fun MainScreenContent(
   isLoggedIn: Boolean,
   canUseApp: Boolean?,
   isInternetReachable: Boolean,
+  isPasswordExpired: Boolean,
   onNavigateToAppLocked: () -> Unit,
   onNavigateToSettings: () -> Unit,
   onNavigateToLogin: () -> Unit,
+  onNavigateToChangePassword: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   LaunchedEffect(isLoggedIn, canUseApp) {
@@ -133,8 +139,10 @@ fun MainScreenContent(
       MainScreenList(
         isLoggedIn = isLoggedIn,
         isInternetReachable = isInternetReachable,
+        isPasswordExpired = isPasswordExpired,
         tiles = tiles,
         onNavigateToLogin = onNavigateToLogin,
+        onNavigateToChangePassword = onNavigateToChangePassword,
         modifier = Modifier.padding(innerPadding),
       )
     }
@@ -145,8 +153,10 @@ fun MainScreenContent(
 private fun MainScreenList(
   isLoggedIn: Boolean,
   isInternetReachable: Boolean,
+  isPasswordExpired: Boolean,
   tiles: List<TileData>,
   onNavigateToLogin: () -> Unit,
+  onNavigateToChangePassword: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   LazyColumn(
@@ -168,6 +178,16 @@ private fun MainScreenList(
           message = stringResource(R.string.main_login_prompt),
           modifier = Modifier.padding(bottom = 16.dp),
           onClick = onNavigateToLogin,
+        )
+      }
+    }
+
+    if (isLoggedIn && isPasswordExpired && isInternetReachable) {
+      item {
+        InfoCard(
+          message = stringResource(R.string.change_password_expired_warning),
+          modifier = Modifier.padding(bottom = 16.dp),
+          onClick = onNavigateToChangePassword,
         )
       }
     }

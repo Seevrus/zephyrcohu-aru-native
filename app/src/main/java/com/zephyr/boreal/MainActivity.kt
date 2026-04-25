@@ -16,6 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.zephyr.boreal.ui.screens.AppLockedScreen
+import com.zephyr.boreal.ui.screens.ChangePasswordScreen
 import com.zephyr.boreal.ui.screens.LoginScreen
 import com.zephyr.boreal.ui.screens.MainScreen
 import com.zephyr.boreal.ui.screens.PrintSettingsScreen
@@ -57,59 +58,93 @@ fun BorealApp() {
 fun BorealNavHost(navController: androidx.navigation.NavHostController) {
   NavHost(navController = navController, startDestination = "main") {
     composable("main") {
-      MainScreen(
-        onNavigateToAppLocked = {
-          navController.navigate("app_locked") {
-            popUpTo(0) { inclusive = true }
-          }
-        },
-        onNavigateToSettings = {
-          navController.navigate("settings")
-        },
-        onNavigateToLogin = {
-          navController.navigate("login")
-        },
-      )
+      MainRoute(navController)
     }
     composable("login") {
-      LoginScreen(
-        onLoginSuccess = {
-          navController.navigate("main") {
-            popUpTo(0) { inclusive = true }
-          }
-        },
-      )
+      LoginRoute(navController)
     }
     composable("app_locked") {
-      AppLockedScreen(
-        onNavigateToMain = {
-          navController.navigate("main") {
-            popUpTo(0) { inclusive = true }
-          }
-        },
-        onNavigateToSettings = {
-          navController.navigate("settings")
-        },
-      )
+      AppLockedRoute(navController)
     }
     composable("settings") {
-      SettingsScreen(
-        onNavigateToPrintSettings = {
-          navController.navigate("print_settings")
-        },
-        onLogout = {
-          navController.navigate("main") {
-            popUpTo(0) { inclusive = true }
-          }
-        },
-      )
+      SettingsRoute(navController)
     }
     composable("print_settings") {
-      PrintSettingsScreen(
-        onNavigateBack = {
-          navController.popBackStack()
-        },
-      )
+      PrintSettingsRoute(navController)
+    }
+    composable("change_password") {
+      ChangePasswordScreen()
     }
   }
+}
+
+@Composable
+private fun MainRoute(navController: androidx.navigation.NavHostController) {
+  MainScreen(
+    onNavigateToAppLocked = {
+      navController.navigate("app_locked") {
+        popUpTo(0) { inclusive = true }
+      }
+    },
+    onNavigateToSettings = {
+      navController.navigate("settings")
+    },
+    onNavigateToLogin = {
+      navController.navigate("login")
+    },
+    onNavigateToChangePassword = {
+      navController.navigate("change_password")
+    },
+  )
+}
+
+@Composable
+private fun LoginRoute(navController: androidx.navigation.NavHostController) {
+  LoginScreen(
+    onLoginSuccess = {
+      navController.navigate("main") {
+        popUpTo(0) { inclusive = true }
+      }
+    },
+  )
+}
+
+@Composable
+private fun AppLockedRoute(navController: androidx.navigation.NavHostController) {
+  AppLockedScreen(
+    onNavigateToMain = {
+      navController.navigate("main") {
+        popUpTo(0) { inclusive = true }
+      }
+    },
+    onNavigateToSettings = {
+      navController.navigate("settings")
+    },
+  )
+}
+
+@Composable
+private fun SettingsRoute(navController: androidx.navigation.NavHostController) {
+  SettingsScreen(
+    onNavigateToPrintSettings = {
+      navController.navigate("print_settings")
+    },
+    onNavigateToChangePassword = {
+      navController.navigate("change_password")
+    },
+    onLogout = {
+      navController.navigate("main") {
+        popUpTo(0) { inclusive = true }
+      }
+    },
+  )
+}
+
+@Composable
+private fun PrintSettingsRoute(navController: androidx.navigation.NavHostController) {
+  PrintSettingsScreen(
+    onNavigateBack = {
+      navController.popBackStack()
+    },
+  )
 }

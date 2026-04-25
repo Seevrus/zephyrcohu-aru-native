@@ -128,6 +128,7 @@ class MainViewModelTest {
 
       val state = viewModel.appState.value
       assertTrue(state is AppStartState.Ready)
-      assertEquals(false, (state as AppStartState.Ready).isLoggedIn)
+      assertEquals(true, (state as AppStartState.Ready).isLoggedIn)
+      assertTrue((state as AppStartState.Ready).isPasswordExpired)
     }
 }

@@ -25,6 +25,7 @@ sealed class AppStartState {
     val canUseApp: Boolean? = null,
     val userName: String? = null,
     val isInternetReachable: Boolean = true,
+    val isPasswordExpired: Boolean = false,
   ) : AppStartState()
 }
 
@@ -60,18 +61,23 @@ class MainViewModel
           ) { userState, isOnline ->
             userState to isOnline
           }.collect { (userState, isOnline) ->
-            val isLoggedIn =
-              userState.storedToken?.token != null &&
-                userState.storedToken.isPasswordExpired != true
+            val isLoggedIn = userState.storedToken?.token != null
+            val isPasswordExpired = userState.storedToken?.isPasswordExpired == true
 
             // Only update isLoggedIn if not overriding user data
             _appState.value =
               when (val currentState = _appState.value) {
-                is AppStartState.Ready -> currentState.copy(isLoggedIn = isLoggedIn, isInternetReachable = isOnline)
+                is AppStartState.Ready ->
+                  currentState.copy(
+                    isLoggedIn = isLoggedIn,
+                    isInternetReachable = isOnline,
+                    isPasswordExpired = isPasswordExpired,
+                  )
                 AppStartState.Reconciling ->
                   AppStartState.Ready(
                     isLoggedIn = isLoggedIn,
                     isInternetReachable = isOnline,
+                    isPasswordExpired = isPasswordExpired,
                   )
               }
           }

@@ -3,6 +3,7 @@ package com.zephyr.boreal.data.repository
 import android.content.Context
 import com.zephyr.boreal.R
 import com.zephyr.boreal.api.AuthApiService
+import com.zephyr.boreal.api.dto.request.ChangePasswordRequestDto
 import com.zephyr.boreal.api.dto.request.LoginRequestDto
 import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.UserDao
@@ -83,6 +84,43 @@ class UserRepository
         userSessionStore.clearSession()
         cacheMetadataDao.clearCacheMetadata("get_current_user")
         ApiResource.Error(e.localizedMessage ?: "Logout failed")
+      }
+
+    suspend fun changePassword(password: String): ApiResource<Unit> =
+      try {
+        val request = ChangePasswordRequestDto(password = password)
+        val response = apiService.changePassword(request)
+
+        // Update session with new token
+        userSessionStore.updateSession(
+          deviceId = userSessionStore.userState.value.deviceId,
+          token =
+            StoredToken(
+              token = response.token.accessToken,
+              isPasswordExpired = response.token.abilities.contains(UserRole.PASSWORD_EXPIRED),
+              expiresAt = response.token.expiresAt,
+            ),
+        )
+
+        // Clear user and cache to force refetch of current user (and roles)
+        userDao.clearUser()
+        cacheMetadataDao.clearCacheMetadata("get_current_user")
+
+        ApiResource.Success(Unit)
+      } catch (e: retrofit2.HttpException) {
+        val errorMessage =
+          when (e.code()) {
+            400 -> context.getString(R.string.change_password_error_400)
+            401 -> {
+              logout()
+              context.getString(R.string.change_password_error_401)
+            }
+            422 -> context.getString(R.string.change_password_error_422)
+            else -> context.getString(R.string.change_password_error_unexpected)
+          }
+        ApiResource.Error(errorMessage)
+      } catch (e: Exception) {
+        ApiResource.Error(e.localizedMessage ?: context.getString(R.string.change_password_error_unexpected))
       }
 
     fun getCurrentUser(): Flow<ApiResource<User?>> =

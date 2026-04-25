@@ -24,5 +24,5 @@ interface AuthApiService {
   @POST("users/password")
   suspend fun changePassword(
     @Body request: ChangePasswordRequestDto,
-  )
+  ): LoginResponseDto
 }

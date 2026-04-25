@@ -12,6 +12,8 @@ import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.user.UserSessionStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -28,6 +30,7 @@ class UserRepositoryTest {
   private val userSessionStore: UserSessionStore = mock()
   private val connectivityObserver: ConnectivityObserver = mock()
   private val cacheMetadataDao: CacheMetadataDao = mock()
+  private val context: android.content.Context = mock()
 
   private val mockLoginResponse =
     LoginResponseDto(
@@ -64,6 +67,7 @@ class UserRepositoryTest {
     whenever(userSessionStore.userState).thenReturn(stateFlow)
     val connectivityFlow = MutableStateFlow(true)
     whenever(connectivityObserver.isInternetReachable).thenReturn(connectivityFlow)
+    whenever(context.getString(any())).thenReturn("Error")
     repository =
       UserRepository(
         apiService,
@@ -71,7 +75,7 @@ class UserRepositoryTest {
         connectivityObserver,
         userSessionStore,
         cacheMetadataDao,
-        mock(),
+        context,
       )
   }
 
@@ -108,6 +112,34 @@ class UserRepositoryTest {
       verify(userSessionStore).clearSession()
       verify(userDao).clearUser()
       verify(cacheMetadataDao).clearCacheMetadata("get_current_user")
+    }
+
+  @Test
+  fun `changePassword should update session and clear local cache on success`() =
+    runTest {
+      whenever(apiService.changePassword(any())).thenReturn(mockLoginResponse)
+
+      val result = repository.changePassword("newPassword")
+
+      assertTrue(result is ApiResource.Success)
+      verify(apiService).changePassword(any())
+      verify(userSessionStore).updateSession(any(), any())
+      verify(userDao).clearUser()
+      verify(cacheMetadataDao).clearCacheMetadata("get_current_user")
+    }
+
+  @Test
+  fun `changePassword should logout and return error on 401`() =
+    runTest {
+      val responseBody = "Unauthorized".toResponseBody("application/json".toMediaType())
+      val error = retrofit2.HttpException(retrofit2.Response.error<Any>(401, responseBody))
+      whenever(apiService.changePassword(any())).thenThrow(error)
+
+      val result = repository.changePassword("newPassword")
+
+      assertTrue(result is ApiResource.Error)
+      verify(userSessionStore).clearSession()
+      verify(userDao).clearUser()
     }
 
   @Test

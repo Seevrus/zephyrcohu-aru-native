@@ -128,18 +128,51 @@ class AuthApiServiceTest : BaseApiTest() {
     }
 
   @Test
-  fun `changePassword should send POST request with correct body`() =
+  fun `changePassword should send POST request with correct body and return response`() =
     runTest {
-      enqueueResponse(code = 204)
+      val mockResponseBody =
+        """
+        {
+          "id": 1,
+          "userName": "testuser",
+          "state": "I",
+          "name": "Test User",
+          "isDev": false,
+          "roles": ["AM"],
+          "lastActive": "2026-04-03T10:00:00Z",
+          "createdAt": "2026-04-03T09:00:00Z",
+          "updatedAt": "2026-04-03T09:00:00Z",
+          "company": {
+            "id": 3,
+            "code": "C3",
+            "name": "Company 3",
+            "country": "HU",
+            "postalCode": "1000",
+            "city": "Budapest",
+            "address": "Test Street 1",
+            "felir": "AA0000000",
+            "vatNumber": "12345678-2-41",
+            "iban": "HU1234567890",
+            "bankAccount": "12345678-12345678-12345678"
+          },
+          "token": {
+            "tokenType": "Bearer",
+            "accessToken": "new_mocked_token",
+            "abilities": ["AM"]
+          }
+        }
+        """.trimIndent()
+      enqueueResponse(body = mockResponseBody)
 
-      val request = ChangePasswordRequestDto("password")
-      service.changePassword(request)
+      val request = ChangePasswordRequestDto("new_password")
+      val response = service.changePassword(request)
 
       val recordedRequest = mockWebServer.takeRequest()
       assertEquals("POST", recordedRequest.method)
       assertEquals("/users/password", recordedRequest.path)
 
       val bodyString = recordedRequest.body.readUtf8()
-      assert(bodyString.contains("password"))
+      assert(bodyString.contains("new_password"))
+      assertEquals("new_mocked_token", response.token.accessToken)
     }
 }

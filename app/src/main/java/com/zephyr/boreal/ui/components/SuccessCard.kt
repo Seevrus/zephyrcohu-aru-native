@@ -1,6 +1,5 @@
 package com.zephyr.boreal.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -23,35 +22,25 @@ import com.zephyr.boreal.ui.theme.BorealFontSizes
 import com.zephyr.boreal.ui.theme.NunitoSansFamily
 
 @Composable
-fun InfoCard(
+fun SuccessCard(
   message: String,
   modifier: Modifier = Modifier,
-  onClick: (() -> Unit)? = null,
 ) {
-  val cardModifier =
-    if (onClick != null) {
-      modifier
-        .fillMaxWidth()
-        .padding(vertical = 16.dp)
-        .clickable(onClick = onClick)
-    } else {
-      modifier
-        .fillMaxWidth()
-        .padding(vertical = 16.dp)
-    }
-
   Card(
-    modifier = cardModifier,
+    modifier =
+      modifier
+        .fillMaxWidth()
+        .padding(vertical = 16.dp),
     shape = RoundedCornerShape(8.dp),
     colors =
       CardDefaults.cardColors(
-        containerColor = BorealColors.Neutral,
+        containerColor = BorealColors.Ok,
         contentColor = BorealColors.White,
       ),
   ) {
     Row(
       modifier = Modifier.padding(8.dp),
-      verticalAlignment = Alignment.Top,
+      verticalAlignment = Alignment.CenterVertically,
     ) {
       Text(
         text = message,
@@ -63,7 +52,7 @@ fun InfoCard(
       )
       Icon(
         imageVector = ImageVector.vectorResource(id = R.drawable.info_outlined),
-        contentDescription = "info_icon",
+        contentDescription = "success_icon",
         modifier =
           Modifier
             .padding(start = 4.dp)
