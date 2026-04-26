@@ -18,7 +18,7 @@ class AppLockedScreenTest {
   fun appLockedScreen_displaysCorrectMessageAndTitle() {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
     val userName = "TestUser"
-    val appTitle = context.getString(R.string.title_main)
+    val appTitle = context.getString(R.string.screen_main_title)
     val expectedMessage = context.getString(R.string.app_locked_message, userName)
     val settingsDescription = context.getString(R.string.settings_icon_description)
 

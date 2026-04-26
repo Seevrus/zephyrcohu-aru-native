@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import com.zephyr.boreal.R
 import com.zephyr.boreal.ui.theme.BorealTheme
@@ -17,7 +18,7 @@ class SettingsScreenTest {
   @Test
   fun settingsScreen_displaysCorrectTitleAndTiles_whenNotLoggedIn() {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
-    val settingsTitle = context.getString(R.string.title_settings)
+    val settingsTitle = context.getString(R.string.screen_settings_title)
     val loginTitle = context.getString(R.string.tile_login)
     val printSettingsTitle = context.getString(R.string.tile_print_settings)
 
@@ -27,6 +28,7 @@ class SettingsScreenTest {
           isLoggedIn = false,
           isIdle = false,
           isLoading = false,
+          isInternetReachable = true,
         )
       }
     }
@@ -42,7 +44,7 @@ class SettingsScreenTest {
   @Test
   fun settingsScreen_displaysCorrectTitleAndTiles_whenLoggedInAndIdle() {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
-    val settingsTitle = context.getString(R.string.title_settings)
+    val settingsTitle = context.getString(R.string.screen_settings_title)
     val changePasswordTitle = context.getString(R.string.tile_change_password)
     val printSettingsTitle = context.getString(R.string.tile_print_settings)
     val logoutTitle = context.getString(R.string.tile_logout)
@@ -53,6 +55,7 @@ class SettingsScreenTest {
           isLoggedIn = true,
           isIdle = true,
           isLoading = false,
+          isInternetReachable = true,
         )
       }
     }
@@ -77,6 +80,7 @@ class SettingsScreenTest {
           isLoggedIn = true,
           isIdle = false,
           isLoading = false,
+          isInternetReachable = true,
         )
       }
     }
@@ -93,6 +97,7 @@ class SettingsScreenTest {
           isLoggedIn = false,
           isIdle = false,
           isLoading = true,
+          isInternetReachable = true,
         )
       }
     }
@@ -113,14 +118,14 @@ class SettingsScreenTest {
           isLoggedIn = false,
           isIdle = false,
           isLoading = false,
+          isInternetReachable = true,
           onNavigateToLogin = { loginCalled = true },
         )
       }
     }
 
     // Perform Click
-    androidx.compose.ui.test
-      .performClick(composeTestRule.onNodeWithText(loginTitle))
+    composeTestRule.onNodeWithText(loginTitle).performClick()
 
     // Assert Callback
     assert(loginCalled)

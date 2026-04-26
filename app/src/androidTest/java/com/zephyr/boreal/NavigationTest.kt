@@ -78,6 +78,8 @@ class NavigationTest {
                 isReady = true,
                 isLoggedIn = true,
                 canUseApp = false, // Should trigger navigation immediately
+                isInternetReachable = true,
+                isPasswordExpired = false,
                 onNavigateToAppLocked = {
                   navController.navigate("app_locked") {
                     popUpTo(0) { inclusive = true }
@@ -85,6 +87,7 @@ class NavigationTest {
                 },
                 onNavigateToSettings = {},
                 onNavigateToLogin = {},
+                onNavigateToChangePassword = {},
               )
             }
             composable("app_locked") {
@@ -119,11 +122,14 @@ class NavigationTest {
                 isReady = true,
                 isLoggedIn = false,
                 canUseApp = null,
+                isInternetReachable = true,
+                isPasswordExpired = false,
                 onNavigateToAppLocked = {},
                 onNavigateToSettings = {},
                 onNavigateToLogin = {
                   navController.navigate("login")
                 },
+                onNavigateToChangePassword = {},
               )
             }
             composable("login") {
@@ -195,11 +201,14 @@ class NavigationTest {
                 isReady = true,
                 isLoggedIn = true,
                 canUseApp = true,
+                isInternetReachable = true,
+                isPasswordExpired = false,
                 onNavigateToAppLocked = {},
                 onNavigateToSettings = {
                   navController.navigate("settings")
                 },
                 onNavigateToLogin = {},
+                onNavigateToChangePassword = {},
               )
             }
             composable("settings") {

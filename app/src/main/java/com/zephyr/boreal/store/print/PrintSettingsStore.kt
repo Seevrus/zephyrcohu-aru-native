@@ -20,7 +20,7 @@ data class PrintSettingsState(
 )
 
 @Singleton
-class PrintSettingsStore
+open class PrintSettingsStore
   @Inject
   constructor(
     private val dataStore: DataStore<Preferences>,
@@ -31,7 +31,7 @@ class PrintSettingsStore
       val PRINT_FULL_STORAGE_LIST = booleanPreferencesKey("print_full_storage_list")
     }
 
-    val printSettingsState: StateFlow<PrintSettingsState> =
+    open val printSettingsState: StateFlow<PrintSettingsState> =
       dataStore.data
         .map { preferences ->
           val selectedPrinterMacAddress = preferences[SELECTED_PRINTER_MAC]
@@ -47,7 +47,7 @@ class PrintSettingsStore
           initialValue = PrintSettingsState(),
         )
 
-    suspend fun updateSettings(
+    open suspend fun updateSettings(
       selectedPrinterMacAddress: String?,
       printFullStorageList: Boolean,
     ) {

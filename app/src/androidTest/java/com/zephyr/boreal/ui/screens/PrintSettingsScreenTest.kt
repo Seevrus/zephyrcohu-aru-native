@@ -6,37 +6,35 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.test.platform.app.InstrumentationRegistry
 import com.zephyr.boreal.R
 import com.zephyr.boreal.printer.BluetoothDeviceData
-import com.zephyr.boreal.printer.BluetoothHelper
-import com.zephyr.boreal.store.print.PrintSettingsState
-import com.zephyr.boreal.store.print.PrintSettingsStore
 import com.zephyr.boreal.ui.theme.BorealTheme
-import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 
 class PrintSettingsScreenTest {
   @get:Rule
   val composeTestRule = createComposeRule()
-
-  private val printSettingsStore: PrintSettingsStore = mock()
-  private val bluetoothHelper: BluetoothHelper = mock()
-  private val printSettingsStateFlow = MutableStateFlow(PrintSettingsState())
 
   @Test
   fun printSettingsScreen_displaysPermissionError_whenNoPermissions() {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
     val errorMessage = context.getString(R.string.print_settings_permission_error)
 
-    whenever(printSettingsStore.printSettingsState).thenReturn(printSettingsStateFlow)
-    val viewModel = PrintSettingsViewModel(printSettingsStore, bluetoothHelper)
-    viewModel.updatePermissionsState(hasPermissions = false, canAskPermissions = false)
-    viewModel.finishInitialCheck()
+    val uiState =
+      PrintSettingsUiState(
+        hasPermissions = false,
+        isInitialCheck = false,
+      )
 
     composeTestRule.setContent {
       BorealTheme {
-        PrintSettingsScreen(onNavigateBack = {}, viewModel = viewModel)
+        PrintSettingsScreenContent(
+          uiState = uiState,
+          onOpenSettings = {},
+          onEnableBluetooth = {},
+          onPrinterSelected = {},
+          onPrintFullStorageListChanged = {},
+          onSave = {},
+        )
       }
     }
 
@@ -48,16 +46,23 @@ class PrintSettingsScreenTest {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
     val errorMessage = context.getString(R.string.print_settings_bluetooth_off_error)
 
-    whenever(printSettingsStore.printSettingsState).thenReturn(printSettingsStateFlow)
-    whenever(bluetoothHelper.isBluetoothEnabled()).thenReturn(false)
-
-    val viewModel = PrintSettingsViewModel(printSettingsStore, bluetoothHelper)
-    viewModel.updatePermissionsState(hasPermissions = true, canAskPermissions = false)
-    viewModel.refreshBluetoothState()
+    val uiState =
+      PrintSettingsUiState(
+        hasPermissions = true,
+        isBluetoothEnabled = false,
+        isInitialCheck = false,
+      )
 
     composeTestRule.setContent {
       BorealTheme {
-        PrintSettingsScreen(onNavigateBack = {}, viewModel = viewModel)
+        PrintSettingsScreenContent(
+          uiState = uiState,
+          onOpenSettings = {},
+          onEnableBluetooth = {},
+          onPrinterSelected = {},
+          onPrintFullStorageListChanged = {},
+          onSave = {},
+        )
       }
     }
 
@@ -70,17 +75,25 @@ class PrintSettingsScreenTest {
     val printerLabel = context.getString(R.string.print_settings_printer_label)
     val modeLabel = context.getString(R.string.print_settings_mode_label)
 
-    whenever(printSettingsStore.printSettingsState).thenReturn(printSettingsStateFlow)
-    whenever(bluetoothHelper.isBluetoothEnabled()).thenReturn(true)
-    whenever(bluetoothHelper.getPairedDevices()).thenReturn(listOf(BluetoothDeviceData("My Printer", "11:22")))
-
-    val viewModel = PrintSettingsViewModel(printSettingsStore, bluetoothHelper)
-    viewModel.updatePermissionsState(hasPermissions = true, canAskPermissions = false)
-    viewModel.refreshBluetoothState()
+    val uiState =
+      PrintSettingsUiState(
+        hasPermissions = true,
+        isBluetoothEnabled = true,
+        isInitialCheck = false,
+        pairedDevices = listOf(BluetoothDeviceData("My Printer", "11:22")),
+        selectedPrinterAddress = "11:22",
+      )
 
     composeTestRule.setContent {
       BorealTheme {
-        PrintSettingsScreen(onNavigateBack = {}, viewModel = viewModel)
+        PrintSettingsScreenContent(
+          uiState = uiState,
+          onOpenSettings = {},
+          onEnableBluetooth = {},
+          onPrinterSelected = {},
+          onPrintFullStorageListChanged = {},
+          onSave = {},
+        )
       }
     }
 

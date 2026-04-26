@@ -17,20 +17,20 @@ data class BluetoothDeviceData(
   val address: String,
 )
 
-class BluetoothHelper(
+open class BluetoothHelper(
   private val context: Context,
 ) {
   private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
   private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
 
-  fun isBluetoothEnabled(): Boolean =
+  open fun isBluetoothEnabled(): Boolean =
     try {
       bluetoothAdapter?.isEnabled == true
     } catch (e: SecurityException) {
       false
     }
 
-  fun observeBluetoothState(): Flow<Boolean> =
+  open fun observeBluetoothState(): Flow<Boolean> =
     callbackFlow {
       val receiver =
         object : android.content.BroadcastReceiver() {
@@ -58,7 +58,7 @@ class BluetoothHelper(
       }
     }.onStart { emit(isBluetoothEnabled()) }
 
-  fun getPairedDevices(): List<BluetoothDeviceData> {
+  open fun getPairedDevices(): List<BluetoothDeviceData> {
     try {
       if (!isBluetoothEnabled()) {
         return emptyList()

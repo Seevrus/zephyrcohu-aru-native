@@ -36,7 +36,6 @@ import com.zephyr.boreal.ui.components.DropdownItem
 import com.zephyr.boreal.ui.components.ErrorCard
 import com.zephyr.boreal.ui.theme.BorealColors
 
-@Suppress("LongMethod")
 @Composable
 fun PrintSettingsScreen(
   onNavigateBack: () -> Unit,
@@ -45,62 +44,82 @@ fun PrintSettingsScreen(
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val context = LocalContext.current
-
-  val permissionsToRequest =
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-      arrayOf(android.Manifest.permission.BLUETOOTH_CONNECT)
-    } else {
-      arrayOf(
-        android.Manifest.permission.BLUETOOTH,
-        android.Manifest.permission.ACCESS_FINE_LOCATION,
-      )
-    }
+  val permissions = getBluetoothPermissions()
 
   val permissionLauncher =
     rememberLauncherForActivityResult(
       contract = ActivityResultContracts.RequestMultiplePermissions(),
-    ) { permissions ->
-      val allGranted = permissions.entries.all { it.value }
-      viewModel.updatePermissionsState(
-        hasPermissions = allGranted,
-        canAskPermissions = !allGranted,
-      )
+    ) { perms ->
+      val allGranted = perms.entries.all { it.value }
+      viewModel.updatePermissionsState(hasPermissions = allGranted, canAskPermissions = !allGranted)
       viewModel.finishInitialCheck()
     }
 
   val bluetoothEnableLauncher =
     rememberLauncherForActivityResult(
       contract = ActivityResultContracts.StartActivityForResult(),
-    ) { _ ->
-      // State is observed reactively in the ViewModel
-    }
+    ) { _ -> }
 
   LaunchedEffect(Unit) {
     val allGranted =
-      permissionsToRequest.all {
-        androidx.core.content.ContextCompat.checkSelfPermission(
-          context,
-          it,
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+      permissions.all {
+        androidx.core.content.ContextCompat
+          .checkSelfPermission(context, it) ==
+          android.content.pm.PackageManager.PERMISSION_GRANTED
       }
-
     if (!allGranted) {
-      permissionLauncher.launch(permissionsToRequest)
+      permissionLauncher.launch(permissions)
     } else {
-      viewModel.updatePermissionsState(
-        hasPermissions = true,
-        canAskPermissions = false,
-      )
+      viewModel.updatePermissionsState(hasPermissions = true, canAskPermissions = false)
     }
   }
 
+  PrintSettingsScreenContent(
+    uiState = uiState,
+    onOpenSettings = {
+      val intent =
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+          data = Uri.fromParts("package", context.packageName, null)
+        }
+      context.startActivity(intent)
+    },
+    onEnableBluetooth = {
+      bluetoothEnableLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+    },
+    onPrinterSelected = viewModel::onPrinterSelected,
+    onPrintFullStorageListChanged = viewModel::onPrintFullStorageListChanged,
+    onSave = {
+      viewModel.saveSettings()
+      onNavigateBack()
+    },
+    modifier = modifier,
+  )
+}
+
+private fun getBluetoothPermissions(): Array<String> =
+  if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+    arrayOf(android.Manifest.permission.BLUETOOTH_CONNECT)
+  } else {
+    arrayOf(
+      android.Manifest.permission.BLUETOOTH,
+      android.Manifest.permission.ACCESS_FINE_LOCATION,
+    )
+  }
+
+@Suppress("LongMethod")
+@Composable
+fun PrintSettingsScreenContent(
+  uiState: PrintSettingsUiState,
+  onOpenSettings: () -> Unit,
+  onEnableBluetooth: () -> Unit,
+  onPrinterSelected: (String) -> Unit,
+  onPrintFullStorageListChanged: (Boolean) -> Unit,
+  onSave: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
   Scaffold(
     modifier = modifier,
-    topBar = {
-      BorealTopAppBar(
-        title = stringResource(R.string.screen_print_title),
-      )
-    },
+    topBar = { BorealTopAppBar(title = stringResource(R.string.screen_print_title)) },
     containerColor = BorealColors.Background,
   ) { padding ->
     Column(
@@ -112,91 +131,100 @@ fun PrintSettingsScreen(
           .verticalScroll(rememberScrollState()),
       horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-      if (uiState.isInitialCheck) {
-        // Show nothing while waiting for permission result
-      } else if (!uiState.hasPermissions) {
-        ErrorCard(
-          message = stringResource(R.string.print_settings_permission_error),
-          modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        BorealButton(
-          text = stringResource(R.string.print_settings_open_settings),
-          variant = ButtonVariant.NEUTRAL,
-          onClick = {
-            val intent =
-              Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.fromParts("package", context.packageName, null)
-              }
-            context.startActivity(intent)
-          },
-        )
-      } else if (!uiState.isBluetoothEnabled) {
-        ErrorCard(
-          message = stringResource(R.string.print_settings_bluetooth_off_error),
-          modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        BorealButton(
-          text = stringResource(R.string.print_settings_enable_bluetooth),
-          variant = ButtonVariant.NEUTRAL,
-          onClick = {
-            val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            bluetoothEnableLauncher.launch(intent)
-          },
-        )
-      } else {
-        if (uiState.pairedDevices.isEmpty()) {
-          ErrorCard(
-            message = stringResource(R.string.print_settings_no_paired_devices),
-            modifier = Modifier.fillMaxWidth(),
+      when {
+        uiState.isInitialCheck -> {}
+        !uiState.hasPermissions -> PermissionErrorView(onOpenSettings)
+        !uiState.isBluetoothEnabled -> BluetoothErrorView(onEnableBluetooth)
+        else ->
+          SettingsFormView(
+            uiState = uiState,
+            onPrinterSelected = onPrinterSelected,
+            onPrintFullStorageListChanged = onPrintFullStorageListChanged,
+            onSave = onSave,
           )
-          Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        val deviceItems =
-          remember(uiState.pairedDevices) {
-            uiState.pairedDevices.map {
-              DropdownItem(key = it.address, value = it.name)
-            }
-          }
-
-        BorealDropdown(
-          label = stringResource(R.string.print_settings_printer_label),
-          data = deviceItems,
-          selectedKey = uiState.selectedPrinterAddress,
-          onSelect = { viewModel.onPrinterSelected(it) },
-          modifier = Modifier.fillMaxWidth(),
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        BorealDropdown(
-          label = stringResource(R.string.print_settings_mode_label),
-          data =
-            listOf(
-              DropdownItem(key = "NORMAL", value = stringResource(R.string.print_settings_mode_changes)),
-              DropdownItem(key = "FULL", value = stringResource(R.string.print_settings_mode_full)),
-            ),
-          selectedKey = if (uiState.printFullStorageList) "FULL" else "NORMAL",
-          onSelect = { viewModel.onPrintFullStorageListChanged(it == "FULL") },
-          modifier = Modifier.fillMaxWidth(),
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Box(modifier = Modifier.fillMaxWidth()) {
-          BorealButton(
-            text = stringResource(R.string.print_settings_save),
-            variant = if (uiState.selectedPrinterAddress == null) ButtonVariant.DISABLED else ButtonVariant.NEUTRAL,
-            onClick = {
-              viewModel.saveSettings()
-              onNavigateBack()
-            },
-            modifier = Modifier.align(Alignment.Center),
-          )
-        }
       }
     }
+  }
+}
+
+@Composable
+private fun PermissionErrorView(onOpenSettings: () -> Unit) {
+  ErrorCard(
+    message = stringResource(R.string.print_settings_permission_error),
+    modifier = Modifier.fillMaxWidth(),
+  )
+  Spacer(modifier = Modifier.height(16.dp))
+  BorealButton(
+    text = stringResource(R.string.print_settings_open_settings),
+    variant = ButtonVariant.NEUTRAL,
+    onClick = onOpenSettings,
+  )
+}
+
+@Composable
+private fun BluetoothErrorView(onEnableBluetooth: () -> Unit) {
+  ErrorCard(
+    message = stringResource(R.string.print_settings_bluetooth_off_error),
+    modifier = Modifier.fillMaxWidth(),
+  )
+  Spacer(modifier = Modifier.height(16.dp))
+  BorealButton(
+    text = stringResource(R.string.print_settings_enable_bluetooth),
+    variant = ButtonVariant.NEUTRAL,
+    onClick = onEnableBluetooth,
+  )
+}
+
+@Composable
+private fun SettingsFormView(
+  uiState: PrintSettingsUiState,
+  onPrinterSelected: (String) -> Unit,
+  onPrintFullStorageListChanged: (Boolean) -> Unit,
+  onSave: () -> Unit,
+) {
+  if (uiState.pairedDevices.isEmpty()) {
+    ErrorCard(
+      message = stringResource(R.string.print_settings_no_paired_devices),
+      modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+  }
+
+  val deviceItems =
+    remember(uiState.pairedDevices) {
+      uiState.pairedDevices.map { DropdownItem(key = it.address, value = it.name) }
+    }
+
+  BorealDropdown(
+    label = stringResource(R.string.print_settings_printer_label),
+    data = deviceItems,
+    selectedKey = uiState.selectedPrinterAddress,
+    onSelect = onPrinterSelected,
+    modifier = Modifier.fillMaxWidth(),
+  )
+
+  Spacer(modifier = Modifier.height(16.dp))
+
+  BorealDropdown(
+    label = stringResource(R.string.print_settings_mode_label),
+    data =
+      listOf(
+        DropdownItem(key = "NORMAL", value = stringResource(R.string.print_settings_mode_changes)),
+        DropdownItem(key = "FULL", value = stringResource(R.string.print_settings_mode_full)),
+      ),
+    selectedKey = if (uiState.printFullStorageList) "FULL" else "NORMAL",
+    onSelect = { onPrintFullStorageListChanged(it == "FULL") },
+    modifier = Modifier.fillMaxWidth(),
+  )
+
+  Spacer(modifier = Modifier.height(32.dp))
+
+  Box(modifier = Modifier.fillMaxWidth()) {
+    BorealButton(
+      text = stringResource(R.string.print_settings_save),
+      variant = if (uiState.selectedPrinterAddress == null) ButtonVariant.DISABLED else ButtonVariant.NEUTRAL,
+      onClick = onSave,
+      modifier = Modifier.align(Alignment.Center),
+    )
   }
 }

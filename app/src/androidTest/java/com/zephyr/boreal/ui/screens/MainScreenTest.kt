@@ -21,16 +21,26 @@ class MainScreenTest {
     // It is used here to retrieve localized string resources (R.string.*) to ensure that
     // the UI assertions match the actual values defined in strings.xml.
     val context = InstrumentationRegistry.getInstrumentation().targetContext
-    val appTitle = context.getString(R.string.title_main)
-    val loadingTitle = context.getString(R.string.tile_storage)
-    val unloadingTitle = context.getString(R.string.tile_sell)
-    val routesTitle = context.getString(R.string.tile_errands)
+    val appTitle = context.getString(R.string.screen_main_title)
+    val loadingTitle = context.getString(R.string.tile_loading)
+    val unloadingTitle = context.getString(R.string.tile_unloading)
+    val routesTitle = context.getString(R.string.tile_rounds)
     val documentsTitle = context.getString(R.string.tile_receipts, 0)
     val settingsDescription = context.getString(R.string.settings_icon_description)
 
     composeTestRule.setContent {
       BorealTheme {
-        MainScreen()
+        MainScreenContent(
+          isReady = true,
+          isLoggedIn = true,
+          canUseApp = true,
+          isInternetReachable = true,
+          isPasswordExpired = false,
+          onNavigateToAppLocked = {},
+          onNavigateToSettings = {},
+          onNavigateToLogin = {},
+          onNavigateToChangePassword = {},
+        )
       }
     }
 

@@ -13,7 +13,7 @@ class MainActivityTest {
   @Test
   fun mainActivity_loadsMainScreen() {
     val context = composeTestRule.activity
-    val mainActivityTitle = context.getString(R.string.title_main)
+    val mainActivityTitle = context.getString(R.string.screen_main_title)
 
     // Assert that MainScreen is loaded by checking for the App Bar title
     composeTestRule.onNodeWithText(mainActivityTitle).assertIsDisplayed()
