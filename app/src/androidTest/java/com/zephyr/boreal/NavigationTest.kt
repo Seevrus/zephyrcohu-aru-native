@@ -263,4 +263,43 @@ class NavigationTest {
       assertEquals("settings", navController.currentDestination?.route)
     }
   }
+
+  @Test
+  fun navigation_fromSettingsToLogin() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    val loginTileTitle = context.getString(R.string.tile_login)
+
+    composeTestRule.setContent {
+      BorealTheme {
+        Surface {
+          navController = rememberNavController()
+          NavHost(
+            navController = navController as androidx.navigation.NavHostController,
+            startDestination = "settings",
+          ) {
+            composable("settings") {
+              com.zephyr.boreal.ui.screens.SettingsScreenContent(
+                isLoggedIn = false,
+                isIdle = false,
+                isLoading = false,
+                isInternetReachable = true,
+                onNavigateToLogin = {
+                  navController.navigate("login")
+                },
+              )
+            }
+            composable("login") {
+              Box {}
+            }
+          }
+        }
+      }
+    }
+
+    composeTestRule.onNodeWithText(loginTileTitle).performClick()
+
+    composeTestRule.runOnIdle {
+      assertEquals("login", navController.currentDestination?.route)
+    }
+  }
 }

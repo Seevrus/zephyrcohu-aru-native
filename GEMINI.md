@@ -21,3 +21,9 @@
 - Always run `./gradlew ktlintFormat` before finishing a task that involves Kotlin changes.
 - Ensure `./gradlew detekt` passes before declaring a task complete.
 - When adding `@Composable` functions, ensure they follow PascalCase and include a `Modifier` parameter if they emit UI.
+
+## Emulator & ADB Safety
+- **NEVER** use `adb uninstall` without explicit user confirmation, especially if multiple emulators/devices are connected.
+- **NEVER** assume an emulator is dedicated to this project. Always ask the user which device is safe to use for testing.
+- If an `INSTALL_FAILED_VERSION_DOWNGRADE` occurs, prefer `adb install -r -d` (downgrade flag) over uninstallation.
+- Before running any `adb` command that modifies the device state, verify the package name matches the current project's `applicationId`.

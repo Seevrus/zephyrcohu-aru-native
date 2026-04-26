@@ -126,6 +126,9 @@ private fun AppLockedRoute(navController: androidx.navigation.NavHostController)
 @Composable
 private fun SettingsRoute(navController: androidx.navigation.NavHostController) {
   SettingsScreen(
+    onNavigateToLogin = {
+      navController.navigate("login")
+    },
     onNavigateToPrintSettings = {
       navController.navigate("print_settings")
     },
