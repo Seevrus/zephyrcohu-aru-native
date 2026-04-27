@@ -20,43 +20,13 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.zephyr.boreal.R
+import com.zephyr.boreal.ui.components.BorealAlert
 import com.zephyr.boreal.ui.components.BorealTile
 import com.zephyr.boreal.ui.components.BorealTopAppBar
 import com.zephyr.boreal.ui.components.InfoCard
 import com.zephyr.boreal.ui.components.LoadingIndicator
 import com.zephyr.boreal.ui.components.SettingsButton
-import com.zephyr.boreal.ui.components.TileVariant
 import com.zephyr.boreal.ui.theme.BorealColors
-
-@Composable
-fun getTiles(
-  numberOfReceipts: Int,
-  isLoggedIn: Boolean,
-): List<TileData> {
-  val defaultVariant = if (isLoggedIn) TileVariant.NEUTRAL else TileVariant.DISABLED
-  return listOf(
-    TileData(
-      stringResource(R.string.tile_loading),
-      if (isLoggedIn) TileVariant.OK else TileVariant.DISABLED,
-      ImageVector.vectorResource(R.drawable.truck_solid_full),
-    ),
-    TileData(
-      stringResource(R.string.tile_unloading),
-      if (isLoggedIn) TileVariant.WARNING else TileVariant.DISABLED,
-      ImageVector.vectorResource(R.drawable.cart_arrow_down_solid_full),
-    ),
-    TileData(
-      stringResource(R.string.tile_rounds),
-      defaultVariant,
-      ImageVector.vectorResource(R.drawable.rectangle_list_solid_full),
-    ),
-    TileData(
-      stringResource(R.string.tile_receipts, numberOfReceipts),
-      TileVariant.DISABLED,
-      ImageVector.vectorResource(R.drawable.receipt_solid_full),
-    ),
-  )
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,25 +38,16 @@ fun MainScreen(
   onNavigateToChangePassword: () -> Unit = {},
   viewModel: MainViewModel = hiltViewModel(),
 ) {
-  val appState by viewModel.appState.collectAsState()
-
-  val isReady = appState is AppStartState.Ready
-  val readyState = appState as? AppStartState.Ready
-  val isLoggedIn = readyState?.isLoggedIn ?: false
-  val canUseApp = readyState?.canUseApp
-  val isInternetReachable = readyState?.isInternetReachable ?: true
-  val isPasswordExpired = readyState?.isPasswordExpired ?: false
+  val uiState by viewModel.uiState.collectAsState()
 
   MainScreenContent(
-    isReady = isReady,
-    isLoggedIn = isLoggedIn,
-    canUseApp = canUseApp,
-    isInternetReachable = isInternetReachable,
-    isPasswordExpired = isPasswordExpired,
+    uiState = uiState,
     onNavigateToAppLocked = onNavigateToAppLocked,
     onNavigateToSettings = onNavigateToSettings,
     onNavigateToLogin = onNavigateToLogin,
     onNavigateToChangePassword = onNavigateToChangePassword,
+    onTileClick = viewModel::onTileClick,
+    onDismissAlert = viewModel::dismissAlert,
     modifier = modifier,
   )
 }
@@ -94,24 +55,20 @@ fun MainScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreenContent(
-  isReady: Boolean,
-  isLoggedIn: Boolean,
-  canUseApp: Boolean?,
-  isInternetReachable: Boolean,
-  isPasswordExpired: Boolean,
+  uiState: MainScreenUiState,
   onNavigateToAppLocked: () -> Unit,
   onNavigateToSettings: () -> Unit,
   onNavigateToLogin: () -> Unit,
   onNavigateToChangePassword: () -> Unit,
+  onTileClick: (TileUiModel) -> Unit,
+  onDismissAlert: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  LaunchedEffect(isLoggedIn, canUseApp) {
-    if (isLoggedIn && canUseApp == false) {
+  LaunchedEffect(uiState.isLoggedIn, uiState.canUseApp) {
+    if (uiState.isLoggedIn && uiState.canUseApp == false) {
       onNavigateToAppLocked()
     }
   }
-
-  val tiles = getTiles(numberOfReceipts = 0, isLoggedIn = isLoggedIn)
 
   Scaffold(
     modifier = modifier,
@@ -125,7 +82,7 @@ fun MainScreenContent(
     },
     containerColor = BorealColors.Background,
   ) { innerPadding ->
-    if (!isReady) {
+    if (!uiState.isReady) {
       Box(
         modifier =
           Modifier
@@ -137,13 +94,23 @@ fun MainScreenContent(
       }
     } else {
       MainScreenList(
-        isLoggedIn = isLoggedIn,
-        isInternetReachable = isInternetReachable,
-        isPasswordExpired = isPasswordExpired,
-        tiles = tiles,
+        uiState = uiState,
         onNavigateToLogin = onNavigateToLogin,
         onNavigateToChangePassword = onNavigateToChangePassword,
+        onTileClick = onTileClick,
         modifier = Modifier.padding(innerPadding),
+      )
+    }
+
+    uiState.alertState?.let { alert ->
+      BorealAlert(
+        title = stringResource(alert.titleResId),
+        message = alert.messageResId?.let { stringResource(it) },
+        confirmButtonText = alert.confirmTextResId?.let { stringResource(it) },
+        cancelButtonText = alert.cancelButtonTextResId?.let { stringResource(it) },
+        onConfirmClick = alert.onConfirm,
+        onCancelClick = alert.onCancel,
+        onDismissRequest = onDismissAlert,
       )
     }
   }
@@ -151,19 +118,17 @@ fun MainScreenContent(
 
 @Composable
 private fun MainScreenList(
-  isLoggedIn: Boolean,
-  isInternetReachable: Boolean,
-  isPasswordExpired: Boolean,
-  tiles: List<TileData>,
+  uiState: MainScreenUiState,
   onNavigateToLogin: () -> Unit,
   onNavigateToChangePassword: () -> Unit,
+  onTileClick: (TileUiModel) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   LazyColumn(
     contentPadding = PaddingValues(16.dp),
     modifier = modifier.fillMaxSize(),
   ) {
-    if (!isInternetReachable) {
+    if (!uiState.isInternetReachable) {
       item {
         InfoCard(
           message = stringResource(R.string.offline_warning),
@@ -172,7 +137,7 @@ private fun MainScreenList(
       }
     }
 
-    if (!isLoggedIn && isInternetReachable) {
+    if (!uiState.isLoggedIn && uiState.isInternetReachable) {
       item {
         InfoCard(
           message = stringResource(R.string.main_login_prompt),
@@ -182,7 +147,7 @@ private fun MainScreenList(
       }
     }
 
-    if (isLoggedIn && isPasswordExpired && isInternetReachable) {
+    if (uiState.isLoggedIn && uiState.isPasswordExpired && uiState.isInternetReachable) {
       item {
         InfoCard(
           message = stringResource(R.string.change_password_expired_warning),
@@ -192,12 +157,18 @@ private fun MainScreenList(
       }
     }
 
-    items(tiles) { tile ->
+    items(uiState.tiles, key = { it.id }) { tile ->
+      val title =
+        tile.titleArg?.let {
+          stringResource(tile.titleResId, it)
+        } ?: stringResource(tile.titleResId)
+
       BorealTile(
-        title = tile.title,
+        title = title,
         variant = tile.variant,
-        icon = tile.icon,
+        icon = ImageVector.vectorResource(tile.iconResId),
         modifier = Modifier.padding(bottom = 16.dp),
+        onClick = { onTileClick(tile) },
       )
     }
   }

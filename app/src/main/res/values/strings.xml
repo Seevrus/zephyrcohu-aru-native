@@ -78,4 +78,15 @@
     <string name="change_password_error_unexpected">Váratlan hiba lépett fel a jelszóváltoztatás során.</string>
     <string name="change_password_expired_warning">Az Ön jelszava lejárt, kérem változtassa meg.</string>
     <string name="change_password_invalid_format">A választott jelszó nem felel meg a szabályoknak.</string>
+
+    <!-- Tile States & Alerts -->
+    <string name="disabled_tile_logged_out">A funkció csak bejelentkezés után elérhető.</string>
+    <string name="disabled_tile_no_printer">Nincs nyomtató kiválasztva.</string>
+    <string name="disabled_tile_no_role">Nincs megfelelő szerepkör.</string>
+    <string name="disabled_tile_offline">A funkció csak online érhető el.</string>
+    <string name="disabled_tile_storage_during_round">Folyamatban lévő kör közben a rakodás nem elérhető.</string>
+    <string name="disabled_tile_sell_before_round">A funkció csak körindítás után elérhető.</string>
+    <string name="disabled_tile_no_receipts">Nincs elérhető bizonylat.</string>
+    <string name="alert_title_feature_not_available">Funkció nem elérhető</string>
+    <string name="alert_button_ok">Értem</string>
 </resources>

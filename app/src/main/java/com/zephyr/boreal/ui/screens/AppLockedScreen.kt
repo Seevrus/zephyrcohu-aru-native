@@ -25,14 +25,11 @@ fun AppLockedScreen(
   onNavigateToSettings: () -> Unit = {},
   viewModel: MainViewModel = hiltViewModel(),
 ) {
-  val appState by viewModel.appState.collectAsState()
-
-  val canUseApp = (appState as? AppStartState.Ready)?.canUseApp
-  val userName = (appState as? AppStartState.Ready)?.userName ?: ""
+  val uiState by viewModel.uiState.collectAsState()
 
   AppLockedScreenContent(
-    userName = userName,
-    canUseApp = canUseApp,
+    userName = uiState.userName ?: "",
+    canUseApp = uiState.canUseApp,
     onNavigateToMain = onNavigateToMain,
     onNavigateToSettings = onNavigateToSettings,
     modifier = modifier,

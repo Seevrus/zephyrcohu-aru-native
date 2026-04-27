@@ -1,14 +1,22 @@
 package com.zephyr.boreal.ui.screens
 
+import com.zephyr.boreal.R
+import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.UserRepository
+import com.zephyr.boreal.domain.model.Company
+import com.zephyr.boreal.domain.model.User
+import com.zephyr.boreal.domain.model.UserRole
 import com.zephyr.boreal.network.ConnectivityObserver
+import com.zephyr.boreal.store.print.PrintSettingsState
+import com.zephyr.boreal.store.print.PrintSettingsStore
 import com.zephyr.boreal.store.user.StoredToken
 import com.zephyr.boreal.store.user.UserSessionStore
-import com.zephyr.boreal.store.user.UserState
+import com.zephyr.boreal.ui.components.TileVariant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
@@ -17,6 +25,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -24,6 +35,8 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import com.zephyr.boreal.domain.model.UserState as DomainUserState
+import com.zephyr.boreal.store.user.UserState as StoreUserState
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainViewModelTest {
@@ -31,15 +44,52 @@ class MainViewModelTest {
   private val cacheMetadataDao: com.zephyr.boreal.data.local.dao.CacheMetadataDao = mock()
   private val userRepository: UserRepository = mock()
   private val connectivityObserver: ConnectivityObserver = mock()
+  private val printSettingsStore: PrintSettingsStore = mock()
   private val testDispatcher = StandardTestDispatcher()
 
   private val isInternetReachableFlow = MutableStateFlow(true)
+  private val userStoreStateFlow = MutableStateFlow(StoreUserState())
+  private val printSettingsFlow = MutableStateFlow(PrintSettingsState())
+  private val currentUserFlow = MutableStateFlow<ApiResource<User>>(ApiResource.Loading())
+
+  private val mockCompany =
+    Company(
+      id = 1,
+      name = "Test Co",
+      code = "002",
+      country = "HU",
+      postalCode = "1000",
+      city = "Budapest",
+      address = "Test st 1",
+      felir = "123",
+      vatNumber = "123",
+      iban = "123",
+      bankAccount = "123",
+    )
+  private val mockUser =
+    User(
+      id = 1,
+      userName = "test",
+      state = DomainUserState.IDLE,
+      name = "Test User",
+      phoneNumber = null,
+      isDev = false,
+      roles = listOf(UserRole.APP, UserRole.LOAD_OWNED),
+      storeInUseId = null,
+      storeOwnedId = 1,
+      lastActive = "2026-04-26T10:00:00Z",
+      createdAt = "2026-04-26T10:00:00Z",
+      updatedAt = "2026-04-26T10:00:00Z",
+      company = mockCompany,
+    )
 
   @BeforeEach
   fun setUp() {
     Dispatchers.setMain(testDispatcher)
-    whenever(userRepository.getCurrentUser()).thenReturn(emptyFlow())
+    whenever(userRepository.getCurrentUser()).thenReturn(currentUserFlow)
     whenever(connectivityObserver.isInternetReachable).thenReturn(isInternetReachableFlow)
+    whenever(userSessionStore.userState).thenReturn(userStoreStateFlow)
+    whenever(printSettingsStore.printSettingsState).thenReturn(printSettingsFlow)
   }
 
   @AfterEach
@@ -47,88 +97,247 @@ class MainViewModelTest {
     Dispatchers.resetMain()
   }
 
+  private fun createViewModel() =
+    MainViewModel(
+      userSessionStore,
+      cacheMetadataDao,
+      userRepository,
+      connectivityObserver,
+      printSettingsStore,
+    )
+
   @Test
-  fun `initially should be in Reconciling state and perform GC`() =
+  fun `initially should be not ready and perform GC`() =
     runTest {
-      val userStateFlow = MutableStateFlow(UserState())
-      whenever(userSessionStore.userState).thenReturn(userStateFlow)
+      val viewModel = createViewModel()
+      backgroundScope.launch { viewModel.uiState.collect() }
 
-      val viewModel = MainViewModel(userSessionStore, cacheMetadataDao, userRepository, connectivityObserver)
-
-      assertEquals(AppStartState.Reconciling, viewModel.appState.value)
-      // Since it's in viewModelScope.launch, it might have already started or finished.
-      // In StandardTestDispatcher, we need to advance or runCurrent.
+      assertFalse(viewModel.uiState.value.isReady)
       runCurrent()
       verify(cacheMetadataDao).deleteOldEntries(any())
     }
 
   @Test
-  fun `should transition to Ready(isLoggedIn = true) after delay if token is valid`() =
+  fun `should transition to ready after delay`() =
     runTest {
-      val userStateFlow =
-        MutableStateFlow(
-          UserState(
-            deviceId = "test-device",
-            storedToken =
-              StoredToken(
-                token = "valid_token",
-                isPasswordExpired = false,
-                expiresAt = "2099-01-01T00:00:00Z",
-              ),
-          ),
-        )
-      whenever(userSessionStore.userState).thenReturn(userStateFlow)
-
-      val viewModel = MainViewModel(userSessionStore, cacheMetadataDao, userRepository, connectivityObserver)
-
-      assertEquals(AppStartState.Reconciling, viewModel.appState.value)
+      val viewModel = createViewModel()
+      backgroundScope.launch { viewModel.uiState.collect() }
 
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
 
-      val state = viewModel.appState.value
-      assertTrue(state is AppStartState.Ready)
-      assertEquals(true, (state as AppStartState.Ready).isLoggedIn)
+      assertTrue(viewModel.uiState.value.isReady)
     }
 
   @Test
-  fun `should transition to Ready(isLoggedIn = false) after delay if no token`() =
+  fun `Storage tile should be OK when idle, online, and has printer`() =
     runTest {
-      val userStateFlow = MutableStateFlow(UserState())
-      whenever(userSessionStore.userState).thenReturn(userStateFlow)
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser)
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+      isInternetReachableFlow.value = true
 
-      val viewModel = MainViewModel(userSessionStore, cacheMetadataDao, userRepository, connectivityObserver)
-
+      val viewModel = createViewModel()
+      backgroundScope.launch { viewModel.uiState.collect() }
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
 
-      val state = viewModel.appState.value
-      assertTrue(state is AppStartState.Ready)
-      assertEquals(false, (state as AppStartState.Ready).isLoggedIn)
+      val storageTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == TileId.STORAGE }
+      assertNotNull(storageTile)
+      assertEquals(TileVariant.OK, storageTile?.variant)
     }
 
   @Test
-  fun `should transition to Ready(isLoggedIn = false) after delay if password expired`() =
+  fun `Storage tile should be DISABLED with offline message when offline`() =
     runTest {
-      val userStateFlow =
-        MutableStateFlow(
-          UserState(
-            deviceId = "test-device",
-            storedToken =
-              StoredToken(
-                token = "valid_token",
-                isPasswordExpired = true,
-                expiresAt = "2099-01-01T00:00:00Z",
-              ),
-          ),
-        )
-      whenever(userSessionStore.userState).thenReturn(userStateFlow)
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser)
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+      isInternetReachableFlow.value = false
 
-      val viewModel = MainViewModel(userSessionStore, cacheMetadataDao, userRepository, connectivityObserver)
-
+      val viewModel = createViewModel()
+      backgroundScope.launch { viewModel.uiState.collect() }
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
 
-      val state = viewModel.appState.value
-      assertTrue(state is AppStartState.Ready)
-      assertEquals(true, (state as AppStartState.Ready).isLoggedIn)
-      assertTrue((state as AppStartState.Ready).isPasswordExpired)
+      val storageTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == TileId.STORAGE }
+      assertEquals(TileVariant.DISABLED, storageTile?.variant)
+      assertEquals(R.string.disabled_tile_offline, storageTile?.disabledMessageResId)
+    }
+
+  @Test
+  fun `Storage tile should be DISABLED with no printer message when printer is missing`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser)
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = null)
+      isInternetReachableFlow.value = true
+
+      val viewModel = createViewModel()
+      backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val storageTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == TileId.STORAGE }
+      assertEquals(TileVariant.DISABLED, storageTile?.variant)
+      assertEquals(R.string.disabled_tile_no_printer, storageTile?.disabledMessageResId)
+    }
+
+  @Test
+  fun `Sell tile should be NEUTRAL when user is ON_ROUND`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser.copy(state = DomainUserState.ON_ROUND))
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+
+      val viewModel = createViewModel()
+      backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val sellTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == TileId.SELL }
+      assertEquals(TileVariant.NEUTRAL, sellTile?.variant)
+    }
+
+  @Test
+  fun `Clicking disabled tile should trigger alert`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      isInternetReachableFlow.value = false // Disables storage tile
+      val viewModel = createViewModel()
+      backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val storageTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == TileId.STORAGE }!!
+      viewModel.onTileClick(storageTile)
+      runCurrent()
+
+      assertNotNull(viewModel.uiState.value.alertState)
+      assertEquals(
+        R.string.disabled_tile_offline,
+        viewModel.uiState.value.alertState
+          ?.messageResId,
+      )
+    }
+
+  @Test
+  fun `Alert dismissal should clear alert state`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      isInternetReachableFlow.value = false
+      val viewModel = createViewModel()
+      backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val storageTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == TileId.STORAGE }!!
+      viewModel.onTileClick(storageTile)
+      runCurrent()
+      assertNotNull(viewModel.uiState.value.alertState)
+
+      viewModel.dismissAlert()
+      runCurrent()
+      assertNull(viewModel.uiState.value.alertState)
+    }
+
+  @Test
+  fun `Sell tile should be DISABLED with logged out message when logged out`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState() // logged out
+
+      val viewModel = createViewModel()
+      backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val sellTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == TileId.SELL }
+      assertEquals(TileVariant.DISABLED, sellTile?.variant)
+      assertEquals(R.string.disabled_tile_logged_out, sellTile?.disabledMessageResId)
+    }
+
+  @Test
+  fun `Receipts tile should be DISABLED with logged out message when logged out`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState() // logged out
+
+      val viewModel = createViewModel()
+      backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val receiptsTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == TileId.RECEIPTS }
+      assertEquals(TileVariant.DISABLED, receiptsTile?.variant)
+      assertEquals(R.string.disabled_tile_logged_out, receiptsTile?.disabledMessageResId)
+    }
+
+  @Test
+  fun `Storage tile should be DISABLED when logged out`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState() // logged out
+
+      val viewModel = createViewModel()
+      backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val storageTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == TileId.STORAGE }
+      assertEquals(TileVariant.DISABLED, storageTile?.variant)
+      assertEquals(R.string.disabled_tile_logged_out, storageTile?.disabledMessageResId)
+    }
+
+  @Test
+  fun `Storage tile should be NEUTRAL when user state is LOADING`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser.copy(state = DomainUserState.LOADING))
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+
+      val viewModel = createViewModel()
+      backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val storageTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == TileId.STORAGE }
+      assertEquals(TileVariant.NEUTRAL, storageTile?.variant)
+    }
+
+  @Test
+  fun `Storage tile should be DISABLED with no role message when roles missing`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser.copy(roles = listOf(UserRole.APP)))
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+
+      val viewModel = createViewModel()
+      backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val storageTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == TileId.STORAGE }
+      assertEquals(TileVariant.DISABLED, storageTile?.variant)
+      assertEquals(R.string.disabled_tile_no_role, storageTile?.disabledMessageResId)
     }
 }
