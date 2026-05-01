@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.zephyr.boreal.ui.screens.AppLockedScreen
 import com.zephyr.boreal.ui.screens.ChangePasswordScreen
+import com.zephyr.boreal.ui.screens.ErrandsScreen
 import com.zephyr.boreal.ui.screens.LoginScreen
 import com.zephyr.boreal.ui.screens.MainScreen
 import com.zephyr.boreal.ui.screens.PrintSettingsScreen
@@ -75,6 +76,9 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
     composable("change_password") {
       ChangePasswordScreen()
     }
+    composable("errands") {
+      ErrandsRoute(navController)
+    }
   }
 }
 
@@ -94,6 +98,9 @@ private fun MainRoute(navController: androidx.navigation.NavHostController) {
     },
     onNavigateToChangePassword = {
       navController.navigate("change_password")
+    },
+    onNavigateToErrands = {
+      navController.navigate("errands")
     },
   )
 }
@@ -146,6 +153,15 @@ private fun SettingsRoute(navController: androidx.navigation.NavHostController) 
 @Composable
 private fun PrintSettingsRoute(navController: androidx.navigation.NavHostController) {
   PrintSettingsScreen(
+    onNavigateBack = {
+      navController.popBackStack()
+    },
+  )
+}
+
+@Composable
+private fun ErrandsRoute(navController: androidx.navigation.NavHostController) {
+  ErrandsScreen(
     onNavigateBack = {
       navController.popBackStack()
     },

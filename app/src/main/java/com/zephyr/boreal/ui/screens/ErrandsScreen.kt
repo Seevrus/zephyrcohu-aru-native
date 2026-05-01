@@ -23,38 +23,28 @@ import com.zephyr.boreal.R
 import com.zephyr.boreal.ui.components.BorealAlert
 import com.zephyr.boreal.ui.components.BorealTile
 import com.zephyr.boreal.ui.components.BorealTopAppBar
-import com.zephyr.boreal.ui.components.InfoCard
 import com.zephyr.boreal.ui.components.LoadingIndicator
-import com.zephyr.boreal.ui.components.SettingsButton
 import com.zephyr.boreal.ui.theme.BorealColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(
+fun ErrandsScreen(
   modifier: Modifier = Modifier,
-  onNavigateToAppLocked: () -> Unit = {},
-  onNavigateToSettings: () -> Unit = {},
-  onNavigateToLogin: () -> Unit = {},
-  onNavigateToChangePassword: () -> Unit = {},
-  onNavigateToErrands: () -> Unit = {},
-  viewModel: MainViewModel = hiltViewModel(),
+  onNavigateBack: () -> Unit = {},
+  viewModel: ErrandsViewModel = hiltViewModel(),
 ) {
   val uiState by viewModel.uiState.collectAsState()
 
   LaunchedEffect(Unit) {
     viewModel.events.collect { event ->
       when (event) {
-        MainScreenEvent.NavigateToErrands -> onNavigateToErrands()
+        ErrandsEvent.NavigateBack -> onNavigateBack()
       }
     }
   }
 
-  MainScreenContent(
+  ErrandsScreenContent(
     uiState = uiState,
-    onNavigateToAppLocked = onNavigateToAppLocked,
-    onNavigateToSettings = onNavigateToSettings,
-    onNavigateToLogin = onNavigateToLogin,
-    onNavigateToChangePassword = onNavigateToChangePassword,
     onTileClick = viewModel::onTileClick,
     onDismissAlert = viewModel::dismissAlert,
     modifier = modifier,
@@ -63,30 +53,17 @@ fun MainScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreenContent(
-  uiState: MainScreenUiState,
-  onNavigateToAppLocked: () -> Unit,
-  onNavigateToSettings: () -> Unit,
-  onNavigateToLogin: () -> Unit,
-  onNavigateToChangePassword: () -> Unit,
-  onTileClick: (TileUiModel<MainTileId>) -> Unit,
+fun ErrandsScreenContent(
+  uiState: ErrandsUiState,
+  onTileClick: (TileUiModel<ErrandTileId>) -> Unit,
   onDismissAlert: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  LaunchedEffect(uiState.isLoggedIn, uiState.canUseApp) {
-    if (uiState.isLoggedIn && uiState.canUseApp == false) {
-      onNavigateToAppLocked()
-    }
-  }
-
   Scaffold(
     modifier = modifier,
     topBar = {
       BorealTopAppBar(
-        title = stringResource(R.string.screen_main_title),
-        actions = {
-          SettingsButton(onClick = onNavigateToSettings)
-        },
+        title = stringResource(R.string.screen_errands_title),
       )
     },
     containerColor = BorealColors.Background,
@@ -102,10 +79,8 @@ fun MainScreenContent(
         LoadingIndicator()
       }
     } else {
-      MainScreenList(
+      ErrandsScreenList(
         uiState = uiState,
-        onNavigateToLogin = onNavigateToLogin,
-        onNavigateToChangePassword = onNavigateToChangePassword,
         onTileClick = onTileClick,
         modifier = Modifier.padding(innerPadding),
       )
@@ -126,46 +101,15 @@ fun MainScreenContent(
 }
 
 @Composable
-private fun MainScreenList(
-  uiState: MainScreenUiState,
-  onNavigateToLogin: () -> Unit,
-  onNavigateToChangePassword: () -> Unit,
-  onTileClick: (TileUiModel<MainTileId>) -> Unit,
+private fun ErrandsScreenList(
+  uiState: ErrandsUiState,
+  onTileClick: (TileUiModel<ErrandTileId>) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   LazyColumn(
     contentPadding = PaddingValues(16.dp),
     modifier = modifier.fillMaxSize(),
   ) {
-    if (!uiState.isInternetReachable) {
-      item {
-        InfoCard(
-          message = stringResource(R.string.offline_warning),
-          modifier = Modifier.padding(bottom = 16.dp),
-        )
-      }
-    }
-
-    if (!uiState.isLoggedIn && uiState.isInternetReachable) {
-      item {
-        InfoCard(
-          message = stringResource(R.string.main_login_prompt),
-          modifier = Modifier.padding(bottom = 16.dp),
-          onClick = onNavigateToLogin,
-        )
-      }
-    }
-
-    if (uiState.isLoggedIn && uiState.isPasswordExpired && uiState.isInternetReachable) {
-      item {
-        InfoCard(
-          message = stringResource(R.string.change_password_expired_warning),
-          modifier = Modifier.padding(bottom = 16.dp),
-          onClick = onNavigateToChangePassword,
-        )
-      }
-    }
-
     items(uiState.tiles, key = { it.id }) { tile ->
       val title =
         tile.titleArg?.let {

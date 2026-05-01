@@ -44,25 +44,25 @@ class MainScreenTest {
               tiles =
                 listOf(
                   TileUiModel(
-                    id = TileId.STORAGE,
+                    id = MainTileId.STORAGE,
                     titleResId = R.string.tile_loading,
                     variant = TileVariant.OK,
                     iconResId = R.drawable.truck_solid_full,
                   ),
                   TileUiModel(
-                    id = TileId.SELL,
+                    id = MainTileId.SELL,
                     titleResId = R.string.tile_unloading,
                     variant = TileVariant.OK,
                     iconResId = R.drawable.cart_arrow_down_solid_full,
                   ),
                   TileUiModel(
-                    id = TileId.ERRANDS,
+                    id = MainTileId.ERRANDS,
                     titleResId = R.string.tile_rounds,
                     variant = TileVariant.OK,
                     iconResId = R.drawable.rectangle_list_solid_full,
                   ),
                   TileUiModel(
-                    id = TileId.RECEIPTS,
+                    id = MainTileId.RECEIPTS,
                     titleResId = R.string.tile_receipts,
                     titleArg = 0,
                     variant = TileVariant.OK,
@@ -132,11 +132,11 @@ class MainScreenTest {
   fun mainScreen_tileClick_triggersCallback() {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
     val loadingTitle = context.getString(R.string.tile_loading)
-    var clickedTile: TileUiModel? = null
+    var clickedTile: TileUiModel<MainTileId>? = null
 
     val tile =
       TileUiModel(
-        id = TileId.STORAGE,
+        id = MainTileId.STORAGE,
         titleResId = R.string.tile_loading,
         variant = TileVariant.OK,
         iconResId = R.drawable.truck_solid_full,
@@ -162,6 +162,6 @@ class MainScreenTest {
 
     composeTestRule.onNodeWithText(loadingTitle).performClick()
 
-    assertTrue(clickedTile?.id == TileId.STORAGE)
+    assertTrue(clickedTile?.id == MainTileId.STORAGE)
   }
 }

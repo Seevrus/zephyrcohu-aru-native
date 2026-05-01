@@ -79,6 +79,16 @@
     <string name="change_password_expired_warning">Az Ön jelszava lejárt, kérem változtassa meg.</string>
     <string name="change_password_invalid_format">A választott jelszó nem felel meg a szabályoknak.</string>
 
+    <!-- Errands -->
+    <string name="screen_errands_title">Körök</string>
+    <string name="tile_errands_start">Kör indítása</string>
+    <string name="tile_errands_end">Kör zárása</string>
+    <string name="tile_errands_list">Lezárt körök</string>
+    <string name="errands_start_disabled_loading">Rakodás közben kör nem indítható.</string>
+    <string name="errands_start_disabled_on_round">Körindítás előtt szükséges a megkezdett kör zárása.</string>
+    <string name="errands_end_disabled_not_on_round">A funkció csak körindítás után érhető el.</string>
+    <string name="errands_list_disabled_empty">Nincsenek elérhető körök.</string>
+
     <!-- Tile States & Alerts -->
     <string name="disabled_tile_logged_out">A funkció csak bejelentkezés után elérhető.</string>
     <string name="disabled_tile_no_printer">Nincs nyomtató kiválasztva.</string>

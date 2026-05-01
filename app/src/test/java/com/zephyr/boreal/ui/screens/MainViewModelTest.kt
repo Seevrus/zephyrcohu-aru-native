@@ -110,23 +110,25 @@ class MainViewModelTest {
   fun `initially should be not ready and perform GC`() =
     runTest {
       val viewModel = createViewModel()
-      backgroundScope.launch { viewModel.uiState.collect() }
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
 
       assertFalse(viewModel.uiState.value.isReady)
       runCurrent()
       verify(cacheMetadataDao).deleteOldEntries(any())
+      uiStateJob.cancel()
     }
 
   @Test
   fun `should transition to ready after delay`() =
     runTest {
       val viewModel = createViewModel()
-      backgroundScope.launch { viewModel.uiState.collect() }
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
 
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
       runCurrent()
 
       assertTrue(viewModel.uiState.value.isReady)
+      uiStateJob.cancel()
     }
 
   @Test
@@ -138,15 +140,16 @@ class MainViewModelTest {
       isInternetReachableFlow.value = true
 
       val viewModel = createViewModel()
-      backgroundScope.launch { viewModel.uiState.collect() }
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
       runCurrent()
 
       val storageTile =
         viewModel.uiState.value.tiles
-          .find { it.id == TileId.STORAGE }
+          .find { it.id == MainTileId.STORAGE }
       assertNotNull(storageTile)
       assertEquals(TileVariant.OK, storageTile?.variant)
+      uiStateJob.cancel()
     }
 
   @Test
@@ -158,15 +161,16 @@ class MainViewModelTest {
       isInternetReachableFlow.value = false
 
       val viewModel = createViewModel()
-      backgroundScope.launch { viewModel.uiState.collect() }
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
       runCurrent()
 
       val storageTile =
         viewModel.uiState.value.tiles
-          .find { it.id == TileId.STORAGE }
+          .find { it.id == MainTileId.STORAGE }
       assertEquals(TileVariant.DISABLED, storageTile?.variant)
       assertEquals(R.string.disabled_tile_offline, storageTile?.disabledMessageResId)
+      uiStateJob.cancel()
     }
 
   @Test
@@ -178,15 +182,16 @@ class MainViewModelTest {
       isInternetReachableFlow.value = true
 
       val viewModel = createViewModel()
-      backgroundScope.launch { viewModel.uiState.collect() }
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
       runCurrent()
 
       val storageTile =
         viewModel.uiState.value.tiles
-          .find { it.id == TileId.STORAGE }
+          .find { it.id == MainTileId.STORAGE }
       assertEquals(TileVariant.DISABLED, storageTile?.variant)
       assertEquals(R.string.disabled_tile_no_printer, storageTile?.disabledMessageResId)
+      uiStateJob.cancel()
     }
 
   @Test
@@ -197,14 +202,15 @@ class MainViewModelTest {
       printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
 
       val viewModel = createViewModel()
-      backgroundScope.launch { viewModel.uiState.collect() }
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
       runCurrent()
 
       val sellTile =
         viewModel.uiState.value.tiles
-          .find { it.id == TileId.SELL }
+          .find { it.id == MainTileId.SELL }
       assertEquals(TileVariant.NEUTRAL, sellTile?.variant)
+      uiStateJob.cancel()
     }
 
   @Test
@@ -213,13 +219,13 @@ class MainViewModelTest {
       userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
       isInternetReachableFlow.value = false // Disables storage tile
       val viewModel = createViewModel()
-      backgroundScope.launch { viewModel.uiState.collect() }
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
       runCurrent()
 
       val storageTile =
         viewModel.uiState.value.tiles
-          .find { it.id == TileId.STORAGE }!!
+          .find { it.id == MainTileId.STORAGE }!!
       viewModel.onTileClick(storageTile)
       runCurrent()
 
@@ -229,6 +235,7 @@ class MainViewModelTest {
         viewModel.uiState.value.alertState
           ?.messageResId,
       )
+      uiStateJob.cancel()
     }
 
   @Test
@@ -237,13 +244,13 @@ class MainViewModelTest {
       userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
       isInternetReachableFlow.value = false
       val viewModel = createViewModel()
-      backgroundScope.launch { viewModel.uiState.collect() }
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
       runCurrent()
 
       val storageTile =
         viewModel.uiState.value.tiles
-          .find { it.id == TileId.STORAGE }!!
+          .find { it.id == MainTileId.STORAGE }!!
       viewModel.onTileClick(storageTile)
       runCurrent()
       assertNotNull(viewModel.uiState.value.alertState)
@@ -251,6 +258,7 @@ class MainViewModelTest {
       viewModel.dismissAlert()
       runCurrent()
       assertNull(viewModel.uiState.value.alertState)
+      uiStateJob.cancel()
     }
 
   @Test
@@ -259,15 +267,16 @@ class MainViewModelTest {
       userStoreStateFlow.value = StoreUserState() // logged out
 
       val viewModel = createViewModel()
-      backgroundScope.launch { viewModel.uiState.collect() }
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
       runCurrent()
 
       val sellTile =
         viewModel.uiState.value.tiles
-          .find { it.id == TileId.SELL }
+          .find { it.id == MainTileId.SELL }
       assertEquals(TileVariant.DISABLED, sellTile?.variant)
       assertEquals(R.string.disabled_tile_logged_out, sellTile?.disabledMessageResId)
+      uiStateJob.cancel()
     }
 
   @Test
@@ -276,15 +285,16 @@ class MainViewModelTest {
       userStoreStateFlow.value = StoreUserState() // logged out
 
       val viewModel = createViewModel()
-      backgroundScope.launch { viewModel.uiState.collect() }
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
       runCurrent()
 
       val receiptsTile =
         viewModel.uiState.value.tiles
-          .find { it.id == TileId.RECEIPTS }
+          .find { it.id == MainTileId.RECEIPTS }
       assertEquals(TileVariant.DISABLED, receiptsTile?.variant)
       assertEquals(R.string.disabled_tile_logged_out, receiptsTile?.disabledMessageResId)
+      uiStateJob.cancel()
     }
 
   @Test
@@ -293,15 +303,16 @@ class MainViewModelTest {
       userStoreStateFlow.value = StoreUserState() // logged out
 
       val viewModel = createViewModel()
-      backgroundScope.launch { viewModel.uiState.collect() }
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
       runCurrent()
 
       val storageTile =
         viewModel.uiState.value.tiles
-          .find { it.id == TileId.STORAGE }
+          .find { it.id == MainTileId.STORAGE }
       assertEquals(TileVariant.DISABLED, storageTile?.variant)
       assertEquals(R.string.disabled_tile_logged_out, storageTile?.disabledMessageResId)
+      uiStateJob.cancel()
     }
 
   @Test
@@ -312,14 +323,15 @@ class MainViewModelTest {
       printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
 
       val viewModel = createViewModel()
-      backgroundScope.launch { viewModel.uiState.collect() }
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
       runCurrent()
 
       val storageTile =
         viewModel.uiState.value.tiles
-          .find { it.id == TileId.STORAGE }
+          .find { it.id == MainTileId.STORAGE }
       assertEquals(TileVariant.NEUTRAL, storageTile?.variant)
+      uiStateJob.cancel()
     }
 
   @Test
@@ -330,14 +342,63 @@ class MainViewModelTest {
       printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
 
       val viewModel = createViewModel()
-      backgroundScope.launch { viewModel.uiState.collect() }
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
       advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
       runCurrent()
 
       val storageTile =
         viewModel.uiState.value.tiles
-          .find { it.id == TileId.STORAGE }
+          .find { it.id == MainTileId.STORAGE }
       assertEquals(TileVariant.DISABLED, storageTile?.variant)
       assertEquals(R.string.disabled_tile_no_role, storageTile?.disabledMessageResId)
+      uiStateJob.cancel()
+    }
+
+  @Test
+  fun `Errands tile should be NEUTRAL when idle, online, and has printer`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser)
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+      isInternetReachableFlow.value = true
+
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val errandsTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == MainTileId.ERRANDS }
+      assertNotNull(errandsTile)
+      assertEquals(TileVariant.NEUTRAL, errandsTile?.variant)
+      uiStateJob.cancel()
+    }
+
+  @Test
+  fun `Clicking Errands tile should navigate to Errands screen`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser)
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+      isInternetReachableFlow.value = true
+
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      val events = mutableListOf<MainScreenEvent>()
+      val job = launch { viewModel.events.collect { events.add(it) } }
+
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val errandsTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == MainTileId.ERRANDS }!!
+      viewModel.onTileClick(errandsTile)
+      runCurrent()
+
+      assertTrue(events.contains(MainScreenEvent.NavigateToErrands))
+      job.cancel()
+      uiStateJob.cancel()
     }
 }

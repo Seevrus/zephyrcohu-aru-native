@@ -16,15 +16,21 @@ import com.zephyr.boreal.store.print.PrintSettingsStore
 import com.zephyr.boreal.store.user.UserSessionStore
 import com.zephyr.boreal.ui.components.TileVariant
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+sealed interface MainScreenEvent {
+  data object NavigateToErrands : MainScreenEvent
+}
 
 data class AlertUiState(
   @param:StringRes val titleResId: Int,
@@ -36,6 +42,13 @@ data class AlertUiState(
   val onDismiss: () -> Unit = {},
 )
 
+enum class MainTileId {
+  STORAGE,
+  SELL,
+  ERRANDS,
+  RECEIPTS,
+}
+
 data class MainScreenUiState(
   val isReady: Boolean = false,
   val isLoggedIn: Boolean = false,
@@ -43,7 +56,7 @@ data class MainScreenUiState(
   val userName: String? = null,
   val isInternetReachable: Boolean = true,
   val isPasswordExpired: Boolean = false,
-  val tiles: List<TileUiModel> = emptyList(),
+  val tiles: List<TileUiModel<MainTileId>> = emptyList(),
   val alertState: AlertUiState? = null,
 )
 
@@ -65,6 +78,8 @@ class MainViewModel
     private val isReadyFlow = MutableStateFlow(false)
     private val alertStateFlow = MutableStateFlow<AlertUiState?>(null)
     private val receiptsFlow = MutableStateFlow<List<Any>>(emptyList())
+    private val eventChannel = Channel<MainScreenEvent>()
+    val events = eventChannel.receiveAsFlow()
 
     private data class DeviceState(
       val isOnline: Boolean,
@@ -155,7 +170,7 @@ class MainViewModel
       hasPrinter: Boolean,
       user: User?,
       receiptsCount: Int,
-    ): List<TileUiModel> =
+    ): List<TileUiModel<MainTileId>> =
       listOf(
         createStorageTile(isLoggedIn, isPasswordExpired, isOnline, hasPrinter, user),
         createSellTile(isLoggedIn, hasPrinter, user),
@@ -169,7 +184,7 @@ class MainViewModel
       isOnline: Boolean,
       hasPrinter: Boolean,
       user: User?,
-    ): TileUiModel {
+    ): TileUiModel<MainTileId> {
       var state = TileVariant.DISABLED
       var messageResId: Int? = null
 
@@ -189,7 +204,7 @@ class MainViewModel
       }
 
       return TileUiModel(
-        id = TileId.STORAGE,
+        id = MainTileId.STORAGE,
         titleResId = R.string.tile_loading,
         variant = state,
         iconResId = R.drawable.truck_solid_full,
@@ -201,7 +216,7 @@ class MainViewModel
       isLoggedIn: Boolean,
       hasPrinter: Boolean,
       user: User?,
-    ): TileUiModel {
+    ): TileUiModel<MainTileId> {
       var state = TileVariant.DISABLED
       var messageResId: Int? = null
 
@@ -218,7 +233,7 @@ class MainViewModel
       }
 
       return TileUiModel(
-        id = TileId.SELL,
+        id = MainTileId.SELL,
         titleResId = R.string.tile_unloading,
         variant = state,
         iconResId = R.drawable.cart_arrow_down_solid_full,
@@ -231,7 +246,7 @@ class MainViewModel
       isPasswordExpired: Boolean,
       isOnline: Boolean,
       hasPrinter: Boolean,
-    ): TileUiModel {
+    ): TileUiModel<MainTileId> {
       var state = TileVariant.DISABLED
       var messageResId: Int? = null
 
@@ -244,7 +259,7 @@ class MainViewModel
       }
 
       return TileUiModel(
-        id = TileId.ERRANDS,
+        id = MainTileId.ERRANDS,
         titleResId = R.string.tile_rounds,
         variant = state,
         iconResId = R.drawable.rectangle_list_solid_full,
@@ -256,7 +271,7 @@ class MainViewModel
       isLoggedIn: Boolean,
       hasPrinter: Boolean,
       receiptsCount: Int,
-    ): TileUiModel {
+    ): TileUiModel<MainTileId> {
       var state = TileVariant.DISABLED
       var messageResId: Int? = null
 
@@ -268,7 +283,7 @@ class MainViewModel
       }
 
       return TileUiModel(
-        id = TileId.RECEIPTS,
+        id = MainTileId.RECEIPTS,
         titleResId = R.string.tile_receipts,
         titleArg = receiptsCount,
         variant = state,
@@ -277,7 +292,7 @@ class MainViewModel
       )
     }
 
-    fun onTileClick(tile: TileUiModel) {
+    fun onTileClick(tile: TileUiModel<MainTileId>) {
       if (tile.variant == TileVariant.DISABLED) {
         showAlert(tile.disabledMessageResId)
       } else {
@@ -285,20 +300,21 @@ class MainViewModel
       }
     }
 
-    private fun handleNavigation(id: TileId) {
-      // Navigation logic based on current state (matching RN business logic)
-      when (id) {
-        TileId.STORAGE -> {
-          // Handle Storage navigation
-        }
-        TileId.SELL -> {
-          // Handle Sell navigation
-        }
-        TileId.ERRANDS -> {
-          // Handle Errands navigation
-        }
-        TileId.RECEIPTS -> {
-          // Handle Receipts navigation
+    private fun handleNavigation(id: MainTileId) {
+      viewModelScope.launch {
+        when (id) {
+          MainTileId.STORAGE -> {
+            // Handle Storage navigation
+          }
+          MainTileId.SELL -> {
+            // Handle Sell navigation
+          }
+          MainTileId.ERRANDS -> {
+            eventChannel.send(MainScreenEvent.NavigateToErrands)
+          }
+          MainTileId.RECEIPTS -> {
+            // Handle Receipts navigation
+          }
         }
       }
     }
