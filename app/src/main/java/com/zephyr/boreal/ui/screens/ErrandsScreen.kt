@@ -31,6 +31,7 @@ import com.zephyr.boreal.ui.theme.BorealColors
 fun ErrandsScreen(
   modifier: Modifier = Modifier,
   onNavigateBack: () -> Unit = {},
+  onNavigateToStartErrand: () -> Unit = {},
   viewModel: ErrandsViewModel = hiltViewModel(),
 ) {
   val uiState by viewModel.uiState.collectAsState()
@@ -39,6 +40,7 @@ fun ErrandsScreen(
     viewModel.events.collect { event ->
       when (event) {
         ErrandsEvent.NavigateBack -> onNavigateBack()
+        ErrandsEvent.NavigateToStartErrand -> onNavigateToStartErrand()
       }
     }
   }

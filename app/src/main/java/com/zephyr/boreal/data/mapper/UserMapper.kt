@@ -5,9 +5,11 @@ import com.zephyr.boreal.api.dto.response.CompanyDto
 import com.zephyr.boreal.api.dto.response.LoginResponseDto
 import com.zephyr.boreal.api.dto.response.PartialCompanyDto
 import com.zephyr.boreal.api.dto.response.SelectStoreResponseTypeDto
+import com.zephyr.boreal.api.dto.response.StoreUserDto
 import com.zephyr.boreal.api.dto.response.UserDto
 import com.zephyr.boreal.data.local.UserEntity
 import com.zephyr.boreal.domain.model.Company
+import com.zephyr.boreal.domain.model.StoreUser
 import com.zephyr.boreal.domain.model.User
 
 fun CompanyDto.toDomain(): Company =
@@ -176,4 +178,20 @@ fun UserEntity.toDomain(): User =
     createdAt = createdAt,
     updatedAt = updatedAt,
     company = company.toDomain(),
+  )
+
+fun StoreUserDto.toDomain(): StoreUser =
+  StoreUser(
+    id = id,
+    userName = userName,
+    state = state,
+    name = name,
+    phoneNumber = phoneNumber,
+    isDev = isDev,
+    roles = roles,
+    storeInUseId = storeInUseId,
+    storeOwnedId = storeOwnedId,
+    lastActive = lastActive,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
   )

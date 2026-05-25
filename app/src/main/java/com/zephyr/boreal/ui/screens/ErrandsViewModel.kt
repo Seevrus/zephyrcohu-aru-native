@@ -26,6 +26,8 @@ import javax.inject.Inject
 
 sealed interface ErrandsEvent {
   data object NavigateBack : ErrandsEvent
+
+  data object NavigateToStartErrand : ErrandsEvent
 }
 
 enum class ErrandTileId {
@@ -181,8 +183,13 @@ class ErrandsViewModel
       if (tile.variant == TileVariant.DISABLED) {
         showAlert(tile.disabledMessageResId)
       } else {
-        // Handle specific actions (Start, End, List)
-        // For now, we only implement the navigation and state display
+        viewModelScope.launch {
+          when (tile.id) {
+            ErrandTileId.START -> eventChannel.send(ErrandsEvent.NavigateToStartErrand)
+            ErrandTileId.END -> { /* TODO */ }
+            ErrandTileId.LIST -> { /* TODO */ }
+          }
+        }
       }
     }
 

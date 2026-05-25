@@ -8,6 +8,7 @@ import com.zephyr.boreal.data.local.dao.StoreDao
 import com.zephyr.boreal.data.mapper.toDomain
 import com.zephyr.boreal.data.mapper.toEntity
 import com.zephyr.boreal.domain.model.Store
+import com.zephyr.boreal.domain.model.StoreDetails
 import com.zephyr.boreal.domain.model.User
 import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.user.UserSessionStore
@@ -59,5 +60,13 @@ class StoresRepository
         ApiResource.Success(Unit)
       } catch (e: Exception) {
         ApiResource.Error(e.localizedMessage ?: "Failed to deselect store")
+      }
+
+    suspend fun getStoreDetails(storeId: Int): ApiResource<StoreDetails> =
+      try {
+        val response = apiService.getStoreDetails(storeId)
+        ApiResource.Success(response.data.toDomain())
+      } catch (e: Exception) {
+        ApiResource.Error(e.localizedMessage ?: "Failed to fetch store details")
       }
   }

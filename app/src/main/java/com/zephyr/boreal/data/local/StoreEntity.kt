@@ -2,7 +2,7 @@ package com.zephyr.boreal.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.zephyr.boreal.api.dto.response.UserDto
+import com.zephyr.boreal.api.dto.response.StoreUserDto
 import com.zephyr.boreal.domain.model.StoreType
 import com.zephyr.boreal.domain.model.UserState
 
@@ -16,8 +16,8 @@ data class StoreEntity(
   val firstAvailableSerialNumber: Int,
   val lastAvailableSerialNumber: Int,
   val yearCode: Int,
-  val owner: UserDto? = null,
-  val user: UserDto? = null,
+  val owner: StoreUserDto? = null,
+  val user: StoreUserDto? = null,
   val createdAt: String,
   val updatedAt: String,
 )

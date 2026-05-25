@@ -9,8 +9,8 @@ data class Store(
   val firstAvailableSerialNumber: Int,
   val lastAvailableSerialNumber: Int,
   val yearCode: Int,
-  val owner: User? = null,
-  val user: User? = null,
+  val owner: StoreUser? = null,
+  val user: StoreUser? = null,
   val createdAt: String,
   val updatedAt: String,
 )
