@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -22,6 +23,8 @@ import com.zephyr.boreal.ui.screens.LoginScreen
 import com.zephyr.boreal.ui.screens.MainScreen
 import com.zephyr.boreal.ui.screens.PrintSettingsScreen
 import com.zephyr.boreal.ui.screens.SettingsScreen
+import com.zephyr.boreal.ui.screens.StartErrandScreen
+import com.zephyr.boreal.ui.screens.StartErrandViewModel
 import com.zephyr.boreal.ui.theme.BorealColors
 import com.zephyr.boreal.ui.theme.BorealTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -78,6 +81,9 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
     }
     composable("errands") {
       ErrandsRoute(navController)
+    }
+    composable("start_errand") {
+      StartErrandRoute(navController)
     }
   }
 }
@@ -164,6 +170,22 @@ private fun ErrandsRoute(navController: androidx.navigation.NavHostController) {
   ErrandsScreen(
     onNavigateBack = {
       navController.popBackStack()
+    },
+    onNavigateToStartErrand = {
+      navController.navigate("start_errand")
+    },
+  )
+}
+
+@Composable
+private fun StartErrandRoute(navController: androidx.navigation.NavHostController) {
+  val viewModel: StartErrandViewModel = hiltViewModel()
+  StartErrandScreen(
+    viewModel = viewModel,
+    onSuccess = {
+      navController.navigate("main") {
+        popUpTo(0) { inclusive = true }
+      }
     },
   )
 }

@@ -6,6 +6,7 @@ import com.zephyr.boreal.api.dto.response.OtherItemsResponseDto
 import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.ItemDao
 import com.zephyr.boreal.data.local.dao.OtherItemDao
+import com.zephyr.boreal.data.local.dao.PriceListDao
 import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.user.UserSessionStore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,8 +18,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-
-import com.zephyr.boreal.data.local.dao.PriceListDao
 
 class ItemsRepositoryTest {
   private lateinit var repository: ItemsRepository
