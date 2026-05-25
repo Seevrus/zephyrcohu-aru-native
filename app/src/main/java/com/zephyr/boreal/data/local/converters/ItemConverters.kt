@@ -3,6 +3,7 @@ package com.zephyr.boreal.data.local.converters
 import androidx.room.TypeConverter
 import com.zephyr.boreal.api.dto.response.DiscountDto
 import com.zephyr.boreal.api.dto.response.ExpirationDto
+import com.zephyr.boreal.domain.model.PriceListItem
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -20,4 +21,10 @@ class ItemConverters {
 
   @TypeConverter
   fun toDiscountList(value: String): List<DiscountDto> = json.decodeFromString(value)
+
+  @TypeConverter
+  fun fromPriceListItemList(value: List<PriceListItem>): String = json.encodeToString(value)
+
+  @TypeConverter
+  fun toPriceListItemList(value: String): List<PriceListItem> = json.decodeFromString(value)
 }

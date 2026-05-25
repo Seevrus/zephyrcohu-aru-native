@@ -18,11 +18,14 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
+import com.zephyr.boreal.data.local.dao.PriceListDao
+
 class ItemsRepositoryTest {
   private lateinit var repository: ItemsRepository
   private val apiService: ItemApiService = mock()
   private val itemDao: ItemDao = mock()
   private val otherItemDao: OtherItemDao = mock()
+  private val priceListDao: PriceListDao = mock()
   private val connectivityObserver: ConnectivityObserver = mock()
   private val userSessionStore: UserSessionStore = mock()
   private val cacheMetadataDao: CacheMetadataDao = mock()
@@ -49,6 +52,7 @@ class ItemsRepositoryTest {
         apiService,
         itemDao,
         otherItemDao,
+        priceListDao,
         cacheMetadataDao,
         connectivityObserver,
         userSessionStore,

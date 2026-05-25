@@ -5,6 +5,8 @@ import com.zephyr.boreal.api.dto.request.SearchTaxNumberDataDto
 import com.zephyr.boreal.api.dto.request.SearchTaxNumberRequestDto
 import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.PartnerDao
+import com.zephyr.boreal.data.local.dao.PartnerListDao
+import com.zephyr.boreal.data.local.dao.TaxPayerDao
 import com.zephyr.boreal.data.mapper.toDomain
 import com.zephyr.boreal.data.mapper.toEntity
 import com.zephyr.boreal.domain.model.LocationType
@@ -26,6 +28,8 @@ class PartnersRepository
   constructor(
     private val apiService: PartnerApiService,
     private val partnerDao: PartnerDao,
+    private val partnerListDao: PartnerListDao,
+    private val taxPayerDao: TaxPayerDao,
     cacheMetadataDao: CacheMetadataDao,
     connectivityObserver: ConnectivityObserver,
     userSessionStore: UserSessionStore,
@@ -53,19 +57,41 @@ class PartnersRepository
         queryKey = "get_partners",
       )
 
-    suspend fun getPartnerLists(): ApiResource<List<PartnerList>> =
-      try {
-        val response = apiService.getPartnerLists()
-        ApiResource.Success(response.data.map { it.toDomain() })
-      } catch (e: Exception) {
-        ApiResource.Error(e.localizedMessage ?: "Failed to fetch partner lists")
-      }
+    fun getPartnerLists(forceRefresh: Boolean = false): Flow<ApiResource<List<PartnerList>>> =
+      networkBoundResource(
+        query = {
+          partnerListDao.getAllPartnerLists().map { entities ->
+            entities.map { it.toDomain() }
+          }
+        },
+        fetch = {
+          apiService.getPartnerLists().data
+        },
+        saveFetchResult = { dtos ->
+          partnerListDao.insertPartnerLists(dtos.map { it.toEntity() })
+        },
+        queryKey = "get_partner_lists",
+        cacheTimeoutMillis = if (forceRefresh) 0L else DEFAULT_CACHE_TIMEOUT_MS,
+      )
 
-    suspend fun searchTaxNumber(taxNumber: String): ApiResource<List<TaxPayer>> =
-      try {
-        val response = apiService.searchTaxNumber(SearchTaxNumberRequestDto(SearchTaxNumberDataDto(taxNumber)))
-        ApiResource.Success(response.toDomain())
-      } catch (e: Exception) {
-        ApiResource.Error(e.localizedMessage ?: "Failed to search tax number")
-      }
+    fun searchTaxNumber(
+      taxNumber: String,
+      forceRefresh: Boolean = false,
+    ): Flow<ApiResource<List<TaxPayer>>> =
+      networkBoundResource(
+        query = {
+          taxPayerDao.getTaxPayersByVatNumber(taxNumber).map { entities ->
+            entities.map { it.toDomain() }
+          }
+        },
+        fetch = {
+          apiService.searchTaxNumber(SearchTaxNumberRequestDto(SearchTaxNumberDataDto(taxNumber)))
+        },
+        saveFetchResult = { responseDto ->
+          val taxpayers = responseDto.toDomain()
+          taxPayerDao.insertTaxPayers(taxpayers.map { it.toEntity() })
+        },
+        queryKey = "search_tax_number_$taxNumber",
+        cacheTimeoutMillis = if (forceRefresh) 0L else DEFAULT_CACHE_TIMEOUT_MS,
+      )
   }

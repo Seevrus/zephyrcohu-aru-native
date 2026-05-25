@@ -1,5 +1,7 @@
 package com.zephyr.boreal.domain.model
 
+import kotlinx.serialization.Serializable
+
 data class Partner(
   val id: Int,
   val code: String,
@@ -25,6 +27,7 @@ data class PartnerPriceList(
   val name: String,
 )
 
+@Serializable
 data class PartnerLocation(
   val name: String,
   val locationType: LocationType,

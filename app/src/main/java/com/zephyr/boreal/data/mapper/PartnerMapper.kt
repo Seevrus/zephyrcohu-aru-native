@@ -6,6 +6,7 @@ import com.zephyr.boreal.api.dto.response.PartnerLocationDto
 import com.zephyr.boreal.api.dto.response.PartnerResponseDataDto
 import com.zephyr.boreal.api.dto.response.SearchTaxNumberResponseDto
 import com.zephyr.boreal.data.local.PartnerEntity
+import com.zephyr.boreal.data.local.TaxPayerEntity
 import com.zephyr.boreal.domain.model.LocationType
 import com.zephyr.boreal.domain.model.Partner
 import com.zephyr.boreal.domain.model.PartnerLocation
@@ -198,4 +199,18 @@ fun PartnerLocationDto.toDomain(): PartnerLocation =
     address = address,
     createdAt = createdAt,
     updatedAt = updatedAt,
+  )
+
+fun TaxPayer.toEntity(): TaxPayerEntity =
+  TaxPayerEntity(
+    id = id,
+    vatNumber = vatNumber,
+    locations = locations,
+  )
+
+fun TaxPayerEntity.toDomain(): TaxPayer =
+  TaxPayer(
+    id = id,
+    vatNumber = vatNumber,
+    locations = locations,
   )

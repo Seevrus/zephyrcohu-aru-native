@@ -7,8 +7,12 @@ import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.ItemDao
 import com.zephyr.boreal.data.local.dao.OtherItemDao
 import com.zephyr.boreal.data.local.dao.PartnerDao
+import com.zephyr.boreal.data.local.dao.PartnerListDao
+import com.zephyr.boreal.data.local.dao.PriceListDao
 import com.zephyr.boreal.data.local.dao.RoundDao
 import com.zephyr.boreal.data.local.dao.StoreDao
+import com.zephyr.boreal.data.local.dao.StoreDetailsDao
+import com.zephyr.boreal.data.local.dao.TaxPayerDao
 import com.zephyr.boreal.data.local.dao.UserDao
 import dagger.Module
 import dagger.Provides
@@ -38,6 +42,18 @@ object DatabaseModule {
 
   @Provides
   fun providePartnerDao(database: BorealDatabase): PartnerDao = database.partnerDao()
+
+  @Provides
+  fun providePartnerListDao(database: BorealDatabase): PartnerListDao = database.partnerListDao()
+
+  @Provides
+  fun providePriceListDao(database: BorealDatabase): PriceListDao = database.priceListDao()
+
+  @Provides
+  fun provideStoreDetailsDao(database: BorealDatabase): StoreDetailsDao = database.storeDetailsDao()
+
+  @Provides
+  fun provideTaxPayerDao(database: BorealDatabase): TaxPayerDao = database.taxPayerDao()
 
   @Provides
   fun provideItemDao(database: BorealDatabase): ItemDao = database.itemDao()

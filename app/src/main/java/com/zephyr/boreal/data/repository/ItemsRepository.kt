@@ -6,6 +6,7 @@ import com.zephyr.boreal.api.dto.request.SellSelectedItemsRequestDto
 import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.ItemDao
 import com.zephyr.boreal.data.local.dao.OtherItemDao
+import com.zephyr.boreal.data.local.dao.PriceListDao
 import com.zephyr.boreal.data.mapper.toDomain
 import com.zephyr.boreal.data.mapper.toEntity
 import com.zephyr.boreal.domain.model.Item
@@ -25,6 +26,7 @@ class ItemsRepository
     private val apiService: ItemApiService,
     private val itemDao: ItemDao,
     private val otherItemDao: OtherItemDao,
+    private val priceListDao: PriceListDao,
     cacheMetadataDao: CacheMetadataDao,
     connectivityObserver: ConnectivityObserver,
     userSessionStore: UserSessionStore,
@@ -61,13 +63,22 @@ class ItemsRepository
         queryKey = "get_other_items",
       )
 
-    suspend fun getPriceLists(): ApiResource<List<PriceList>> =
-      try {
-        val response = apiService.getPriceLists()
-        ApiResource.Success(response.data.map { it.toDomain() })
-      } catch (e: Exception) {
-        ApiResource.Error(e.localizedMessage ?: "Failed to fetch price list")
-      }
+    fun getPriceLists(forceRefresh: Boolean = false): Flow<ApiResource<List<PriceList>>> =
+      networkBoundResource(
+        query = {
+          priceListDao.getAllPriceLists().map { entities ->
+            entities.map { it.toDomain() }
+          }
+        },
+        fetch = {
+          apiService.getPriceLists().data
+        },
+        saveFetchResult = { dtos ->
+          priceListDao.insertPriceLists(dtos.map { it.toEntity() })
+        },
+        queryKey = "get_price_lists",
+        cacheTimeoutMillis = if (forceRefresh) 0L else DEFAULT_CACHE_TIMEOUT_MS,
+      )
 
     suspend fun saveSelectedItems(request: SaveSelectedItemsRequestDto): ApiResource<Unit> =
       try {
