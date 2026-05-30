@@ -89,3 +89,23 @@ fun RoundReceiptDto.toDomain(): RoundReceipt =
     roundAmount = roundAmount,
     roundedAmount = roundedAmount,
   )
+
+fun com.zephyr.boreal.domain.model.Receipt.toRoundReceiptDto(): RoundReceiptDto =
+  RoundReceiptDto(
+    id = id,
+    serialNumber = serialNumber,
+    yearCode = yearCode,
+    cancelSerialNumber = cancelSerialNumber,
+    cancelYearCode = cancelYearCode,
+    invoiceType = invoiceType,
+    paymentDays = paymentDays,
+    buyer =
+      com.zephyr.boreal.api.dto.response
+        .RoundReceiptBuyerDto(buyer.name, buyer.vatNumber),
+    quantity = quantity,
+    netAmount = netAmount,
+    vatAmount = vatAmount,
+    grossAmount = grossAmount,
+    roundAmount = roundAmount,
+    roundedAmount = roundedAmount,
+  )

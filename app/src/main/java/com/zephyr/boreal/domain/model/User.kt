@@ -14,6 +14,7 @@ data class User(
   val createdAt: String,
   val updatedAt: String,
   val company: Company,
+  val lastRound: Round?,
 )
 
 val User.canAddPartner: Boolean

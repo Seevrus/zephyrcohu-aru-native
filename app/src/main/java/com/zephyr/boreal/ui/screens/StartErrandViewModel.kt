@@ -200,6 +200,8 @@ class StartErrandViewModel
             launch { partnersRepository.getPartners().first() }
             launch { itemsRepository.getPriceLists() }
 
+            userRepository.refreshCurrentUser()
+
             _uiState.update { it.copy(isStartingRound = false) }
             onSuccess()
           }

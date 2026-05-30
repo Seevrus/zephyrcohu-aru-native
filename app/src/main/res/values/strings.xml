@@ -7,6 +7,15 @@
     <string name="tile_receipts">Bizonylatok (%1$d)</string>
     <string name="app_locked_message">A(z) %1$s felhasználó nem rendelkezik az alkalmazás használatához szükséges jogosultságokkal. További információért kérem keresse az adminisztrátort.</string>
     <string name="screen_settings_title">Beállítások</string>
+    <string name="screen_end_errand_title">Kör zárása</string>
+    <string name="end_errand_description_1">Az kör zárásával az alkalmazás készre jelenti a teljes eladási folyamatot.</string>
+    <string name="end_errand_description_2">Sikeres körzárás esetén a következő képernyőn lesz lehetőség a végelszámolás kinyomtatására, amely a készpénzes számlák ellenértéke átvételének igazolására szolgál.</string>
+    <string name="end_errand_description_3">Kivételes esetektől eltekintve a kör zárását kizárólag visszaérkezés után szükséges megtenni.</string>
+    <string name="end_errand_button_label">Kör zárása</string>
+    <string name="end_errand_error_no_store">A felhasználónak nincs aktív boltja.</string>
+    <string name="end_errand_error_store_not_found">Az aktív bolt adatai nem találhatók.</string>
+    <string name="screen_print_end_errand_title">Nyomtatás</string>
+    <string name="print_end_errand_home_button">Vissza a főképernyőre</string>
     <string name="screen_print_title">Nyomtatás</string>
     <string name="tile_login">Bejelentkezés</string>
     <string name="tile_change_password">Jelszó megváltoztatása</string>

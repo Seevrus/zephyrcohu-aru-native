@@ -131,19 +131,7 @@ class UserRepository
           }
         },
         fetch = {
-          val response = apiService.checkToken()
-
-          // Update session if needed (e.g., password expired), preserving current device ID
-          userSessionStore.updateSession(
-            deviceId = userSessionStore.userState.value.deviceId,
-            token =
-              StoredToken(
-                token = response.token.accessToken,
-                isPasswordExpired = response.token.abilities.contains(UserRole.PASSWORD_EXPIRED),
-                expiresAt = response.token.expiresAt,
-              ),
-          )
-          response
+          apiService.checkToken()
         },
         saveFetchResult = { response ->
           userDao.insertUser(response.toEntity())
@@ -151,4 +139,15 @@ class UserRepository
         shouldFetch = { it != null },
         queryKey = "get_current_user",
       )
+
+    suspend fun refreshCurrentUser(): ApiResource<User> =
+      try {
+        val response = apiService.checkToken()
+        userDao.insertUser(response.toEntity())
+        ApiResource.Success(response.toDomain())
+      } catch (e: retrofit2.HttpException) {
+        ApiResource.Error("Failed to refresh user: ${e.message()}")
+      } catch (e: Exception) {
+        ApiResource.Error(e.localizedMessage ?: "Unknown error")
+      }
   }

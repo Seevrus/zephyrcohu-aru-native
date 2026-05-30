@@ -5,23 +5,6 @@ import com.zephyr.boreal.domain.model.UserState
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class UserDto(
-  val id: Int,
-  val userName: String,
-  val state: UserState,
-  val name: String,
-  val phoneNumber: String? = null,
-  val isDev: Boolean,
-  val roles: List<UserRole>,
-  val storeInUseId: Int? = null,
-  val storeOwnedId: Int? = null,
-  val lastActive: String,
-  val createdAt: String,
-  val updatedAt: String,
-  val company: PartialCompanyDto,
-)
-
-@Serializable
 data class TokenDto(
   val tokenType: String,
   val accessToken: String,
@@ -44,7 +27,7 @@ data class LoginResponseDto(
   val createdAt: String,
   val updatedAt: String,
   val company: PartialCompanyDto,
-  val lastRound: RoundResponseDto? = null,
+  val lastRound: RoundResponseDataDto? = null,
   val token: TokenDto,
 )
 
@@ -63,6 +46,6 @@ data class CheckTokenResponseDto(
   val createdAt: String,
   val updatedAt: String,
   val company: CompanyDto,
-  val lastRound: RoundResponseDto? = null,
+  val lastRound: RoundResponseDataDto? = null,
   val token: TokenDto,
 )

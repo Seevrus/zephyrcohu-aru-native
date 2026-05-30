@@ -38,7 +38,14 @@ class PartnersRepository
       networkBoundResource(
         query = {
           partnerDao.getAllPartners().map { entities ->
-            val collator = Collator.getInstance(Locale("hu", "HU"))
+            val collator =
+              Collator.getInstance(
+                Locale
+                  .Builder()
+                  .setLanguage("hu")
+                  .setRegion("HU")
+                  .build(),
+              )
             entities
               .map { it.toDomain() }
               .sortedWith { a, b ->

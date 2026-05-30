@@ -31,7 +31,20 @@ data class Receipt(
   val lastDownloadedAt: String?, // UTC
   val createdAt: String,
   val updatedAt: String,
-)
+) {
+  val paymentDays: Int
+    get() {
+      if (invoiceDate.isEmpty() || fulfillmentDate.isEmpty()) {
+        return 0
+      }
+
+      val invoice = java.time.LocalDate.parse(invoiceDate)
+      val fulfillment = java.time.LocalDate.parse(fulfillmentDate)
+      return java.time.temporal.ChronoUnit.DAYS
+        .between(invoice, fulfillment)
+        .toInt()
+    }
+}
 
 data class ReceiptUser(
   val id: Int,

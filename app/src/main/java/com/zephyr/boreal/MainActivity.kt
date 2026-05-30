@@ -18,9 +18,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.zephyr.boreal.ui.screens.AppLockedScreen
 import com.zephyr.boreal.ui.screens.ChangePasswordScreen
+import com.zephyr.boreal.ui.screens.EndErrandScreen
+import com.zephyr.boreal.ui.screens.EndErrandViewModel
 import com.zephyr.boreal.ui.screens.ErrandsScreen
 import com.zephyr.boreal.ui.screens.LoginScreen
 import com.zephyr.boreal.ui.screens.MainScreen
+import com.zephyr.boreal.ui.screens.PrintEndErrandScreen
 import com.zephyr.boreal.ui.screens.PrintSettingsScreen
 import com.zephyr.boreal.ui.screens.SettingsScreen
 import com.zephyr.boreal.ui.screens.StartErrandScreen
@@ -84,6 +87,12 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
     }
     composable("start_errand") {
       StartErrandRoute(navController)
+    }
+    composable("end_errand") {
+      EndErrandRoute(navController)
+    }
+    composable("print_end_errand") {
+      PrintEndErrandRoute(navController)
     }
   }
 }
@@ -174,6 +183,9 @@ private fun ErrandsRoute(navController: androidx.navigation.NavHostController) {
     onNavigateToStartErrand = {
       navController.navigate("start_errand")
     },
+    onNavigateToEndErrand = {
+      navController.navigate("end_errand")
+    },
   )
 }
 
@@ -183,6 +195,33 @@ private fun StartErrandRoute(navController: androidx.navigation.NavHostControlle
   StartErrandScreen(
     viewModel = viewModel,
     onSuccess = {
+      navController.navigate("main") {
+        popUpTo(0) { inclusive = true }
+      }
+    },
+  )
+}
+
+@Composable
+private fun EndErrandRoute(navController: androidx.navigation.NavHostController) {
+  val viewModel: EndErrandViewModel = hiltViewModel()
+  EndErrandScreen(
+    viewModel = viewModel,
+    onNavigateBack = {
+      navController.popBackStack()
+    },
+    onSuccess = {
+      navController.navigate("print_end_errand") {
+        popUpTo("main") { inclusive = false }
+      }
+    },
+  )
+}
+
+@Composable
+private fun PrintEndErrandRoute(navController: androidx.navigation.NavHostController) {
+  PrintEndErrandScreen(
+    onNavigateHome = {
       navController.navigate("main") {
         popUpTo(0) { inclusive = true }
       }

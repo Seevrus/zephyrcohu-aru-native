@@ -28,6 +28,8 @@ sealed interface ErrandsEvent {
   data object NavigateBack : ErrandsEvent
 
   data object NavigateToStartErrand : ErrandsEvent
+
+  data object NavigateToEndErrand : ErrandsEvent
 }
 
 enum class ErrandTileId {
@@ -186,7 +188,7 @@ class ErrandsViewModel
         viewModelScope.launch {
           when (tile.id) {
             ErrandTileId.START -> eventChannel.send(ErrandsEvent.NavigateToStartErrand)
-            ErrandTileId.END -> { /* TODO */ }
+            ErrandTileId.END -> eventChannel.send(ErrandsEvent.NavigateToEndErrand)
             ErrandTileId.LIST -> { /* TODO */ }
           }
         }

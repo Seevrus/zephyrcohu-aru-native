@@ -27,4 +27,12 @@ class UserConverters {
 
   @TypeConverter
   fun toCompanyDto(value: String): CompanyDto = json.decodeFromString(value)
+
+  @TypeConverter
+  fun fromRoundResponseDataDto(value: com.zephyr.boreal.api.dto.response.RoundResponseDataDto?): String? =
+    value?.let { json.encodeToString(it) }
+
+  @TypeConverter
+  fun toRoundResponseDataDto(value: String?): com.zephyr.boreal.api.dto.response.RoundResponseDataDto? =
+    value?.let { json.decodeFromString(it) }
 }

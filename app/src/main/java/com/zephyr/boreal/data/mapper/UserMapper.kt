@@ -6,7 +6,6 @@ import com.zephyr.boreal.api.dto.response.LoginResponseDto
 import com.zephyr.boreal.api.dto.response.PartialCompanyDto
 import com.zephyr.boreal.api.dto.response.SelectStoreResponseTypeDto
 import com.zephyr.boreal.api.dto.response.StoreUserDto
-import com.zephyr.boreal.api.dto.response.UserDto
 import com.zephyr.boreal.data.local.UserEntity
 import com.zephyr.boreal.domain.model.Company
 import com.zephyr.boreal.domain.model.StoreUser
@@ -59,6 +58,7 @@ fun LoginResponseDto.toDomain(): User =
     createdAt = createdAt,
     updatedAt = updatedAt,
     company = company.toDomain(),
+    lastRound = lastRound?.toDomain(),
   )
 
 fun CheckTokenResponseDto.toDomain(): User =
@@ -76,6 +76,7 @@ fun CheckTokenResponseDto.toDomain(): User =
     createdAt = createdAt,
     updatedAt = updatedAt,
     company = company.toDomain(),
+    lastRound = lastRound?.toDomain(),
   )
 
 fun SelectStoreResponseTypeDto.toDomain(): User =
@@ -93,23 +94,7 @@ fun SelectStoreResponseTypeDto.toDomain(): User =
     createdAt = createdAt,
     updatedAt = updatedAt,
     company = company.toDomain(),
-  )
-
-fun UserDto.toDomain(): User =
-  User(
-    id = id,
-    userName = userName,
-    state = state,
-    name = name,
-    phoneNumber = phoneNumber,
-    isDev = isDev,
-    roles = roles,
-    storeInUseId = storeInUseId,
-    storeOwnedId = storeOwnedId,
-    lastActive = lastActive,
-    createdAt = createdAt,
-    updatedAt = updatedAt,
-    company = company.toDomain(),
+    lastRound = null, // SelectStoreResponseTypeDto has no lastRound
   )
 
 fun LoginResponseDto.toEntity(token: String? = null): UserEntity =
@@ -142,6 +127,7 @@ fun LoginResponseDto.toEntity(token: String? = null): UserEntity =
         iban = "",
         bankAccount = "",
       ),
+    lastRound = lastRound,
     token = token ?: this.token.accessToken,
   )
 
@@ -160,6 +146,7 @@ fun CheckTokenResponseDto.toEntity(token: String? = null): UserEntity =
     createdAt = createdAt,
     updatedAt = updatedAt,
     company = company,
+    lastRound = lastRound,
     token = token ?: this.token.accessToken,
   )
 
@@ -178,6 +165,7 @@ fun UserEntity.toDomain(): User =
     createdAt = createdAt,
     updatedAt = updatedAt,
     company = company.toDomain(),
+    lastRound = lastRound?.toDomain(),
   )
 
 fun StoreUserDto.toDomain(): StoreUser =

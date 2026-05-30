@@ -32,6 +32,7 @@ fun ErrandsScreen(
   modifier: Modifier = Modifier,
   onNavigateBack: () -> Unit = {},
   onNavigateToStartErrand: () -> Unit = {},
+  onNavigateToEndErrand: () -> Unit = {},
   viewModel: ErrandsViewModel = hiltViewModel(),
 ) {
   val uiState by viewModel.uiState.collectAsState()
@@ -41,6 +42,7 @@ fun ErrandsScreen(
       when (event) {
         ErrandsEvent.NavigateBack -> onNavigateBack()
         ErrandsEvent.NavigateToStartErrand -> onNavigateToStartErrand()
+        ErrandsEvent.NavigateToEndErrand -> onNavigateToEndErrand()
       }
     }
   }
