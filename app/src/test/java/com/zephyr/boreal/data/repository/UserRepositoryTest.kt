@@ -142,10 +142,59 @@ class UserRepositoryTest {
       verify(userDao).clearUser()
     }
 
+  private val mockCheckTokenResponse =
+    com.zephyr.boreal.api.dto.response.CheckTokenResponseDto(
+      id = 1,
+      userName = "test@company",
+      state = UserState.IDLE,
+      name = "Test User",
+      phoneNumber = null,
+      isDev = false,
+      roles = listOf(UserRole.ADMIN),
+      storeInUseId = null,
+      storeOwnedId = null,
+      lastActive = "2026-04-03T10:00:00Z",
+      createdAt = "2026-04-03T09:00:00Z",
+      updatedAt = "2026-04-03T09:00:00Z",
+      company =
+        com.zephyr.boreal.api.dto.response.CompanyDto(
+          id = 3,
+          code = "CODE",
+          name = "Company 3",
+          country = "HU",
+          postalCode = "1234",
+          city = "City",
+          address = "Address",
+          felir = "FELIR",
+          vatNumber = "12345678-1-11",
+          iban = "IBAN",
+          bankAccount = "BANK",
+        ),
+      token = TokenDto("Bearer", "mocked_token", listOf(UserRole.ADMIN)),
+    )
+
   @Test
-  fun `getCurrentUser should fetch from network and save to dao`() =
+  fun `refreshCurrentUser should fetch from network, save to dao, and return success`() =
     runTest {
-      // We only test the direct login/logout for now to get the build passing.
-      // The complex flow testing seems to hit environment-specific issues with IllegalStateException.
+      whenever(apiService.checkToken()).thenReturn(mockCheckTokenResponse)
+
+      val result = repository.refreshCurrentUser()
+
+      assertTrue(result is ApiResource.Success)
+      verify(apiService).checkToken()
+      verify(userDao).insertUser(any())
+    }
+
+  @Test
+  fun `refreshCurrentUser should return error on failure`() =
+    runTest {
+      val responseBody = "Unauthorized".toResponseBody("application/json".toMediaType())
+      val error = retrofit2.HttpException(retrofit2.Response.error<Any>(401, responseBody))
+      whenever(apiService.checkToken()).thenThrow(error)
+
+      val result = repository.refreshCurrentUser()
+
+      assertTrue(result is ApiResource.Error)
+      verify(apiService).checkToken()
     }
 }

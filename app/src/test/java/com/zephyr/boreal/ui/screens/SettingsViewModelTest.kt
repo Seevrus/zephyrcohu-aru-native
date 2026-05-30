@@ -144,6 +144,7 @@ class SettingsViewModelTest {
       lastActive = "",
       createdAt = "",
       updatedAt = "",
+      lastRound = null,
       company =
         Company(
           id = 1,

@@ -323,4 +323,34 @@ class ErrandsViewModelTest {
       runCurrent()
       assertTrue(viewModel.uiState.value.alertState == null)
     }
+
+  @Test
+  fun `Clicking enabled End tile should emit NavigateToEndErrand`() =
+    runTest {
+      userStoreStateFlow.value = UserState(storedToken = StoredToken("token", false, "2099"))
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+      isInternetReachableFlow.value = true
+
+      val mockUser = mock<User>()
+      whenever(mockUser.state).thenReturn(com.zephyr.boreal.domain.model.UserState.ON_ROUND)
+      currentUserFlow.value = ApiResource.Success(mockUser)
+
+      val viewModel = createViewModel()
+      backgroundScope.launch { viewModel.uiState.collect() }
+
+      val events = mutableListOf<ErrandsEvent>()
+      val job = launch { viewModel.events.collect { events.add(it) } }
+
+      runCurrent()
+
+      val endTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == ErrandTileId.END }!!
+
+      viewModel.onTileClick(endTile)
+      runCurrent()
+
+      assertTrue(events.contains(ErrandsEvent.NavigateToEndErrand))
+      job.cancel()
+    }
 }

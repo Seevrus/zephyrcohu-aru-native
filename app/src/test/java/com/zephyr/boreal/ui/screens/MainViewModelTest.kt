@@ -3,7 +3,6 @@ package com.zephyr.boreal.ui.screens
 import com.zephyr.boreal.R
 import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.UserRepository
-import com.zephyr.boreal.domain.model.Company
 import com.zephyr.boreal.domain.model.User
 import com.zephyr.boreal.domain.model.UserRole
 import com.zephyr.boreal.network.ConnectivityObserver
@@ -52,35 +51,22 @@ class MainViewModelTest {
   private val printSettingsFlow = MutableStateFlow(PrintSettingsState())
   private val currentUserFlow = MutableStateFlow<ApiResource<User>>(ApiResource.Loading())
 
-  private val mockCompany =
-    Company(
-      id = 1,
-      name = "Test Co",
-      code = "002",
-      country = "HU",
-      postalCode = "1000",
-      city = "Budapest",
-      address = "Test st 1",
-      felir = "123",
-      vatNumber = "123",
-      iban = "123",
-      bankAccount = "123",
-    )
   private val mockUser =
     User(
       id = 1,
-      userName = "test",
-      state = DomainUserState.IDLE,
+      userName = "test@company",
+      state = com.zephyr.boreal.domain.model.UserState.IDLE,
       name = "Test User",
       phoneNumber = null,
       isDev = false,
       roles = listOf(UserRole.APP, UserRole.LOAD_OWNED),
       storeInUseId = null,
       storeOwnedId = 1,
-      lastActive = "2026-04-26T10:00:00Z",
-      createdAt = "2026-04-26T10:00:00Z",
-      updatedAt = "2026-04-26T10:00:00Z",
-      company = mockCompany,
+      lastActive = "2026-04-03T10:00:00Z",
+      createdAt = "2026-04-03T09:00:00Z",
+      updatedAt = "2026-04-03T09:00:00Z",
+      company = mock(),
+      lastRound = null,
     )
 
   @BeforeEach

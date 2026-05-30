@@ -395,6 +395,7 @@ class StartErrandViewModelTest {
 
       val mockStoreDetails = mock<com.zephyr.boreal.domain.model.StoreDetails>()
       whenever(storesRepository.getStoreDetails(eq(101), any())).thenReturn(ApiResource.Success(mockStoreDetails))
+      whenever(userRepository.refreshCurrentUser()).thenReturn(ApiResource.Success(mock()))
 
       whenever(itemsRepository.getItems()).thenReturn(flowOf(ApiResource.Success(emptyList())))
       whenever(itemsRepository.getOtherItems()).thenReturn(flowOf(ApiResource.Success(emptyList())))
@@ -422,6 +423,7 @@ class StartErrandViewModelTest {
       verify(itemsRepository).getOtherItems()
       verify(partnersRepository).getPartners()
       verify(itemsRepository).getPriceLists(any())
+      verify(userRepository).refreshCurrentUser()
 
       assertFalse(viewModel.uiState.value.isStartingRound)
       assertTrue(isSuccessCalled)
