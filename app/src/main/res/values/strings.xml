@@ -117,4 +117,9 @@
     <string name="start_errand_button_label">Kör indítása</string>
     <string name="start_errand_loading_message">Betöltés…</string>
     <string name="start_errand_starting_message">Körindítás folyamatban…</string>
+
+    <!-- Round Info -->
+    <string name="round_info_partner_list">Boltlista:</string>
+    <string name="round_info_store">Raktár:</string>
+    <string name="round_info_started">Kör kezdete:</string>
 </resources>

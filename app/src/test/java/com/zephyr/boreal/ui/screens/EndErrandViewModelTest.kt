@@ -193,6 +193,7 @@ class EndErrandViewModelTest {
       uiStateJob.cancel()
     }
 
+  @Suppress("LongMethod")
   @Test
   fun `finishRound calculates lastSerialNumber correctly with non-empty receipts`() =
     runTest {

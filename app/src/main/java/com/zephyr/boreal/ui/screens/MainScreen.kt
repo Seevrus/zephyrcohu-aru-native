@@ -25,6 +25,7 @@ import com.zephyr.boreal.ui.components.BorealTile
 import com.zephyr.boreal.ui.components.BorealTopAppBar
 import com.zephyr.boreal.ui.components.InfoCard
 import com.zephyr.boreal.ui.components.LoadingIndicator
+import com.zephyr.boreal.ui.components.RoundInfo
 import com.zephyr.boreal.ui.components.SettingsButton
 import com.zephyr.boreal.ui.theme.BorealColors
 
@@ -91,25 +92,13 @@ fun MainScreenContent(
     },
     containerColor = BorealColors.Background,
   ) { innerPadding ->
-    if (!uiState.isReady) {
-      Box(
-        modifier =
-          Modifier
-            .padding(innerPadding)
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center,
-      ) {
-        LoadingIndicator()
-      }
-    } else {
-      MainScreenList(
-        uiState = uiState,
-        onNavigateToLogin = onNavigateToLogin,
-        onNavigateToChangePassword = onNavigateToChangePassword,
-        onTileClick = onTileClick,
-        modifier = Modifier.padding(innerPadding),
-      )
-    }
+    MainScreenBody(
+      uiState = uiState,
+      onNavigateToLogin = onNavigateToLogin,
+      onNavigateToChangePassword = onNavigateToChangePassword,
+      onTileClick = onTileClick,
+      innerPadding = innerPadding,
+    )
 
     uiState.alertState?.let { alert ->
       BorealAlert(
@@ -121,6 +110,46 @@ fun MainScreenContent(
         onCancelClick = alert.onCancel,
         onDismissRequest = onDismissAlert,
       )
+    }
+  }
+}
+
+@Composable
+private fun MainScreenBody(
+  uiState: MainScreenUiState,
+  onNavigateToLogin: () -> Unit,
+  onNavigateToChangePassword: () -> Unit,
+  onTileClick: (TileUiModel<MainTileId>) -> Unit,
+  innerPadding: PaddingValues,
+) {
+  if (!uiState.isReady) {
+    Box(
+      modifier =
+        Modifier
+          .padding(innerPadding)
+          .fillMaxSize(),
+      contentAlignment = Alignment.Center,
+    ) {
+      LoadingIndicator()
+    }
+  } else {
+    androidx.compose.foundation.layout.Column(
+      modifier = Modifier.padding(innerPadding).fillMaxSize(),
+    ) {
+      MainScreenList(
+        uiState = uiState,
+        onNavigateToLogin = onNavigateToLogin,
+        onNavigateToChangePassword = onNavigateToChangePassword,
+        onTileClick = onTileClick,
+        modifier = Modifier.weight(1f),
+      )
+
+      uiState.roundInfo?.let { roundInfo ->
+        RoundInfo(
+          roundInfo = roundInfo,
+          modifier = Modifier.padding(bottom = 16.dp),
+        )
+      }
     }
   }
 }

@@ -49,6 +49,12 @@ enum class MainTileId {
   RECEIPTS,
 }
 
+data class RoundInfoUiModel(
+  val partnerListName: String,
+  val storeName: String,
+  val roundStartedDate: String,
+)
+
 data class MainScreenUiState(
   val isReady: Boolean = false,
   val isLoggedIn: Boolean = false,
@@ -58,6 +64,7 @@ data class MainScreenUiState(
   val isPasswordExpired: Boolean = false,
   val tiles: List<TileUiModel<MainTileId>> = emptyList(),
   val alertState: AlertUiState? = null,
+  val roundInfo: RoundInfoUiModel? = null,
 )
 
 @HiltViewModel
@@ -139,6 +146,31 @@ class MainViewModel
         tilesFlow,
         alertStateFlow,
       ) { isReady, userCtx, deviceCtx, tiles, alert ->
+        val roundInfo =
+          userCtx.user?.lastRound?.let { round ->
+            if (round.roundFinished == null) {
+              val dateStr =
+                try {
+                  java.time.Instant
+                    .parse(round.roundStarted)
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDate()
+                    .toString()
+                } catch (
+                  @Suppress("SwallowedException") e: Exception,
+                ) {
+                  round.roundStarted.substringBefore("T")
+                }
+              RoundInfoUiModel(
+                partnerListName = round.partnerList.name,
+                storeName = round.store.name,
+                roundStartedDate = dateStr,
+              )
+            } else {
+              null
+            }
+          }
+
         MainScreenUiState(
           isReady = isReady,
           isLoggedIn = userCtx.isLoggedIn,
@@ -148,6 +180,7 @@ class MainViewModel
           isPasswordExpired = userCtx.isPasswordExpired,
           alertState = alert,
           tiles = tiles,
+          roundInfo = roundInfo,
         )
       }.stateIn(
         scope = viewModelScope,

@@ -387,4 +387,77 @@ class MainViewModelTest {
       job.cancel()
       uiStateJob.cancel()
     }
+
+  @Test
+  fun `roundInfo should be populated when user has active round`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      val activeRound =
+        com.zephyr.boreal.domain.model.Round(
+          id = 1,
+          user =
+            com.zephyr.boreal.domain.model
+              .RoundUser(1, "test", "Test User"),
+          store =
+            com.zephyr.boreal.domain.model
+              .RoundStore(1, "S01", "Test Store"),
+          partnerList =
+            com.zephyr.boreal.domain.model
+              .RoundPartnerList(1, "Test Partner List"),
+          yearCode = null,
+          roundStarted = "2026-06-08T10:00:00Z",
+          roundFinished = null,
+          lastSerialNumber = null,
+          receipts = emptyList(),
+        )
+      currentUserFlow.value = ApiResource.Success(mockUser.copy(lastRound = activeRound))
+
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val roundInfo = viewModel.uiState.value.roundInfo
+      assertNotNull(roundInfo)
+      assertEquals("Test Partner List", roundInfo?.partnerListName)
+      assertEquals("Test Store", roundInfo?.storeName)
+      assertEquals("2026-06-08", roundInfo?.roundStartedDate)
+
+      uiStateJob.cancel()
+    }
+
+  @Test
+  fun `roundInfo should be null when user has finished round`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      val finishedRound =
+        com.zephyr.boreal.domain.model.Round(
+          id = 1,
+          user =
+            com.zephyr.boreal.domain.model
+              .RoundUser(1, "test", "Test User"),
+          store =
+            com.zephyr.boreal.domain.model
+              .RoundStore(1, "S01", "Test Store"),
+          partnerList =
+            com.zephyr.boreal.domain.model
+              .RoundPartnerList(1, "Test Partner List"),
+          yearCode = null,
+          roundStarted = "2026-06-08T10:00:00Z",
+          roundFinished = "2026-06-08T12:00:00Z",
+          lastSerialNumber = null,
+          receipts = emptyList(),
+        )
+      currentUserFlow.value = ApiResource.Success(mockUser.copy(lastRound = finishedRound))
+
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val roundInfo = viewModel.uiState.value.roundInfo
+      assertNull(roundInfo)
+
+      uiStateJob.cancel()
+    }
 }
