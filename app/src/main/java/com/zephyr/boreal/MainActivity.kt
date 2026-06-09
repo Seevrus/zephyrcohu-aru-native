@@ -25,6 +25,8 @@ import com.zephyr.boreal.ui.screens.LoginScreen
 import com.zephyr.boreal.ui.screens.MainScreen
 import com.zephyr.boreal.ui.screens.PrintEndErrandScreen
 import com.zephyr.boreal.ui.screens.PrintSettingsScreen
+import com.zephyr.boreal.ui.screens.SelectPartnerScreen
+import com.zephyr.boreal.ui.screens.SelectPartnerViewModel
 import com.zephyr.boreal.ui.screens.SettingsScreen
 import com.zephyr.boreal.ui.screens.StartErrandScreen
 import com.zephyr.boreal.ui.screens.StartErrandViewModel
@@ -94,6 +96,9 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
     composable("print_end_errand") {
       PrintEndErrandRoute(navController)
     }
+    composable("select_partner") {
+      SelectPartnerRoute()
+    }
   }
 }
 
@@ -116,6 +121,9 @@ private fun MainRoute(navController: androidx.navigation.NavHostController) {
     },
     onNavigateToErrands = {
       navController.navigate("errands")
+    },
+    onNavigateToSelectPartner = {
+      navController.navigate("select_partner")
     },
   )
 }
@@ -226,5 +234,13 @@ private fun PrintEndErrandRoute(navController: androidx.navigation.NavHostContro
         popUpTo(0) { inclusive = true }
       }
     },
+  )
+}
+
+@Composable
+private fun SelectPartnerRoute() {
+  val viewModel: SelectPartnerViewModel = hiltViewModel()
+  SelectPartnerScreen(
+    viewModel = viewModel,
   )
 }

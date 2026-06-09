@@ -38,6 +38,7 @@ fun MainScreen(
   onNavigateToLogin: () -> Unit = {},
   onNavigateToChangePassword: () -> Unit = {},
   onNavigateToErrands: () -> Unit = {},
+  onNavigateToSelectPartner: () -> Unit = {},
   viewModel: MainViewModel = hiltViewModel(),
 ) {
   val uiState by viewModel.uiState.collectAsState()
@@ -46,6 +47,7 @@ fun MainScreen(
     viewModel.events.collect { event ->
       when (event) {
         MainScreenEvent.NavigateToErrands -> onNavigateToErrands()
+        MainScreenEvent.NavigateToSelectPartner -> onNavigateToSelectPartner()
       }
     }
   }

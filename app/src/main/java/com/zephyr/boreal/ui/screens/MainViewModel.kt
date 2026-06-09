@@ -30,6 +30,8 @@ import javax.inject.Inject
 
 sealed interface MainScreenEvent {
   data object NavigateToErrands : MainScreenEvent
+
+  data object NavigateToSelectPartner : MainScreenEvent
 }
 
 data class AlertUiState(
@@ -340,7 +342,7 @@ class MainViewModel
             // Handle Storage navigation
           }
           MainTileId.SELL -> {
-            // Handle Sell navigation
+            eventChannel.send(MainScreenEvent.NavigateToSelectPartner)
           }
           MainTileId.ERRANDS -> {
             eventChannel.send(MainScreenEvent.NavigateToErrands)

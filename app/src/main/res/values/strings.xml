@@ -122,4 +122,14 @@
     <string name="round_info_partner_list">Boltlista:</string>
     <string name="round_info_store">Raktár:</string>
     <string name="round_info_started">Kör kezdete:</string>
+    <!-- Select Partner -->
+    <string name="select_partner_title">Partner kiválasztása</string>
+    <string name="select_partner_search">Keresés</string>
+    <string name="select_partner_select_btn">Kiválasztás</string>
+    <string name="select_partner_tab_round">Kör boltjai</string>
+    <string name="select_partner_tab_all">Összes bolt</string>
+    <string name="select_partner_add_btn">Partner hozzáadása</string>
+    <string name="select_partner_phone">Telefon</string>
+    <string name="payment_method_wire_transfer_abbr">Á</string>
+    <string name="payment_method_cash_abbr">K</string>
 </resources>
