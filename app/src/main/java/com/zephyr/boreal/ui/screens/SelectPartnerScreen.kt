@@ -60,13 +60,33 @@ private const val ANIMATION_DURATION_MS = 300
 @Composable
 fun SelectPartnerScreen(viewModel: SelectPartnerViewModel) {
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+  SelectPartnerScreenContent(
+    uiState = uiState,
+    onSearchQueryChanged = viewModel::onSearchQueryChanged,
+    onTabSelected = viewModel::onTabSelected,
+    onTogglePartnerExpanded = viewModel::onTogglePartnerExpanded,
+    onAddPartnerClick = { /* Add Partner action */ },
+    onSelectClick = { /* Select partner and navigate next */ },
+  )
+}
+
+@Composable
+fun SelectPartnerScreenContent(
+  uiState: SelectPartnerUiState,
+  onSearchQueryChanged: (String) -> Unit,
+  onTabSelected: (PartnerTab) -> Unit,
+  onTogglePartnerExpanded: (Int) -> Unit,
+  onAddPartnerClick: () -> Unit,
+  onSelectClick: (Int) -> Unit,
+) {
   val tabs = getPartnerTabs()
 
   Scaffold(
     topBar = {
       SelectPartnerTopBar(
         canAddPartner = uiState.canAddPartner,
-        onAddPartnerClick = { /* Add Partner action */ },
+        onAddPartnerClick = onAddPartnerClick,
       )
     },
     bottomBar = {
@@ -74,7 +94,7 @@ fun SelectPartnerScreen(viewModel: SelectPartnerViewModel) {
         tabs = tabs,
         selectedIndex = if (uiState.selectedTab == PartnerTab.ROUND_STORES) 0 else 1,
         onTabSelected = { index ->
-          viewModel.onTabSelected(if (index == 0) PartnerTab.ROUND_STORES else PartnerTab.ALL_STORES)
+          onTabSelected(if (index == 0) PartnerTab.ROUND_STORES else PartnerTab.ALL_STORES)
         },
       )
     },
@@ -88,7 +108,7 @@ fun SelectPartnerScreen(viewModel: SelectPartnerViewModel) {
     ) {
       BorealSearchField(
         query = uiState.searchQuery,
-        onQueryChange = viewModel::onSearchQueryChanged,
+        onQueryChange = onSearchQueryChanged,
         modifier = Modifier.padding(16.dp),
         placeholderText = "${stringResource(R.string.select_partner_search)}...",
       )
@@ -105,8 +125,8 @@ fun SelectPartnerScreen(viewModel: SelectPartnerViewModel) {
           PartnerAccordionItem(
             partner = partner,
             isExpanded = isExpanded,
-            onHeaderClick = { viewModel.onTogglePartnerExpanded(partner.id) },
-            onSelectClick = { /* Select partner and navigate next */ },
+            onHeaderClick = { onTogglePartnerExpanded(partner.id) },
+            onSelectClick = { onSelectClick(partner.id) },
           )
         }
       }

@@ -389,6 +389,33 @@ class MainViewModelTest {
     }
 
   @Test
+  fun `Clicking Sell tile should navigate to Select Partner screen`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser.copy(state = DomainUserState.ON_ROUND))
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+      isInternetReachableFlow.value = true
+
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      val events = mutableListOf<MainScreenEvent>()
+      val job = launch { viewModel.events.collect { events.add(it) } }
+
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val sellTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == MainTileId.SELL }!!
+      viewModel.onTileClick(sellTile)
+      runCurrent()
+
+      assertTrue(events.contains(MainScreenEvent.NavigateToSelectPartner))
+      job.cancel()
+      uiStateJob.cancel()
+    }
+
+  @Test
   fun `roundInfo should be populated when user has active round`() =
     runTest {
       userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
