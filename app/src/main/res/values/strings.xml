@@ -132,4 +132,28 @@
     <string name="select_partner_phone">Telefon</string>
     <string name="payment_method_wire_transfer_abbr">Á</string>
     <string name="payment_method_cash_abbr">K</string>
+
+    <!-- Scanner -->
+    <string name="scanner_title">Vonalkód olvasása</string>
+    <string name="scanner_scanned_code">Beolvasott kód:</string>
+    <string name="scanner_accept_and_back">Elfogadás és vissza</string>
+    <string name="scanner_permission_required">Kamera engedély szükséges a vonalkód olvasáshoz</string>
+    <string name="scanner_open_settings">Beállítások megnyitása</string>
+
+    <!-- Select Items -->
+    <string name="select_items_title">Tételek</string>
+    <string name="select_items_exit_warning_title">Megerősítés szükséges</string>
+    <string name="select_items_exit_warning_message">Biztosan ki szeretne lépni? A folyamat a partnerválasztástól indul újra!</string>
+    <string name="select_items_search_placeholder">Keresés…</string>
+    <string name="select_items_order_label">Rendelés: </string>
+    <string name="select_items_purchase_label">Vásárlás: </string>
+    <string name="select_items_order_row">Rendelés</string>
+    <string name="select_items_delete">Törlés</string>
+    <string name="select_items_barcode">Vonalkód</string>
+    <string name="select_items_decrease">Csökkentés</string>
+    <string name="select_items_increase">Növelés</string>
+
+    <!-- Common Dialog -->
+    <string name="dialog_yes">Igen</string>
+    <string name="dialog_cancel">Mégsem</string>
 </resources>

@@ -34,7 +34,7 @@ object DatabaseModule {
         context,
         BorealDatabase::class.java,
         "boreal_database",
-      ).fallbackToDestructiveMigration()
+      ).fallbackToDestructiveMigration(true)
       .build()
 
   @Provides

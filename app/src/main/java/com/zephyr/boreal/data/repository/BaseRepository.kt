@@ -43,7 +43,6 @@ abstract class BaseRepository(
     cacheTimeoutMillis: Long = DEFAULT_CACHE_TIMEOUT_MS,
   ): Flow<ApiResource<ResultType>> =
     flow {
-      // First, emit the current data from the local source
       val data = query().first()
 
       val isInternetReachable = connectivityObserver.isInternetReachable.value
@@ -62,43 +61,41 @@ abstract class BaseRepository(
 
       if (isStale) {
         if (!hasValidSession) {
-          // If session is invalid, don't attempt network fetch, just return error or existing data
-          emitAll(query().map { ApiResource.Error("Invalid session. Please log in.", it) })
+          emit(ApiResource.Error("Invalid session. Please log in.", data))
           return@flow
         }
 
         if (!isInternetReachable) {
-          // If offline, emit local data and optionally an error or keep it as success/loading based on needs.
-          // For now, emit local data as Success, as offline should allow usage.
-          emitAll(query().map { ApiResource.Success(it) })
+          emit(ApiResource.Success(data))
           return@flow
         }
 
-        // If we should fetch, notify UI that we are starting background fetch
         emit(ApiResource.Loading(data).apply { isFetching = true })
 
         try {
-          // Perform the network fetch with retry logic (3 attempts total)
           val result = fetchWithRetry(fetch)
-
-          // Save result to DB
           saveFetchResult(result)
 
-          // Update cache metadata
           if (queryKey != null) {
             cacheMetadataDao.insertCacheMetadata(CacheMetadataEntity(queryKey, currentTime))
           }
-
-          // Emit the final success from the new DB content
-          emitAll(query().map { ApiResource.Success(it) })
         } catch (throwable: Exception) {
-          // If network fails, emit Error with the previous data we had
-          emitAll(query().map { ApiResource.Error(throwable.localizedMessage ?: "Unknown Error", it) })
+          // Emit error, then we will continue to emit the DB flow with Error state
+          emitAll(
+            query().map {
+              ApiResource.Error(throwable.localizedMessage ?: "Unknown Error", it)
+            },
+          )
+          return@flow
         }
-      } else {
-        // If no fetch is needed, just emit the current DB data as success
-        emitAll(query().map { ApiResource.Success(it) })
       }
+
+      // Defer to the local database as the single source of truth for ongoing updates
+      emitAll(
+        query().map {
+          ApiResource.Success(it)
+        },
+      )
     }
 
   /**

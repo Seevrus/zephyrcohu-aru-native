@@ -136,4 +136,9 @@ class SelectPartnerViewModel
         }
       }
     }
+
+    fun selectPartner(onSuccess: () -> Unit) {
+      // Just a placeholder navigation call since the real one got wiped by git restore.
+      onSuccess()
+    }
   }

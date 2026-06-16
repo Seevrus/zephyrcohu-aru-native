@@ -19,13 +19,55 @@ class ReceiptsStore
     private val _currentReceipt = MutableStateFlow<DraftReceipt?>(null)
     val currentReceipt: StateFlow<DraftReceipt?> = _currentReceipt.asStateFlow()
 
+    private val _selectedItems = MutableStateFlow<Map<Int, Map<Int, Double>>>(emptyMap())
+    val selectedItems: StateFlow<Map<Int, Map<Int, Double>>> = _selectedItems.asStateFlow()
+
+    private val _selectedOrderItems = MutableStateFlow<Map<Int, Double>>(emptyMap())
+    val selectedOrderItems: StateFlow<Map<Int, Double>> = _selectedOrderItems.asStateFlow()
+
     fun resetReceipts() {
       _receipts.value = emptyList()
       _currentReceipt.value = null
+      _selectedItems.value = emptyMap()
+      _selectedOrderItems.value = emptyMap()
     }
 
     fun setCurrentReceipt(receipt: DraftReceipt?) {
       _currentReceipt.value = receipt
+    }
+
+    fun upsertSelectedItem(
+      itemId: Int,
+      expirationId: Int,
+      quantity: Double?,
+    ) {
+      _selectedItems.update { current ->
+        val itemMap = current[itemId]?.toMutableMap() ?: mutableMapOf()
+        if (quantity == null || quantity <= 0) {
+          itemMap.remove(expirationId)
+        } else {
+          itemMap[expirationId] = quantity
+        }
+
+        if (itemMap.isEmpty()) {
+          current - itemId
+        } else {
+          current + (itemId to itemMap)
+        }
+      }
+    }
+
+    fun upsertOrderItem(
+      itemId: Int,
+      quantity: Double?,
+    ) {
+      _selectedOrderItems.update { current ->
+        if (quantity == null || quantity <= 0) {
+          current - itemId
+        } else {
+          current + (itemId to quantity)
+        }
+      }
     }
 
     fun updateCurrentReceipt(updateFn: (DraftReceipt) -> DraftReceipt) {

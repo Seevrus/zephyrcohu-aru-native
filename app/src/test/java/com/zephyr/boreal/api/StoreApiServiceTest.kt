@@ -115,10 +115,8 @@ class StoreApiServiceTest : BaseApiTest() {
             "id": 1,
             "name": "Main Store",
             "code": "S001",
-            "address": "A",
-            "city": "B",
-            "postalCode": "1000",
-            "country": "HU",
+            "type": "S",
+            "state": "I",
             "createdAt": "2026-04-03T09:00:00Z",
             "updatedAt": "2026-04-03T09:00:00Z",
             "expirations": []

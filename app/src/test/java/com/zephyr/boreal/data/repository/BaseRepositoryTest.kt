@@ -168,6 +168,9 @@ class BaseRepositoryTest {
       val results = flow.toList()
 
       assertEquals(3, attempts) // 1 initial + 2 retries
-      assertTrue(results.last() is ApiResource.Error)
+      assertEquals(2, results.size) // Loading -> Error(LocalData)
+      assertTrue(results[0] is ApiResource.Loading)
+      assertTrue(results[1] is ApiResource.Error)
+      assertEquals("LocalData", results[1].getOrNull())
     }
 }

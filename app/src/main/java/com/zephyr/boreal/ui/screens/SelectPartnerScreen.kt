@@ -58,7 +58,10 @@ import kotlinx.coroutines.delay
 private const val ANIMATION_DURATION_MS = 300
 
 @Composable
-fun SelectPartnerScreen(viewModel: SelectPartnerViewModel) {
+fun SelectPartnerScreen(
+  viewModel: SelectPartnerViewModel,
+  onNavigateNext: () -> Unit = {},
+) {
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
   SelectPartnerScreenContent(
@@ -67,7 +70,9 @@ fun SelectPartnerScreen(viewModel: SelectPartnerViewModel) {
     onTabSelected = viewModel::onTabSelected,
     onTogglePartnerExpanded = viewModel::onTogglePartnerExpanded,
     onAddPartnerClick = { /* Add Partner action */ },
-    onSelectClick = { /* Select partner and navigate next */ },
+    onSelectClick = {
+      viewModel.selectPartner { onNavigateNext() }
+    },
   )
 }
 
