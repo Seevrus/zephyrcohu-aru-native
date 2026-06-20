@@ -52,6 +52,7 @@ fun SearchPartnerNavScreen(
   )
 }
 
+@Suppress("LongMethod")
 @Composable
 fun SearchPartnerNavScreenContent(
   uiState: SearchPartnerNavUiState,
@@ -97,7 +98,7 @@ fun SearchPartnerNavScreenContent(
             color = BorealColors.Error,
           )
         }
-        uiState.taxNumber.length == 8 && uiState.results.isEmpty() -> {
+        uiState.taxNumber.length == TAX_NUMBER_DIGIT_COUNT && uiState.results.isEmpty() -> {
           Text(
             text = stringResource(R.string.search_partner_nav_no_results),
             color = BorealColors.White,

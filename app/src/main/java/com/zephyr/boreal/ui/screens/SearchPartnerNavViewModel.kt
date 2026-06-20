@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
+internal const val TAX_NUMBER_DIGIT_COUNT = 8
+
 data class SearchPartnerNavUiState(
   val taxNumber: String = "",
   val isSearching: Boolean = false,
@@ -35,7 +37,7 @@ class SearchPartnerNavViewModel
     val uiState: StateFlow<SearchPartnerNavUiState> =
       taxNumberFlow
         .flatMapLatest { digits ->
-          if (digits.length == 8) {
+          if (digits.length == TAX_NUMBER_DIGIT_COUNT) {
             partnersRepository.searchTaxNumber(digits).map { resource ->
               when (resource) {
                 is ApiResource.Loading ->

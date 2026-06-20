@@ -72,6 +72,7 @@ fun BorealApp() {
   }
 }
 
+@Suppress("LongMethod")
 @Composable
 fun BorealNavHost(navController: androidx.navigation.NavHostController) {
   NavHost(navController = navController, startDestination = "main") {
