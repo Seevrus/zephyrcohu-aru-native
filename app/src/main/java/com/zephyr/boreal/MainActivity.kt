@@ -1,5 +1,6 @@
 package com.zephyr.boreal
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -13,9 +14,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.zephyr.boreal.ui.screens.AddPartnerScreen
+import com.zephyr.boreal.ui.screens.AddPartnerViewModel
 import com.zephyr.boreal.ui.screens.AppLockedScreen
 import com.zephyr.boreal.ui.screens.ChangePasswordScreen
 import com.zephyr.boreal.ui.screens.EndErrandScreen
@@ -25,6 +30,8 @@ import com.zephyr.boreal.ui.screens.LoginScreen
 import com.zephyr.boreal.ui.screens.MainScreen
 import com.zephyr.boreal.ui.screens.PrintEndErrandScreen
 import com.zephyr.boreal.ui.screens.PrintSettingsScreen
+import com.zephyr.boreal.ui.screens.SearchPartnerNavScreen
+import com.zephyr.boreal.ui.screens.SearchPartnerNavViewModel
 import com.zephyr.boreal.ui.screens.SelectItemsScreen
 import com.zephyr.boreal.ui.screens.SelectItemsViewModel
 import com.zephyr.boreal.ui.screens.SelectPartnerScreen
@@ -100,6 +107,26 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
     }
     composable("select_partner") {
       SelectPartnerRoute(navController)
+    }
+    composable("search_partner_nav") {
+      SearchPartnerNavRoute(navController)
+    }
+    composable(
+      "add_partner?taxNumber={taxNumber}&selectedIndex={selectedIndex}",
+      arguments =
+        listOf(
+          navArgument("taxNumber") {
+            type = NavType.StringType
+            nullable = true
+            defaultValue = null
+          },
+          navArgument("selectedIndex") {
+            type = NavType.IntType
+            defaultValue = -1
+          },
+        ),
+    ) {
+      AddPartnerRoute(navController)
     }
     composable("select_items") {
       SelectItemsRoute(navController)
@@ -250,6 +277,42 @@ private fun SelectPartnerRoute(navController: androidx.navigation.NavHostControl
     onNavigateNext = {
       navController.navigate("select_items") {
         popUpTo("select_partner") { inclusive = true }
+      }
+    },
+    onNavigateToAddPartner = { isOnline ->
+      if (isOnline) {
+        navController.navigate("search_partner_nav")
+      } else {
+        navController.navigate("add_partner")
+      }
+    },
+  )
+}
+
+@Composable
+private fun SearchPartnerNavRoute(navController: androidx.navigation.NavHostController) {
+  val viewModel: SearchPartnerNavViewModel = hiltViewModel()
+  SearchPartnerNavScreen(
+    viewModel = viewModel,
+    onNavigateToAddPartner = { taxNumber, selectedIndex ->
+      navController.navigate(
+        "add_partner?taxNumber=${Uri.encode(taxNumber)}&selectedIndex=$selectedIndex",
+      )
+    },
+    onNavigateToManualEntry = {
+      navController.navigate("add_partner")
+    },
+  )
+}
+
+@Composable
+private fun AddPartnerRoute(navController: androidx.navigation.NavHostController) {
+  val viewModel: AddPartnerViewModel = hiltViewModel()
+  AddPartnerScreen(
+    viewModel = viewModel,
+    onNavigateToSelectItems = {
+      navController.navigate("select_items") {
+        popUpTo("main") { inclusive = false }
       }
     },
   )

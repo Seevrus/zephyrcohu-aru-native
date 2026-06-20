@@ -8,6 +8,7 @@ import com.zephyr.boreal.domain.model.Partner
 import com.zephyr.boreal.domain.model.PartnerList
 import com.zephyr.boreal.domain.model.Round
 import com.zephyr.boreal.domain.model.User
+import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.receipts.ReceiptsStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,6 +21,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -33,11 +35,13 @@ class SelectPartnerViewModelTest {
   private val partnersRepository: PartnersRepository = mock()
   private val userRepository: UserRepository = mock()
   private val receiptsStore: ReceiptsStore = mock()
+  private val connectivityObserver: ConnectivityObserver = mock()
   private val testDispatcher = StandardTestDispatcher()
 
   private val partnersFlow = MutableStateFlow<ApiResource<List<Partner>>>(ApiResource.Loading())
   private val partnerListsFlow = MutableStateFlow<ApiResource<List<PartnerList>>>(ApiResource.Loading())
   private val userFlow = MutableStateFlow<ApiResource<User?>>(ApiResource.Loading())
+  private val connectivityFlow = MutableStateFlow(true)
 
   @BeforeEach
   fun setUp() {
@@ -45,6 +49,7 @@ class SelectPartnerViewModelTest {
     whenever(partnersRepository.getPartners()).thenReturn(partnersFlow)
     whenever(partnersRepository.getPartnerLists(org.mockito.kotlin.any())).thenReturn(partnerListsFlow)
     whenever(userRepository.getCurrentUser()).thenReturn(userFlow)
+    whenever(connectivityObserver.isInternetReachable).thenReturn(connectivityFlow)
   }
 
   @AfterEach
@@ -55,7 +60,7 @@ class SelectPartnerViewModelTest {
   @Test
   fun `initial state is correct`() =
     runTest {
-      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore)
+      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore, connectivityObserver)
 
       advanceUntilIdle()
 
@@ -84,7 +89,7 @@ class SelectPartnerViewModelTest {
       partnerListsFlow.value = ApiResource.Success(listOf(partnerList))
       userFlow.value = ApiResource.Success(user)
 
-      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore)
+      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore, connectivityObserver)
       val collectJob =
         backgroundScope.launch(kotlinx.coroutines.test.UnconfinedTestDispatcher(testScheduler)) {
           viewModel.uiState.collect { }
@@ -122,7 +127,7 @@ class SelectPartnerViewModelTest {
       partnerListsFlow.value = ApiResource.Success(emptyList()) // Doesn't matter for ALL_STORES
       userFlow.value = ApiResource.Success(null)
 
-      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore)
+      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore, connectivityObserver)
       val collectJob =
         backgroundScope.launch(kotlinx.coroutines.test.UnconfinedTestDispatcher(testScheduler)) {
           viewModel.uiState.collect { }
@@ -167,7 +172,7 @@ class SelectPartnerViewModelTest {
       partnerListsFlow.value = ApiResource.Success(emptyList())
       userFlow.value = ApiResource.Success(null)
 
-      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore)
+      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore, connectivityObserver)
       val collectJob =
         backgroundScope.launch(kotlinx.coroutines.test.UnconfinedTestDispatcher(testScheduler)) {
           viewModel.uiState.collect { }
@@ -210,7 +215,7 @@ class SelectPartnerViewModelTest {
       partnerListsFlow.value = ApiResource.Success(emptyList())
       userFlow.value = ApiResource.Success(null)
 
-      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore)
+      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore, connectivityObserver)
       val collectJob =
         backgroundScope.launch(kotlinx.coroutines.test.UnconfinedTestDispatcher(testScheduler)) {
           viewModel.uiState.collect { }
@@ -230,6 +235,31 @@ class SelectPartnerViewModelTest {
       assertEquals("P1", captor.firstValue.partnerCode)
       assertTrue(successCalled)
 
+      collectJob.cancel()
+    }
+
+  @Test
+  fun `isInternetReachable reflects connectivity state`() =
+    runTest {
+      val viewModel =
+        SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore, connectivityObserver)
+      val collectJob =
+        backgroundScope.launch(kotlinx.coroutines.test.UnconfinedTestDispatcher(testScheduler)) {
+          viewModel.uiState.collect { }
+        }
+
+      partnersFlow.value = ApiResource.Success(emptyList())
+      partnerListsFlow.value = ApiResource.Success(emptyList())
+      userFlow.value = ApiResource.Success(null)
+      connectivityFlow.value = true
+      advanceUntilIdle()
+
+      assertTrue(viewModel.uiState.value.isInternetReachable)
+
+      connectivityFlow.value = false
+      advanceUntilIdle()
+
+      assertFalse(viewModel.uiState.value.isInternetReachable)
       collectJob.cancel()
     }
 

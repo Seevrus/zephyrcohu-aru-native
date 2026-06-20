@@ -7,6 +7,7 @@ import com.zephyr.boreal.data.repository.UserRepository
 import com.zephyr.boreal.domain.model.DraftReceipt
 import com.zephyr.boreal.domain.model.Partner
 import com.zephyr.boreal.domain.model.canAddPartner
+import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.receipts.ReceiptsStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,7 @@ data class SelectPartnerUiState(
   val expandedPartnerIds: Set<Int> = emptySet(),
   val canAddPartner: Boolean = false,
   val selectedPartnerId: Int? = null,
+  val isInternetReachable: Boolean = false,
 )
 
 @HiltViewModel
@@ -39,6 +41,7 @@ class SelectPartnerViewModel
     private val partnersRepository: PartnersRepository,
     private val userRepository: UserRepository,
     private val receiptsStore: ReceiptsStore,
+    private val connectivityObserver: ConnectivityObserver,
   ) : ViewModel() {
     private val searchQueryFlow = MutableStateFlow("")
     private val selectedTabFlow = MutableStateFlow(PartnerTab.ROUND_STORES)
@@ -55,67 +58,72 @@ class SelectPartnerViewModel
 
     val uiState: StateFlow<SelectPartnerUiState> =
       combine(
-        filtersFlow,
-        partnersRepository.getPartners(),
-        partnersRepository.getPartnerLists(),
-        userRepository.getCurrentUser(),
-      ) { filters, partnersRes, partnerListsRes, userRes ->
-        val (searchQuery, selectedTab, expandedIds) = filters
-        val user = userRes.getOrNull()
-        val canAddPartner = user?.canAddPartner == true
-        val allPartners = partnersRes.getOrNull() ?: emptyList()
+        combine(
+          filtersFlow,
+          partnersRepository.getPartners(),
+          partnersRepository.getPartnerLists(),
+          userRepository.getCurrentUser(),
+        ) { filters, partnersRes, partnerListsRes, userRes ->
+          val (searchQuery, selectedTab, expandedIds) = filters
+          val user = userRes.getOrNull()
+          val canAddPartner = user?.canAddPartner == true
+          val allPartners = partnersRes.getOrNull() ?: emptyList()
 
-        val filteredPartners =
-          when (selectedTab) {
-            PartnerTab.ALL_STORES -> allPartners
-            PartnerTab.ROUND_STORES -> {
-              val currentRoundPartnerListId = user?.lastRound?.partnerList?.id
-              val currentPartnerList =
-                partnerListsRes.getOrNull()?.find { it.id == currentRoundPartnerListId }
+          val filteredPartners =
+            when (selectedTab) {
+              PartnerTab.ALL_STORES -> allPartners
+              PartnerTab.ROUND_STORES -> {
+                val currentRoundPartnerListId = user?.lastRound?.partnerList?.id
+                val currentPartnerList =
+                  partnerListsRes.getOrNull()?.find { it.id == currentRoundPartnerListId }
 
-              if (currentPartnerList != null) {
-                allPartners.filter { currentPartnerList.partners.contains(it.id) }
-              } else {
-                emptyList()
+                if (currentPartnerList != null) {
+                  allPartners.filter { currentPartnerList.partners.contains(it.id) }
+                } else {
+                  emptyList()
+                }
               }
+            }.filter { partner ->
+              if (searchQuery.isBlank()) return@filter true
+
+              val needle = searchQuery.lowercase()
+              val haystack =
+                partner.locations
+                  .joinToString("") { loc ->
+                    "${loc.postalCode}${loc.name}${loc.city}${loc.address}"
+                  }.lowercase()
+
+              haystack.contains(needle)
             }
-          }.filter { partner ->
-            if (searchQuery.isBlank()) return@filter true
 
-            val needle = searchQuery.lowercase()
-            val haystack =
-              partner.locations
-                .joinToString("") { loc ->
-                  "${loc.postalCode}${loc.name}${loc.city}${loc.address}"
-                }.lowercase()
+          // Treat the expanded partner as the selected partner
+          val actualSelectedPartnerId: Int? = expandedIds.firstOrNull()
 
-            haystack.contains(needle)
-          }
-
-        // Treat the expanded partner as the selected partner
-        val actualSelectedPartnerId: Int? = expandedIds.firstOrNull()
-
-        val partnersWithSelectedPrepended =
-          if (actualSelectedPartnerId != null) {
-            val selectedPartner = allPartners.find { it.id == actualSelectedPartnerId }
-            if (selectedPartner != null && !filteredPartners.contains(selectedPartner)) {
-              listOf(selectedPartner) + filteredPartners
+          val partnersWithSelectedPrepended =
+            if (actualSelectedPartnerId != null) {
+              val selectedPartner = allPartners.find { it.id == actualSelectedPartnerId }
+              if (selectedPartner != null && !filteredPartners.contains(selectedPartner)) {
+                listOf(selectedPartner) + filteredPartners
+              } else {
+                filteredPartners
+              }
             } else {
               filteredPartners
             }
-          } else {
-            filteredPartners
-          }
 
-        SelectPartnerUiState(
-          isLoading = partnersRes.isLoading || partnerListsRes.isLoading,
-          searchQuery = searchQuery,
-          selectedTab = selectedTab,
-          partners = partnersWithSelectedPrepended,
-          expandedPartnerIds = expandedIds,
-          canAddPartner = canAddPartner,
-          selectedPartnerId = actualSelectedPartnerId,
-        )
+          SelectPartnerUiState(
+            isLoading = partnersRes.isLoading || partnerListsRes.isLoading,
+            searchQuery = searchQuery,
+            selectedTab = selectedTab,
+            partners = partnersWithSelectedPrepended,
+            expandedPartnerIds = expandedIds,
+            canAddPartner = canAddPartner,
+            selectedPartnerId = actualSelectedPartnerId,
+          )
+        },
+        connectivityObserver.isInternetReachable,
+      ) { state, isOnline ->
+        state.copy(isInternetReachable = isOnline)
       }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),

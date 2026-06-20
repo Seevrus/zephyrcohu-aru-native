@@ -61,6 +61,7 @@ private const val ANIMATION_DURATION_MS = 300
 fun SelectPartnerScreen(
   viewModel: SelectPartnerViewModel,
   onNavigateNext: () -> Unit = {},
+  onNavigateToAddPartner: (isInternetReachable: Boolean) -> Unit = {},
 ) {
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -69,7 +70,7 @@ fun SelectPartnerScreen(
     onSearchQueryChanged = viewModel::onSearchQueryChanged,
     onTabSelected = viewModel::onTabSelected,
     onTogglePartnerExpanded = viewModel::onTogglePartnerExpanded,
-    onAddPartnerClick = { /* Add Partner action */ },
+    onAddPartnerClick = { onNavigateToAddPartner(uiState.isInternetReachable) },
     onSelectClick = {
       viewModel.selectPartner { onNavigateNext() }
     },
