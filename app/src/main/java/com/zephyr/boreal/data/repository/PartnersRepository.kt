@@ -99,6 +99,10 @@ class PartnersRepository
           taxPayerDao.insertTaxPayers(taxpayers.map { it.toEntity() })
         },
         queryKey = "search_tax_number_$taxNumber",
-        cacheTimeoutMillis = if (forceRefresh) 0L else DEFAULT_CACHE_TIMEOUT_MS,
+        cacheTimeoutMillis = if (forceRefresh) 0L else TAX_NUMBER_CACHE_TIMEOUT_MS,
       )
+
+    companion object {
+      private const val TAX_NUMBER_CACHE_TIMEOUT_MS = 86_400_000L // 1 day
+    }
   }
