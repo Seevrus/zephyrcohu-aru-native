@@ -132,6 +132,22 @@
     <string name="select_partner_phone">Telefon</string>
     <string name="payment_method_wire_transfer_abbr">Á</string>
     <string name="payment_method_cash_abbr">K</string>
+    <string name="search_partner_nav_title">Partner keresése</string>
+    <string name="search_partner_nav_hint">Adószám (8 számjegy)</string>
+    <string name="search_partner_nav_searching">Keresés…</string>
+    <string name="search_partner_nav_no_results">Nincs találat</string>
+    <string name="search_partner_nav_error">Hiba a keresés során</string>
+    <string name="search_partner_nav_manual_entry">Kézi megadás</string>
+    <string name="search_partner_nav_select">Kiválasztás</string>
+    <string name="add_partner_title">Partner hozzáadása</string>
+    <string name="add_partner_tax_number">Adószám</string>
+    <string name="add_partner_name">A bolt neve</string>
+    <string name="add_partner_headquarters">Székhely</string>
+    <string name="add_partner_delivery">A bolt neve és címe</string>
+    <string name="add_partner_postal_code">Irányítószám</string>
+    <string name="add_partner_city">Város</string>
+    <string name="add_partner_address">Cím</string>
+    <string name="add_partner_submit">Mentés és tovább</string>
 
     <!-- Scanner -->
     <string name="scanner_title">Vonalkód olvasása</string>
