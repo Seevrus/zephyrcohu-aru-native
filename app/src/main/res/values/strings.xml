@@ -132,7 +132,9 @@
     <string name="select_partner_phone">Telefon</string>
     <string name="payment_method_wire_transfer_abbr">Á</string>
     <string name="payment_method_cash_abbr">K</string>
-    <string name="search_partner_nav_title">Partner keresése</string>
+    <string name="search_partner_nav_title">Új partner keresése</string>
+    <string name="search_partner_nav_info">Amennyiben nem találja a keresett partnert a listában, ezen az oldalon lehetősége van keresésre a NAV adatbázisában.</string>
+    <string name="search_partner_nav_label">Keresés adószámra:</string>
     <string name="search_partner_nav_hint">Adószám (8 számjegy)</string>
     <string name="search_partner_nav_searching">Keresés…</string>
     <string name="search_partner_nav_no_results">Nincs találat</string>

@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -29,8 +27,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zephyr.boreal.R
 import com.zephyr.boreal.domain.model.TaxPayer
+import com.zephyr.boreal.ui.components.BorealButton
 import com.zephyr.boreal.ui.components.BorealTopAppBar
+import com.zephyr.boreal.ui.components.ButtonVariant
+import com.zephyr.boreal.ui.components.InfoCard
 import com.zephyr.boreal.ui.theme.BorealColors
+import com.zephyr.boreal.ui.theme.BorealFontSizes
+import com.zephyr.boreal.ui.theme.NunitoSansFamily
 
 @Composable
 fun SearchPartnerNavScreen(
@@ -75,14 +78,36 @@ fun SearchPartnerNavScreenContent(
           .padding(paddingValues)
           .padding(16.dp),
     ) {
+      if (uiState.taxNumber.isEmpty()) {
+        InfoCard(message = stringResource(R.string.search_partner_nav_info))
+      }
+
+      Text(
+        text = stringResource(R.string.search_partner_nav_label),
+        color = BorealColors.White,
+        fontFamily = NunitoSansFamily,
+        fontSize = BorealFontSizes.Body,
+      )
+      Spacer(modifier = Modifier.height(4.dp))
       OutlinedTextField(
         value = uiState.taxNumber,
         onValueChange = onTaxNumberChanged,
-        label = { Text(stringResource(R.string.search_partner_nav_hint)) },
+        placeholder = { Text(stringResource(R.string.search_partner_nav_hint)) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
       )
+
+      Spacer(modifier = Modifier.height(16.dp))
+
+      Box(modifier = Modifier.fillMaxWidth()) {
+        BorealButton(
+          text = stringResource(R.string.search_partner_nav_manual_entry),
+          variant = ButtonVariant.NEUTRAL,
+          onClick = onManualEntry,
+          modifier = Modifier.align(Alignment.Center),
+        )
+      }
 
       Spacer(modifier = Modifier.height(16.dp))
 
@@ -104,7 +129,7 @@ fun SearchPartnerNavScreenContent(
             color = BorealColors.White,
           )
         }
-        else -> {
+        uiState.results.isNotEmpty() -> {
           LazyColumn(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(bottom = 16.dp),
@@ -120,19 +145,6 @@ fun SearchPartnerNavScreenContent(
             }
           }
         }
-      }
-
-      Spacer(modifier = Modifier.weight(1f))
-
-      Button(
-        onClick = onManualEntry,
-        modifier = Modifier.fillMaxWidth(),
-        colors = ButtonDefaults.buttonColors(containerColor = BorealColors.Neutral),
-      ) {
-        Text(
-          text = stringResource(R.string.search_partner_nav_manual_entry),
-          color = BorealColors.White,
-        )
       }
     }
   }
@@ -169,13 +181,12 @@ private fun TaxPayerResultItem(
       )
     }
     Spacer(modifier = Modifier.height(8.dp))
-    Button(
-      onClick = onSelect,
-      colors = ButtonDefaults.buttonColors(containerColor = BorealColors.Ok),
-    ) {
-      Text(
+    Box(modifier = Modifier.fillMaxWidth()) {
+      BorealButton(
         text = stringResource(R.string.search_partner_nav_select),
-        color = BorealColors.White,
+        variant = ButtonVariant.OK,
+        onClick = onSelect,
+        modifier = Modifier.align(Alignment.CenterStart),
       )
     }
   }
