@@ -14,7 +14,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,12 +27,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zephyr.boreal.R
 import com.zephyr.boreal.domain.model.TaxPayer
 import com.zephyr.boreal.ui.components.BorealButton
+import com.zephyr.boreal.ui.components.BorealTextInput
 import com.zephyr.boreal.ui.components.BorealTopAppBar
 import com.zephyr.boreal.ui.components.ButtonVariant
 import com.zephyr.boreal.ui.components.InfoCard
 import com.zephyr.boreal.ui.theme.BorealColors
-import com.zephyr.boreal.ui.theme.BorealFontSizes
-import com.zephyr.boreal.ui.theme.NunitoSansFamily
 
 @Composable
 fun SearchPartnerNavScreen(
@@ -82,20 +80,12 @@ fun SearchPartnerNavScreenContent(
         InfoCard(message = stringResource(R.string.search_partner_nav_info))
       }
 
-      Text(
-        text = stringResource(R.string.search_partner_nav_label),
-        color = BorealColors.White,
-        fontFamily = NunitoSansFamily,
-        fontSize = BorealFontSizes.Body,
-      )
-      Spacer(modifier = Modifier.height(4.dp))
-      OutlinedTextField(
+      BorealTextInput(
+        label = stringResource(R.string.search_partner_nav_label),
         value = uiState.taxNumber,
         onValueChange = onTaxNumberChanged,
-        placeholder = { Text(stringResource(R.string.search_partner_nav_hint)) },
+        maxLength = TAX_NUMBER_DIGIT_COUNT,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
       )
 
       Spacer(modifier = Modifier.height(16.dp))
