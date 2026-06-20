@@ -24,7 +24,7 @@ fun SearchTaxNumberResponseDto.toDomain(): List<TaxPayer> {
       timeZone = TimeZone.getTimeZone("UTC")
     }
   val now = isoFormat.format(Date())
-  val addressList = data.addressList ?: emptyList()
+  val addressList = data.addressList
 
   val centralLocation = mapCentralLocation(data.name ?: "", addressList, now)
   val siteAddresses = addressList.filter { it.taxpayerAddressType == TaxpayerAddressType.SITE }
@@ -56,7 +56,7 @@ private fun mapCentralLocation(
           it.taxpayerAddress.streetName,
           it.taxpayerAddress.publicPlaceCategory,
           it.taxpayerAddress.number,
-        ).filter { s -> s.isNotEmpty() }.joinToString(" "),
+        ).filterNotNull().filter { s -> s.isNotEmpty() }.joinToString(" "),
       createdAt = now,
       updatedAt = now,
     )
@@ -83,7 +83,7 @@ private fun mapSiteAddresses(
             site.taxpayerAddress.streetName,
             site.taxpayerAddress.publicPlaceCategory,
             site.taxpayerAddress.number,
-          ).filter { s -> s.isNotEmpty() }.joinToString(" "),
+          ).filterNotNull().filter { s -> s.isNotEmpty() }.joinToString(" "),
         createdAt = now,
         updatedAt = now,
       )
@@ -118,7 +118,7 @@ private fun mapSingleAddress(
           address.taxpayerAddress.streetName,
           address.taxpayerAddress.publicPlaceCategory,
           address.taxpayerAddress.number,
-        ).filter { s -> s.isNotEmpty() }.joinToString(" "),
+        ).filterNotNull().filter { s -> s.isNotEmpty() }.joinToString(" "),
       createdAt = now,
       updatedAt = now,
     )
