@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zephyr.boreal.data.repository.PartnersRepository
 import com.zephyr.boreal.data.repository.UserRepository
+import com.zephyr.boreal.domain.model.DraftReceipt
 import com.zephyr.boreal.domain.model.Partner
 import com.zephyr.boreal.domain.model.canAddPartner
+import com.zephyr.boreal.store.receipts.ReceiptsStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,6 +38,7 @@ class SelectPartnerViewModel
   constructor(
     private val partnersRepository: PartnersRepository,
     private val userRepository: UserRepository,
+    private val receiptsStore: ReceiptsStore,
   ) : ViewModel() {
     private val searchQueryFlow = MutableStateFlow("")
     private val selectedTabFlow = MutableStateFlow(PartnerTab.ROUND_STORES)
@@ -138,7 +141,17 @@ class SelectPartnerViewModel
     }
 
     fun selectPartner(onSuccess: () -> Unit) {
-      // Just a placeholder navigation call since the real one got wiped by git restore.
+      val selectedPartnerId = uiState.value.selectedPartnerId ?: return
+      val partner = uiState.value.partners.find { it.id == selectedPartnerId } ?: return
+      receiptsStore.setCurrentReceipt(
+        DraftReceipt(
+          partnerId = partner.id,
+          partnerCode = partner.code,
+          partnerSiteCode = partner.siteCode,
+          paymentDays = partner.paymentDays,
+          invoiceType = partner.invoiceType,
+        ),
+      )
       onSuccess()
     }
   }

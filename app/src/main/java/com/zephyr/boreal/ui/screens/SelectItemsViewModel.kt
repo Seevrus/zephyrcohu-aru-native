@@ -45,6 +45,7 @@ data class SelectItemsUiState(
   val searchQuery: String = "",
   val barcodeQuery: String = "",
   val items: List<SellItem> = emptyList(),
+  val allItems: List<SellItem> = emptyList(),
   val selectedItems: Map<Int, Map<Int, Double>> = emptyMap(),
   val selectedOrderItems: Map<Int, Double> = emptyMap(),
   val netTotal: Double = 0.0,
@@ -123,61 +124,64 @@ class SelectItemsViewModel
         val rawItems = itemsRes.getOrNull() ?: emptyList()
         val inventory = storeState?.expirations ?: emptyList()
 
-        val sellItems =
-          rawItems
-            .map { item ->
-              val sellExpirations =
-                item.expirations
-                  .map { exp ->
-                    val expDateDigits = exp.expiresAt.filter { it.isDigit() }
-                    val storeExp =
-                      inventory.find { it.itemId == item.id && it.expirationId == exp.id }
-                        ?: inventory.find {
-                          (it.articleNumber == item.articleNumber) &&
-                            (
-                              it.expirationId == exp.id ||
-                                it.expiresAt.filter { c -> c.isDigit() }.endsWith(expDateDigits) ||
-                                expDateDigits.endsWith(it.expiresAt.filter { c -> c.isDigit() })
-                            )
-                        }
-                        ?: inventory.find {
+        val allSellItems =
+          rawItems.map { item ->
+            val sellExpirations =
+              item.expirations
+                .map { exp ->
+                  val expDateDigits = exp.expiresAt.filter { it.isDigit() }
+                  val storeExp =
+                    inventory.find { it.itemId == item.id && it.expirationId == exp.id }
+                      ?: inventory.find {
+                        (it.articleNumber == item.articleNumber) &&
                           (
-                            it.articleNumber.contains(item.articleNumber) ||
-                              item.articleNumber.contains(it.articleNumber)
-                          ) &&
-                            (
+                            it.expirationId == exp.id ||
                               it.expiresAt.filter { c -> c.isDigit() }.endsWith(expDateDigits) ||
-                                expDateDigits.endsWith(it.expiresAt.filter { c -> c.isDigit() })
-                            )
-                        }
+                              expDateDigits.endsWith(it.expiresAt.filter { c -> c.isDigit() })
+                          )
+                      }
+                      ?: inventory.find {
+                        (
+                          it.articleNumber.contains(item.articleNumber) ||
+                            item.articleNumber.contains(it.articleNumber)
+                        ) &&
+                          (
+                            it.expiresAt.filter { c -> c.isDigit() }.endsWith(expDateDigits) ||
+                              expDateDigits.endsWith(it.expiresAt.filter { c -> c.isDigit() })
+                          )
+                      }
 
-                    SellExpiration(
-                      itemId = item.id,
-                      expirationId = exp.id,
-                      expiresAt = exp.expiresAt,
-                      quantity = storeExp?.quantity ?: 0.0,
-                    )
-                  }
+                  SellExpiration(
+                    itemId = item.id,
+                    expirationId = exp.id,
+                    expiresAt = exp.expiresAt,
+                    quantity = storeExp?.quantity ?: 0.0,
+                  )
+                }
 
-              SellItem(
-                id = item.id,
-                name = item.name,
-                articleNumber = item.articleNumber,
-                unitName = item.unitName,
-                barcodes =
-                  if (item.expirations.isEmpty()) {
-                    listOfNotNull(item.barcode).filter { it.isNotBlank() }
-                  } else {
-                    item.expirations
-                      .mapNotNull { "${item.barcode ?: ""}${it.barcode ?: ""}" }
-                      .filter { it.isNotBlank() }
-                  },
-                netPrice = item.netPrice,
-                vatRate = item.vatRate,
-                cnCode = item.cnCode,
-                expirations = sellExpirations,
-              )
-            }.filter {
+            SellItem(
+              id = item.id,
+              name = item.name,
+              articleNumber = item.articleNumber,
+              unitName = item.unitName,
+              barcodes =
+                if (item.expirations.isEmpty()) {
+                  listOfNotNull(item.barcode).filter { it.isNotBlank() }
+                } else {
+                  item.expirations
+                    .mapNotNull { "${item.barcode ?: ""}${it.barcode ?: ""}" }
+                    .filter { it.isNotBlank() }
+                },
+              netPrice = item.netPrice,
+              vatRate = item.vatRate,
+              cnCode = item.cnCode,
+              expirations = sellExpirations,
+            )
+          }
+
+        val sellItems =
+          allSellItems
+            .filter {
               val nameMatches = it.name.contains(search, ignoreCase = true)
               val barcodeMatches = barcode.isBlank() || it.barcodes.any { bc -> bc.contains(barcode) }
               nameMatches && barcodeMatches
@@ -230,6 +234,7 @@ class SelectItemsViewModel
           searchQuery = search,
           barcodeQuery = barcode,
           items = sellItems,
+          allItems = allSellItems,
           selectedItems = selected,
           selectedOrderItems = ordered,
           netTotal = netTotal,
@@ -285,23 +290,17 @@ class SelectItemsViewModel
     fun confirmItemsHandler(onSuccess: () -> Unit) {
       if (!uiState.value.canConfirmItems) return
 
-      val rawItems = uiState.value.items
+      val allItems = uiState.value.allItems
 
       receiptsStore.updateCurrentReceipt { draft ->
         val selected = receiptsStore.selectedItems.value
         val itemsList = mutableListOf<ReceiptItem>()
 
         selected.forEach { (itemId, expMap) ->
-          val item = rawItems.find { it.id == itemId }
+          val item = allItems.find { it.id == itemId }
           if (item != null) {
-            val vatRateNumeric = item.vatRate.toDoubleOrNull() ?: 0.0
-
             expMap.forEach { (expirationId, qty) ->
-              val netAmount = item.netPrice * qty
-              val vatAmount = kotlin.math.round(netAmount * (vatRateNumeric / 100.0))
-              val grossAmount = netAmount + vatAmount
-
-              // Find the expiration to get the expiresAt string
+              val amounts = AmountCalculator.calculateAmounts(item.netPrice, qty, item.vatRate)
               val expiration = item.expirations.find { it.expirationId == expirationId }
               val expiresAtStr = expiration?.expiresAt?.take(6) ?: ""
 
@@ -313,11 +312,11 @@ class SelectItemsViewModel
                   quantity = qty,
                   unitName = item.unitName,
                   netPrice = item.netPrice,
-                  netAmount = netAmount,
+                  netAmount = amounts.netAmount,
                   vatRate = item.vatRate,
-                  vatAmount = vatAmount,
-                  grossAmount = grossAmount,
-                  discountName = null, // Handled later if discounts apply
+                  vatAmount = amounts.vatAmount,
+                  grossAmount = amounts.grossAmount,
+                  discountName = null,
                   expirationId = expirationId,
                   cnCode = item.cnCode,
                   expiresAt = expiresAtStr,

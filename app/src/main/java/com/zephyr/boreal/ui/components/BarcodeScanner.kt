@@ -21,10 +21,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +40,7 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 @Suppress("LongMethod")
 @Composable
@@ -47,6 +50,7 @@ fun BarcodeScanner(
 ) {
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
+  val currentOnBarcodeScanned by rememberUpdatedState(onBarcodeScanned)
 
   var hasCameraPermission by remember { mutableStateOf(false) }
 
@@ -69,6 +73,22 @@ fun BarcodeScanner(
   }
 
   if (hasCameraPermission) {
+    val executor = remember { Executors.newSingleThreadExecutor() }
+    val barcodeScanner =
+      remember {
+        BarcodeScanning.getClient(
+          BarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS).build(),
+        )
+      }
+    val hasScanned = remember { AtomicBoolean(false) }
+
+    DisposableEffect(Unit) {
+      onDispose {
+        executor.shutdown()
+        barcodeScanner.close()
+      }
+    }
+
     Box(modifier = modifier) {
       AndroidView(
         factory = { ctx ->
@@ -83,14 +103,6 @@ fun BarcodeScanner(
                 it.surfaceProvider = previewView.surfaceProvider
               }
 
-            val barcodeScanner =
-              BarcodeScanning.getClient(
-                BarcodeScannerOptions
-                  .Builder()
-                  .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
-                  .build(),
-              )
-
             val imageAnalyzer =
               ImageAnalysis
                 .Builder()
@@ -98,7 +110,7 @@ fun BarcodeScanner(
                 .build()
                 .also { analysis ->
                   analysis.setAnalyzer(
-                    Executors.newSingleThreadExecutor(),
+                    executor,
                     @OptIn(ExperimentalGetImage::class)
                     object : ImageAnalysis.Analyzer {
                       override fun analyze(imageProxy: ImageProxy) {
@@ -108,9 +120,9 @@ fun BarcodeScanner(
                           barcodeScanner
                             .process(image)
                             .addOnSuccessListener { barcodes ->
-                              for (barcode in barcodes) {
-                                barcode.rawValue?.let { value ->
-                                  onBarcodeScanned(value)
+                              barcodes.firstNotNullOfOrNull { it.rawValue }?.let { value ->
+                                if (hasScanned.compareAndSet(false, true)) {
+                                  currentOnBarcodeScanned(value)
                                 }
                               }
                             }.addOnFailureListener { e ->

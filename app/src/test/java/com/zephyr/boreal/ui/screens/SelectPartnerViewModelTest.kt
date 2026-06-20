@@ -8,6 +8,7 @@ import com.zephyr.boreal.domain.model.Partner
 import com.zephyr.boreal.domain.model.PartnerList
 import com.zephyr.boreal.domain.model.Round
 import com.zephyr.boreal.domain.model.User
+import com.zephyr.boreal.store.receipts.ReceiptsStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,13 +23,16 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SelectPartnerViewModelTest {
   private val partnersRepository: PartnersRepository = mock()
   private val userRepository: UserRepository = mock()
+  private val receiptsStore: ReceiptsStore = mock()
   private val testDispatcher = StandardTestDispatcher()
 
   private val partnersFlow = MutableStateFlow<ApiResource<List<Partner>>>(ApiResource.Loading())
@@ -51,7 +55,7 @@ class SelectPartnerViewModelTest {
   @Test
   fun `initial state is correct`() =
     runTest {
-      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository)
+      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore)
 
       advanceUntilIdle()
 
@@ -80,7 +84,7 @@ class SelectPartnerViewModelTest {
       partnerListsFlow.value = ApiResource.Success(listOf(partnerList))
       userFlow.value = ApiResource.Success(user)
 
-      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository)
+      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore)
       val collectJob =
         backgroundScope.launch(kotlinx.coroutines.test.UnconfinedTestDispatcher(testScheduler)) {
           viewModel.uiState.collect { }
@@ -118,7 +122,7 @@ class SelectPartnerViewModelTest {
       partnerListsFlow.value = ApiResource.Success(emptyList()) // Doesn't matter for ALL_STORES
       userFlow.value = ApiResource.Success(null)
 
-      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository)
+      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore)
       val collectJob =
         backgroundScope.launch(kotlinx.coroutines.test.UnconfinedTestDispatcher(testScheduler)) {
           viewModel.uiState.collect { }
@@ -163,7 +167,7 @@ class SelectPartnerViewModelTest {
       partnerListsFlow.value = ApiResource.Success(emptyList())
       userFlow.value = ApiResource.Success(null)
 
-      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository)
+      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore)
       val collectJob =
         backgroundScope.launch(kotlinx.coroutines.test.UnconfinedTestDispatcher(testScheduler)) {
           viewModel.uiState.collect { }
@@ -194,6 +198,37 @@ class SelectPartnerViewModelTest {
           .isEmpty(),
       )
       assertEquals(null, viewModel.uiState.value.selectedPartnerId)
+
+      collectJob.cancel()
+    }
+
+  @Test
+  fun `selectPartner sets partnerId on receipt and calls onSuccess`() =
+    runTest {
+      val partner = mockPartner(1, "Test Partner")
+      partnersFlow.value = ApiResource.Success(listOf(partner))
+      partnerListsFlow.value = ApiResource.Success(emptyList())
+      userFlow.value = ApiResource.Success(null)
+
+      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore)
+      val collectJob =
+        backgroundScope.launch(kotlinx.coroutines.test.UnconfinedTestDispatcher(testScheduler)) {
+          viewModel.uiState.collect { }
+        }
+      viewModel.onTabSelected(PartnerTab.ALL_STORES)
+      viewModel.onTogglePartnerExpanded(1)
+      advanceUntilIdle()
+
+      assertEquals(1, viewModel.uiState.value.selectedPartnerId)
+
+      var successCalled = false
+      viewModel.selectPartner { successCalled = true }
+
+      val captor = argumentCaptor<com.zephyr.boreal.domain.model.DraftReceipt>()
+      verify(receiptsStore).setCurrentReceipt(captor.capture())
+      assertEquals(1, captor.firstValue.partnerId)
+      assertEquals("P1", captor.firstValue.partnerCode)
+      assertTrue(successCalled)
 
       collectJob.cancel()
     }
