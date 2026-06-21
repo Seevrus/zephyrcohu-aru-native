@@ -20,6 +20,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -96,13 +97,14 @@ class AddPartnerViewModelTest {
     )
 
   @Test
-  fun `initial state is blank when no nav args`() =
+  fun `initial state is blank and not modified when no nav args`() =
     runTest {
       val vm = viewModel()
       advanceUntilIdle()
 
       assertEquals("", vm.uiState.value.taxNumber)
       assertEquals("", vm.uiState.value.name)
+      assertFalse(vm.uiState.value.isModified)
     }
 
   @Test
@@ -121,11 +123,25 @@ class AddPartnerViewModelTest {
 
       assertEquals("12345678-2-41", vm.uiState.value.taxNumber)
       assertEquals("NAV Partner", vm.uiState.value.name)
+      assertEquals("NAV Partner", vm.uiState.value.deliveryName)
       assertEquals("2000", vm.uiState.value.deliveryPostalCode)
       assertEquals("Debrecen", vm.uiState.value.deliveryCity)
       assertEquals("Delivery Road 5", vm.uiState.value.deliveryAddress)
       assertEquals("1000", vm.uiState.value.centralPostalCode)
+      assertTrue(vm.uiState.value.isPreFilled)
+      assertTrue(vm.uiState.value.isModified)
       job.cancel()
+    }
+
+  @Test
+  fun `isModified becomes true after any field change`() =
+    runTest {
+      val vm = viewModel()
+      advanceUntilIdle()
+
+      assertFalse(vm.uiState.value.isModified)
+      vm.onFieldChanged(AddPartnerField.NAME, "x")
+      assertTrue(vm.uiState.value.isModified)
     }
 
   @Test
@@ -139,6 +155,7 @@ class AddPartnerViewModelTest {
       verify(receiptsStore, never()).setCurrentReceipt(org.mockito.kotlin.any())
       assertNotNull(vm.uiState.value.taxNumberError)
       assertNotNull(vm.uiState.value.nameError)
+      assertNotNull(vm.uiState.value.deliveryNameError)
       assertNotNull(vm.uiState.value.deliveryPostalCodeError)
     }
 
@@ -148,6 +165,7 @@ class AddPartnerViewModelTest {
       val vm = viewModel()
       vm.onFieldChanged(AddPartnerField.TAX_NUMBER, "12345678")
       vm.onFieldChanged(AddPartnerField.NAME, "Test Partner")
+      vm.onFieldChanged(AddPartnerField.DELIVERY_NAME, "Test Partner Delivery")
       vm.onFieldChanged(AddPartnerField.DELIVERY_POSTAL_CODE, "1000")
       vm.onFieldChanged(AddPartnerField.DELIVERY_CITY, "Budapest")
       vm.onFieldChanged(AddPartnerField.DELIVERY_ADDRESS, "Street 1")
@@ -165,6 +183,7 @@ class AddPartnerViewModelTest {
       val vm = viewModel()
       vm.onFieldChanged(AddPartnerField.TAX_NUMBER, "12345678-2-41")
       vm.onFieldChanged(AddPartnerField.NAME, "Test Partner")
+      vm.onFieldChanged(AddPartnerField.DELIVERY_NAME, "Test Partner Delivery")
       vm.onFieldChanged(AddPartnerField.DELIVERY_POSTAL_CODE, "1000")
       vm.onFieldChanged(AddPartnerField.DELIVERY_CITY, "Budapest")
       vm.onFieldChanged(AddPartnerField.DELIVERY_ADDRESS, "Street 1")
@@ -183,6 +202,7 @@ class AddPartnerViewModelTest {
       val vm = viewModel()
       vm.onFieldChanged(AddPartnerField.TAX_NUMBER, "12345678-2-41")
       vm.onFieldChanged(AddPartnerField.NAME, "Test Partner")
+      vm.onFieldChanged(AddPartnerField.DELIVERY_NAME, "Test Partner Delivery")
       vm.onFieldChanged(AddPartnerField.DELIVERY_POSTAL_CODE, "1000")
       vm.onFieldChanged(AddPartnerField.DELIVERY_CITY, "Budapest")
       vm.onFieldChanged(AddPartnerField.DELIVERY_ADDRESS, "Street 1")
@@ -198,6 +218,7 @@ class AddPartnerViewModelTest {
       assertNull(receipt.partnerId)
       assertEquals("", receipt.partnerCode)
       assertEquals("Test Partner", receipt.buyer?.name)
+      assertEquals("Test Partner Delivery", receipt.buyer?.deliveryName)
       assertEquals("12345678-2-41", receipt.buyer?.vatNumber)
       assertEquals(InvoiceType.PAPER, receipt.invoiceType)
       assertEquals(0, receipt.paymentDays)

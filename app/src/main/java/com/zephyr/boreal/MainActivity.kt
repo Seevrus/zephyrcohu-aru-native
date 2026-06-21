@@ -316,6 +316,7 @@ private fun AddPartnerRoute(navController: androidx.navigation.NavHostController
         popUpTo("main") { inclusive = false }
       }
     },
+    onNavigateBack = { navController.popBackStack() },
   )
 }
 

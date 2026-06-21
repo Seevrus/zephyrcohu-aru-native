@@ -40,7 +40,7 @@ fun BorealTextInput(
   Column(modifier = modifier) {
     Text(
       text = label,
-      color = BorealColors.White,
+      color = if (isError) BorealColors.Error else BorealColors.White,
       fontFamily = NunitoSansFamily,
       fontWeight = FontWeight.Bold,
       fontSize = BorealFontSizes.Input,

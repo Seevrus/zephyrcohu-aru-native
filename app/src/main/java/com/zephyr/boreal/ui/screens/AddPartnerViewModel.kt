@@ -25,6 +25,7 @@ enum class AddPartnerField {
   CENTRAL_POSTAL_CODE,
   CENTRAL_CITY,
   CENTRAL_ADDRESS,
+  DELIVERY_NAME,
   DELIVERY_POSTAL_CODE,
   DELIVERY_CITY,
   DELIVERY_ADDRESS,
@@ -36,12 +37,16 @@ data class AddPartnerUiState(
   val centralPostalCode: String = "",
   val centralCity: String = "",
   val centralAddress: String = "",
+  val deliveryName: String = "",
   val deliveryPostalCode: String = "",
   val deliveryCity: String = "",
   val deliveryAddress: String = "",
+  val isPreFilled: Boolean = false,
+  val isModified: Boolean = false,
   val taxNumberError: String? = null,
   val nameError: String? = null,
   val centralAddressError: String? = null,
+  val deliveryNameError: String? = null,
   val deliveryPostalCodeError: String? = null,
   val deliveryCityError: String? = null,
   val deliveryAddressError: String? = null,
@@ -61,7 +66,7 @@ class AddPartnerViewModel
     private val taxNumberArg: String? = savedStateHandle["taxNumber"]
     private val selectedIndexArg: Int = savedStateHandle.get<Int>("selectedIndex") ?: -1
 
-    private val _uiState = MutableStateFlow(AddPartnerUiState())
+    private val _uiState = MutableStateFlow(AddPartnerUiState(isPreFilled = taxNumberArg != null))
     val uiState: StateFlow<AddPartnerUiState> = _uiState.asStateFlow()
 
     init {
@@ -92,13 +97,15 @@ class AddPartnerViewModel
       _uiState.update {
         it.copy(
           taxNumber = taxPayer.vatNumber,
-          name = delivery?.name ?: central?.name ?: "",
+          name = central?.name ?: delivery?.name ?: "",
           centralPostalCode = central?.postalCode ?: "",
           centralCity = central?.city ?: "",
           centralAddress = central?.address ?: "",
+          deliveryName = delivery?.name ?: central?.name ?: "",
           deliveryPostalCode = delivery?.postalCode ?: "",
           deliveryCity = delivery?.city ?: "",
           deliveryAddress = delivery?.address ?: "",
+          isModified = true,
         )
       }
     }
@@ -108,22 +115,26 @@ class AddPartnerViewModel
       value: String,
     ) {
       _uiState.update { state ->
-        when (field) {
-          AddPartnerField.TAX_NUMBER -> state.copy(taxNumber = value, taxNumberError = null)
-          AddPartnerField.NAME -> state.copy(name = value, nameError = null)
-          AddPartnerField.CENTRAL_POSTAL_CODE ->
-            state.copy(centralPostalCode = value, centralAddressError = null)
-          AddPartnerField.CENTRAL_CITY ->
-            state.copy(centralCity = value, centralAddressError = null)
-          AddPartnerField.CENTRAL_ADDRESS ->
-            state.copy(centralAddress = value, centralAddressError = null)
-          AddPartnerField.DELIVERY_POSTAL_CODE ->
-            state.copy(deliveryPostalCode = value, deliveryPostalCodeError = null)
-          AddPartnerField.DELIVERY_CITY ->
-            state.copy(deliveryCity = value, deliveryCityError = null)
-          AddPartnerField.DELIVERY_ADDRESS ->
-            state.copy(deliveryAddress = value, deliveryAddressError = null)
-        }
+        val updated =
+          when (field) {
+            AddPartnerField.TAX_NUMBER -> state.copy(taxNumber = value, taxNumberError = null)
+            AddPartnerField.NAME -> state.copy(name = value, nameError = null)
+            AddPartnerField.CENTRAL_POSTAL_CODE ->
+              state.copy(centralPostalCode = value, centralAddressError = null)
+            AddPartnerField.CENTRAL_CITY ->
+              state.copy(centralCity = value, centralAddressError = null)
+            AddPartnerField.CENTRAL_ADDRESS ->
+              state.copy(centralAddress = value, centralAddressError = null)
+            AddPartnerField.DELIVERY_NAME ->
+              state.copy(deliveryName = value, deliveryNameError = null)
+            AddPartnerField.DELIVERY_POSTAL_CODE ->
+              state.copy(deliveryPostalCode = value, deliveryPostalCodeError = null)
+            AddPartnerField.DELIVERY_CITY ->
+              state.copy(deliveryCity = value, deliveryCityError = null)
+            AddPartnerField.DELIVERY_ADDRESS ->
+              state.copy(deliveryAddress = value, deliveryAddressError = null)
+          }
+        updated.copy(isModified = true)
       }
     }
 
@@ -137,6 +148,7 @@ class AddPartnerViewModel
             taxNumberError = errors.taxNumberError,
             nameError = errors.nameError,
             centralAddressError = errors.centralAddressError,
+            deliveryNameError = errors.deliveryNameError,
             deliveryPostalCodeError = errors.deliveryPostalCodeError,
             deliveryCityError = errors.deliveryCityError,
             deliveryAddressError = errors.deliveryAddressError,
@@ -153,7 +165,7 @@ class AddPartnerViewModel
           postalCode = state.centralPostalCode.ifBlank { state.deliveryPostalCode },
           city = state.centralCity.ifBlank { state.deliveryCity },
           address = state.centralAddress.ifBlank { state.deliveryAddress },
-          deliveryName = state.name,
+          deliveryName = state.deliveryName,
           deliveryCountry = "HU",
           deliveryPostalCode = state.deliveryPostalCode,
           deliveryCity = state.deliveryCity,
@@ -181,6 +193,7 @@ private data class ValidationErrors(
   val taxNumberError: String? = null,
   val nameError: String? = null,
   val centralAddressError: String? = null,
+  val deliveryNameError: String? = null,
   val deliveryPostalCodeError: String? = null,
   val deliveryCityError: String? = null,
   val deliveryAddressError: String? = null,
@@ -191,6 +204,7 @@ private data class ValidationErrors(
         taxNumberError,
         nameError,
         centralAddressError,
+        deliveryNameError,
         deliveryPostalCodeError,
         deliveryCityError,
         deliveryAddressError,
@@ -203,6 +217,7 @@ private fun validateForm(state: AddPartnerUiState): ValidationErrors {
     taxNumberError =
       if (!TAX_NUMBER_REGEX.matches(state.taxNumber)) "Hibás adószám formátum (XXXXXXXX-X-XX)" else null,
     nameError = if (state.name.isBlank()) "A bolt neve kötelező" else null,
+    deliveryNameError = if (state.deliveryName.isBlank()) "A bolt neve kötelező" else null,
     deliveryPostalCodeError = if (state.deliveryPostalCode.isBlank()) "Irányítószám kötelező" else null,
     deliveryCityError = if (state.deliveryCity.isBlank()) "Város kötelező" else null,
     deliveryAddressError = if (state.deliveryAddress.isBlank()) "Cím kötelező" else null,

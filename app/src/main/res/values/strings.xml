@@ -141,15 +141,23 @@
     <string name="search_partner_nav_error">Hiba a keresés során</string>
     <string name="search_partner_nav_manual_entry">Kézi megadás</string>
     <string name="search_partner_nav_select">Kiválasztás</string>
-    <string name="add_partner_title">Partner hozzáadása</string>
-    <string name="add_partner_tax_number">Adószám</string>
-    <string name="add_partner_name">A bolt neve</string>
-    <string name="add_partner_headquarters">Székhely</string>
+    <string name="search_partner_nav_filter_label">Keresés a találatok között</string>
+    <string name="add_partner_title">Új partner hozzáadása</string>
+    <string name="add_partner_info_prefilled">Kérem ellenőrizze az adatokat és szükség esetén módosítsa azokat.</string>
+    <string name="add_partner_info_manual">Amennyiben nem találja a keresett partnert a listában, ezen az oldalon lehetősége van manuálisan hozzáadni.</string>
+    <string name="add_partner_tax_number">Adószám:*</string>
+    <string name="add_partner_name">Név:*</string>
+    <string name="add_partner_headquarters">Székhely (központ)</string>
+    <string name="add_partner_postal_code">Irányítószám:</string>
+    <string name="add_partner_city">Város:</string>
+    <string name="add_partner_address">Cím:</string>
     <string name="add_partner_delivery">A bolt neve és címe</string>
-    <string name="add_partner_postal_code">Irányítószám</string>
-    <string name="add_partner_city">Város</string>
-    <string name="add_partner_address">Cím</string>
-    <string name="add_partner_submit">Mentés és tovább</string>
+    <string name="add_partner_delivery_name">Név:*</string>
+    <string name="add_partner_delivery_postal_code">Irányítószám:*</string>
+    <string name="add_partner_delivery_city">Város:*</string>
+    <string name="add_partner_delivery_address">Cím:*</string>
+    <string name="add_partner_submit">Partner felvétele a számlára</string>
+    <string name="add_partner_exit_warning_message">Biztosan vissza szeretne lépni? A megadott adatok nem kerülnek mentésre!</string>
 
     <!-- Scanner -->
     <string name="scanner_title">Vonalkód olvasása</string>

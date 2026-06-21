@@ -141,7 +141,7 @@ class SearchPartnerNavViewModelTest {
     }
 
   @Test
-  fun `onTaxPayerSelected calls navigate callback with correct args`() =
+  fun `onConfirmSelection calls navigate callback with correct args`() =
     runTest {
       val taxpayer = mockTaxPayer(1, "12345678")
       val viewModel = SearchPartnerNavViewModel(partnersRepository)
@@ -154,9 +154,12 @@ class SearchPartnerNavViewModelTest {
       taxPayerFlow.value = ApiResource.Success(listOf(taxpayer))
       advanceUntilIdle()
 
+      viewModel.onResultTapped(taxpayer.id)
+      advanceUntilIdle()
+
       var navigatedTaxNumber: String? = null
       var navigatedIndex: Int? = null
-      viewModel.onTaxPayerSelected(0) { tn, idx ->
+      viewModel.onConfirmSelection { tn, idx ->
         navigatedTaxNumber = tn
         navigatedIndex = idx
       }

@@ -10,6 +10,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -23,6 +24,8 @@ data class SearchPartnerNavUiState(
   val isSearching: Boolean = false,
   val results: List<TaxPayer> = emptyList(),
   val error: String? = null,
+  val filterQuery: String = "",
+  val selectedResultId: Int? = null,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -33,6 +36,8 @@ class SearchPartnerNavViewModel
     private val partnersRepository: PartnersRepository,
   ) : ViewModel() {
     private val taxNumberFlow = MutableStateFlow("")
+    private val filterQueryFlow = MutableStateFlow("")
+    private val selectedResultIdFlow = MutableStateFlow<Int?>(null)
 
     val uiState: StateFlow<SearchPartnerNavUiState> =
       taxNumberFlow
@@ -59,6 +64,10 @@ class SearchPartnerNavViewModel
           } else {
             flowOf(SearchPartnerNavUiState(taxNumber = digits))
           }
+        }.combine(filterQueryFlow) { state, filter ->
+          state.copy(filterQuery = filter)
+        }.combine(selectedResultIdFlow) { state, selectedId ->
+          state.copy(selectedResultId = selectedId)
         }.stateIn(
           scope = viewModelScope,
           started = SharingStarted.WhileSubscribed(5000),
@@ -66,15 +75,27 @@ class SearchPartnerNavViewModel
         )
 
     fun onTaxNumberChanged(input: String) {
-      val digits = input.filter { it.isDigit() }.take(8)
+      val digits = input.filter { it.isDigit() }.take(TAX_NUMBER_DIGIT_COUNT)
+      filterQueryFlow.value = ""
+      selectedResultIdFlow.value = null
       taxNumberFlow.value = digits
     }
 
-    fun onTaxPayerSelected(
-      index: Int,
-      onNavigate: (taxNumber: String, selectedIndex: Int) -> Unit,
-    ) {
-      val taxNumber = uiState.value.taxNumber
-      onNavigate(taxNumber, index)
+    fun onFilterQueryChanged(query: String) {
+      filterQueryFlow.value = query
+    }
+
+    fun onResultTapped(taxPayerId: Int) {
+      val current = selectedResultIdFlow.value
+      selectedResultIdFlow.value = if (current == taxPayerId) null else taxPayerId
+    }
+
+    fun onConfirmSelection(onNavigate: (taxNumber: String, selectedIndex: Int) -> Unit) {
+      val state = uiState.value
+      val selectedId = state.selectedResultId ?: return
+      val index = state.results.indexOfFirst { it.id == selectedId }
+      if (index >= 0) {
+        onNavigate(state.taxNumber, index)
+      }
     }
   }
