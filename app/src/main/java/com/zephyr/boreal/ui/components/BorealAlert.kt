@@ -27,6 +27,7 @@ fun BorealAlert(
   modifier: Modifier = Modifier,
   message: String? = null,
   confirmButtonText: String? = null,
+  confirmButtonVariant: ButtonVariant = ButtonVariant.OK,
   cancelButtonText: String? = null,
   onConfirmClick: () -> Unit = {},
   onCancelClick: () -> Unit = {},
@@ -79,7 +80,7 @@ fun BorealAlert(
             }
             BorealButton(
               text = confirmButtonText,
-              variant = ButtonVariant.OK,
+              variant = confirmButtonVariant,
               onClick = onConfirmClick,
             )
           }

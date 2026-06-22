@@ -179,6 +179,21 @@
     <string name="select_items_decrease">Csökkentés</string>
     <string name="select_items_increase">Növelés</string>
 
+    <!-- Review Items -->
+    <string name="review_items_title">Áttekintés</string>
+    <string name="review_items_quantity_label">Mennyiség:</string>
+    <string name="review_items_gross_label">Bruttó összeg:</string>
+    <string name="review_items_article_number_label">Cikkszám:</string>
+    <string name="review_items_delete">Törlés</string>
+    <string name="review_items_extra_items">Extra tételek</string>
+    <string name="review_items_cancel">Elvetés</string>
+    <string name="review_items_finalize">Véglegesítés</string>
+    <string name="review_items_total_label">Mindösszesen:</string>
+    <string name="review_items_cancel_title">Folyamat törlése</string>
+    <string name="review_items_cancel_message">Ez a lépés törli a jelenlegi árulevételi munkamenetet és visszairányít a kezdőoldalra. Biztosan folytatni szeretné?</string>
+    <string name="review_items_cancel_confirm">Folytatás</string>
+    <string name="review_items_cancel_dismiss">Mégsem</string>
+
     <!-- Common Dialog -->
     <string name="dialog_yes">Igen</string>
     <string name="dialog_cancel">Mégsem</string>

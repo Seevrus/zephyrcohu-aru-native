@@ -30,6 +30,8 @@ import com.zephyr.boreal.ui.screens.LoginScreen
 import com.zephyr.boreal.ui.screens.MainScreen
 import com.zephyr.boreal.ui.screens.PrintEndErrandScreen
 import com.zephyr.boreal.ui.screens.PrintSettingsScreen
+import com.zephyr.boreal.ui.screens.ReviewItemsScreen
+import com.zephyr.boreal.ui.screens.ReviewItemsViewModel
 import com.zephyr.boreal.ui.screens.SearchPartnerNavScreen
 import com.zephyr.boreal.ui.screens.SearchPartnerNavViewModel
 import com.zephyr.boreal.ui.screens.SelectItemsScreen
@@ -131,6 +133,9 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
     }
     composable("select_items") {
       SelectItemsRoute(navController)
+    }
+    composable("review_items") {
+      ReviewItemsRoute(navController)
     }
   }
 }
@@ -321,6 +326,19 @@ private fun AddPartnerRoute(navController: androidx.navigation.NavHostController
 }
 
 @Composable
+private fun ReviewItemsRoute(navController: androidx.navigation.NavHostController) {
+  val viewModel: ReviewItemsViewModel = hiltViewModel()
+  ReviewItemsScreen(
+    viewModel = viewModel,
+    onNavigateHome = {
+      navController.navigate("main") {
+        popUpTo(0) { inclusive = true }
+      }
+    },
+  )
+}
+
+@Composable
 private fun SelectItemsRoute(navController: androidx.navigation.NavHostController) {
   val viewModel: SelectItemsViewModel = hiltViewModel()
   SelectItemsScreen(
@@ -331,8 +349,7 @@ private fun SelectItemsRoute(navController: androidx.navigation.NavHostControlle
       }
     },
     onNavigateNext = {
-      // Out of scope to implement review screen, just navigating forward placeholder
-      // navController.navigate("review_items")
+      navController.navigate("review_items")
     },
   )
 }

@@ -34,7 +34,7 @@ import com.zephyr.boreal.data.local.dao.UserDao
     StoreDetailsEntity::class,
     TaxPayerEntity::class,
   ],
-  version = 16,
+  version = 17,
   exportSchema = false,
 )
 @TypeConverters(
