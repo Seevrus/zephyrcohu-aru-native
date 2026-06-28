@@ -79,7 +79,7 @@ fun ReviewItemsScreen(
 }
 
 @Composable
-private fun ReviewItemsScreenContent(
+internal fun ReviewItemsScreenContent(
   uiState: ReviewItemsUiState,
   onToggleExpanded: (String) -> Unit,
   onRemoveItem: (Int, Int) -> Unit,
