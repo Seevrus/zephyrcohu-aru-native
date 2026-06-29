@@ -221,10 +221,11 @@ private fun OtherItemAccordionHeader(
   name: String,
   headerColor: Color,
   onHeaderClick: () -> Unit,
+  modifier: Modifier = Modifier,
 ) {
   Row(
     modifier =
-      Modifier
+      modifier
         .fillMaxWidth()
         .background(headerColor)
         .clickable(onClick = onHeaderClick)
@@ -250,10 +251,11 @@ private fun OtherItemExpandedContent(
   onQuantityChange: (Double?) -> Unit,
   onNetPriceChange: (Double?) -> Unit,
   onCommentChange: (String?) -> Unit,
+  modifier: Modifier = Modifier,
 ) {
   Column(
     modifier =
-      Modifier
+      modifier
         .fillMaxWidth()
         .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
   ) {
@@ -313,10 +315,11 @@ private fun SelectOtherItemsFooter(
   netTotal: Double,
   grossTotal: Double,
   currencyFormat: NumberFormat,
+  modifier: Modifier = Modifier,
 ) {
   Column(
     modifier =
-      Modifier
+      modifier
         .fillMaxWidth()
         .background(BorealColors.Neutral)
         .padding(16.dp),
