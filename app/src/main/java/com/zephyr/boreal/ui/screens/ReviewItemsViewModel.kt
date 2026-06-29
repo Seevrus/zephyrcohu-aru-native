@@ -3,6 +3,7 @@ package com.zephyr.boreal.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zephyr.boreal.domain.model.ReceiptItem
+import com.zephyr.boreal.domain.model.ReceiptOtherItem
 import com.zephyr.boreal.store.receipts.ReceiptsStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,8 +15,10 @@ import javax.inject.Inject
 
 data class ReviewItemsUiState(
   val items: List<ReceiptItem> = emptyList(),
+  val otherItems: List<ReceiptOtherItem> = emptyList(),
   val grossTotal: Double = 0.0,
   val expandedItemKeys: Set<String> = emptySet(),
+  val expandedOtherItemIds: Set<Int> = emptySet(),
   val showCancelConfirmation: Boolean = false,
 )
 
@@ -32,10 +35,12 @@ class ReviewItemsViewModel
       viewModelScope.launch {
         receiptsStore.currentReceipt.collect { draft ->
           val items = draft?.items ?: emptyList()
+          val otherItems = draft?.otherItems ?: emptyList()
           _uiState.update {
             it.copy(
               items = items,
-              grossTotal = items.sumOf { item -> item.grossAmount },
+              otherItems = otherItems,
+              grossTotal = items.sumOf { item -> item.grossAmount } + otherItems.sumOf { item -> item.grossAmount },
             )
           }
         }
@@ -51,6 +56,18 @@ class ReviewItemsViewModel
             state.expandedItemKeys + key
           }
         state.copy(expandedItemKeys = newKeys)
+      }
+    }
+
+    fun onToggleOtherItemExpanded(id: Int) {
+      _uiState.update { state ->
+        val newIds =
+          if (state.expandedOtherItemIds.contains(id)) {
+            state.expandedOtherItemIds - id
+          } else {
+            state.expandedOtherItemIds + id
+          }
+        state.copy(expandedOtherItemIds = newIds)
       }
     }
 
@@ -71,6 +88,12 @@ class ReviewItemsViewModel
       ) {
         receiptsStore.resetReceipts()
         onNavigateHome()
+      }
+    }
+
+    fun removeOtherItem(id: Int) {
+      receiptsStore.updateCurrentReceipt { draft ->
+        draft.copy(otherItems = draft.otherItems.filter { it.id != id })
       }
     }
 

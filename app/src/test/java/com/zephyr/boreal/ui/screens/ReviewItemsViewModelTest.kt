@@ -2,6 +2,7 @@ package com.zephyr.boreal.ui.screens
 
 import com.zephyr.boreal.domain.model.DraftReceipt
 import com.zephyr.boreal.domain.model.ReceiptItem
+import com.zephyr.boreal.domain.model.ReceiptOtherItem
 import com.zephyr.boreal.store.receipts.ReceiptsStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -61,6 +63,23 @@ class ReviewItemsViewModelTest {
     expiresAt = "2026-12-31",
   )
 
+  private fun buildOtherItem(
+    id: Int = 10,
+    grossAmount: Double = 500.0,
+  ) = ReceiptOtherItem(
+    id = id,
+    articleNumber = "OTH-$id",
+    name = "Other Item $id",
+    quantity = 1.0,
+    unitName = "db",
+    netPrice = grossAmount / 1.27,
+    netAmount = grossAmount / 1.27,
+    vatRate = "27",
+    vatAmount = grossAmount - (grossAmount / 1.27),
+    grossAmount = grossAmount,
+    comment = null,
+  )
+
   @Test
   fun `initially should populate items and grossTotal from store`() =
     runTest {
@@ -73,6 +92,7 @@ class ReviewItemsViewModelTest {
 
       assertEquals(listOf(item1, item2), viewModel.uiState.value.items)
       assertEquals(3000.0, viewModel.uiState.value.grossTotal)
+      assertEquals(emptyList<ReceiptOtherItem>(), viewModel.uiState.value.otherItems)
     }
 
   @Test
@@ -175,5 +195,85 @@ class ReviewItemsViewModelTest {
 
       verify(receiptsStore).resetReceipts()
       verify(onNavigateHome).invoke()
+    }
+
+  @Test
+  fun `grossTotal includes other items gross amounts`() =
+    runTest {
+      val item = buildItem(id = 1, grossAmount = 1000.0)
+      val otherItem = buildOtherItem(id = 10, grossAmount = 500.0)
+      currentReceiptFlow.value = DraftReceipt(items = listOf(item), otherItems = listOf(otherItem))
+
+      val viewModel = ReviewItemsViewModel(receiptsStore)
+      runCurrent()
+
+      assertEquals(1500.0, viewModel.uiState.value.grossTotal)
+    }
+
+  @Test
+  fun `otherItems are populated from store`() =
+    runTest {
+      val otherItem = buildOtherItem(id = 10, grossAmount = 500.0)
+      currentReceiptFlow.value = DraftReceipt(items = listOf(buildItem()), otherItems = listOf(otherItem))
+
+      val viewModel = ReviewItemsViewModel(receiptsStore)
+      runCurrent()
+
+      assertEquals(listOf(otherItem), viewModel.uiState.value.otherItems)
+    }
+
+  @Test
+  fun `onToggleOtherItemExpanded adds id when not expanded`() =
+    runTest {
+      val viewModel = ReviewItemsViewModel(receiptsStore)
+      runCurrent()
+
+      viewModel.onToggleOtherItemExpanded(10)
+
+      assertTrue(
+        viewModel.uiState.value.expandedOtherItemIds
+          .contains(10),
+      )
+    }
+
+  @Test
+  fun `onToggleOtherItemExpanded removes id when already expanded`() =
+    runTest {
+      val viewModel = ReviewItemsViewModel(receiptsStore)
+      runCurrent()
+
+      viewModel.onToggleOtherItemExpanded(10)
+      viewModel.onToggleOtherItemExpanded(10)
+
+      assertFalse(
+        viewModel.uiState.value.expandedOtherItemIds
+          .contains(10),
+      )
+    }
+
+  @Test
+  fun `removeOtherItem calls updateCurrentReceipt`() =
+    runTest {
+      currentReceiptFlow.value = DraftReceipt(items = listOf(buildItem()), otherItems = listOf(buildOtherItem(id = 10)))
+      val viewModel = ReviewItemsViewModel(receiptsStore)
+      runCurrent()
+
+      viewModel.removeOtherItem(10)
+
+      verify(receiptsStore).updateCurrentReceipt(any())
+    }
+
+  @Test
+  fun `removeOtherItem does not reset flow even when other items become empty`() =
+    runTest {
+      currentReceiptFlow.value = DraftReceipt(items = listOf(buildItem()), otherItems = listOf(buildOtherItem(id = 10)))
+      val onNavigateHome: () -> Unit = mock()
+      val viewModel = ReviewItemsViewModel(receiptsStore)
+      runCurrent()
+
+      viewModel.removeOtherItem(10)
+
+      verifyNoInteractions(onNavigateHome)
+      verify(receiptsStore, never()).resetReceipts()
     }
 }
