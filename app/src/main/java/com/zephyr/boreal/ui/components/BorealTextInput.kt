@@ -24,6 +24,7 @@ import com.zephyr.boreal.ui.theme.BorealColors
 import com.zephyr.boreal.ui.theme.BorealFontSizes
 import com.zephyr.boreal.ui.theme.NunitoSansFamily
 
+@Suppress("LongMethod")
 @Composable
 fun BorealTextInput(
   label: String,
@@ -32,6 +33,8 @@ fun BorealTextInput(
   modifier: Modifier = Modifier,
   isError: Boolean = false,
   enabled: Boolean = true,
+  singleLine: Boolean = true,
+  maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
   maxLength: Int? = null,
   keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
   keyboardActions: KeyboardActions = KeyboardActions.Default,
@@ -54,6 +57,24 @@ fun BorealTextInput(
         Modifier
       }
 
+    val fieldModifier =
+      if (singleLine) {
+        Modifier
+          .fillMaxWidth()
+          .height(56.dp)
+          .background(
+            if (enabled) BorealColors.Input else BorealColors.Disabled,
+            RoundedCornerShape(4.dp),
+          ).then(borderModifier)
+      } else {
+        Modifier
+          .fillMaxWidth()
+          .background(
+            if (enabled) BorealColors.Input else BorealColors.Disabled,
+            RoundedCornerShape(4.dp),
+          ).then(borderModifier)
+      }
+
     BasicTextField(
       value = value,
       onValueChange = {
@@ -61,14 +82,7 @@ fun BorealTextInput(
           onValueChange(it)
         }
       },
-      modifier =
-        Modifier
-          .fillMaxWidth()
-          .height(56.dp)
-          .background(
-            if (enabled) BorealColors.Input else BorealColors.Disabled,
-            RoundedCornerShape(4.dp),
-          ).then(borderModifier),
+      modifier = fieldModifier,
       enabled = enabled,
       textStyle =
         TextStyle(
@@ -80,11 +94,16 @@ fun BorealTextInput(
       keyboardOptions = keyboardOptions,
       keyboardActions = keyboardActions,
       visualTransformation = visualTransformation,
-      singleLine = true,
+      singleLine = singleLine,
+      maxLines = maxLines,
       decorationBox = { innerTextField ->
         Box(
-          modifier = Modifier.padding(horizontal = 16.dp),
-          contentAlignment = Alignment.CenterStart,
+          modifier =
+            Modifier.padding(
+              horizontal = 16.dp,
+              vertical = if (singleLine) 0.dp else 12.dp,
+            ),
+          contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart,
         ) {
           innerTextField()
         }

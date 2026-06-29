@@ -26,7 +26,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -205,8 +207,8 @@ private fun OtherItemSelectionAccordion(
       exit = shrinkVertically(animationSpec = tween(ANIMATION_DURATION_MS)),
     ) {
       OtherItemExpandedContent(
+        item = item,
         qty = qty,
-        effectivePrice = effectivePrice,
         selection = selection,
         onQuantityChange = onQuantityChange,
         onNetPriceChange = onNetPriceChange,
@@ -245,14 +247,18 @@ private fun OtherItemAccordionHeader(
 
 @Composable
 private fun OtherItemExpandedContent(
+  item: OtherItem,
   qty: Double,
-  effectivePrice: Double,
   selection: TempSelection?,
   onQuantityChange: (Double?) -> Unit,
   onNetPriceChange: (Double?) -> Unit,
   onCommentChange: (String?) -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  var priceText by remember(item.id, selection?.netPrice) {
+    mutableStateOf((selection?.netPrice ?: item.netPrice).toInt().toString())
+  }
+
   Column(
     modifier =
       modifier
@@ -268,8 +274,11 @@ private fun OtherItemExpandedContent(
     Spacer(modifier = Modifier.height(8.dp))
     BorealTextInput(
       label = stringResource(R.string.select_other_items_net_price_label),
-      value = effectivePrice.toInt().toString(),
-      onValueChange = { onNetPriceChange(it.toDoubleOrNull()) },
+      value = priceText,
+      onValueChange = { text ->
+        priceText = text
+        onNetPriceChange(text.toDoubleOrNull())
+      },
       keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
     )
     Spacer(modifier = Modifier.height(8.dp))
@@ -277,6 +286,8 @@ private fun OtherItemExpandedContent(
       label = stringResource(R.string.select_other_items_comment_label),
       value = selection?.comment ?: "",
       onValueChange = { onCommentChange(it.ifBlank { null }) },
+      singleLine = false,
+      maxLines = 4,
       maxLength = 100,
     )
   }
