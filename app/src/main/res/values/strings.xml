@@ -194,6 +194,16 @@
     <string name="review_items_cancel_confirm">Folytatás</string>
     <string name="review_items_cancel_dismiss">Mégsem</string>
 
+    <!-- Select Other Items -->
+    <string name="select_other_items_title">Extra tételek</string>
+    <string name="select_other_items_search_hint">Keresés…</string>
+    <string name="select_other_items_quantity_label">Mennyiség</string>
+    <string name="select_other_items_net_price_label">Nettó egységár</string>
+    <string name="select_other_items_comment_label">Megjegyzés</string>
+    <string name="select_other_items_net_total_label">Nettó összesen:</string>
+    <string name="select_other_items_gross_total_label">Bruttó összesen:</string>
+    <string name="select_other_items_accept_description">Elfogadás</string>
+
     <!-- Common Dialog -->
     <string name="dialog_yes">Igen</string>
     <string name="dialog_cancel">Mégsem</string>
