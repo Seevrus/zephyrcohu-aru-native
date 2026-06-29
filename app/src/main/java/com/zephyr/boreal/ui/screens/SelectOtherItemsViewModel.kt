@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 data class TempSelection(
   val netPrice: Double? = null,
@@ -52,8 +53,8 @@ class SelectOtherItemsViewModel
           item.id to
             TempSelection(
               netPrice = item.netPrice,
-              quantity = item.quantity.toInt(),
-              comment = item.comment,
+              quantity = item.quantity.roundToInt(),
+              comment = item.comment?.takeIf { it.isNotBlank() },
             )
         }
       _uiState.update { it.copy(selections = initialSelections) }
