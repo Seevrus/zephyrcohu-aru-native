@@ -36,6 +36,8 @@ import com.zephyr.boreal.ui.screens.SearchPartnerNavScreen
 import com.zephyr.boreal.ui.screens.SearchPartnerNavViewModel
 import com.zephyr.boreal.ui.screens.SelectItemsScreen
 import com.zephyr.boreal.ui.screens.SelectItemsViewModel
+import com.zephyr.boreal.ui.screens.SelectOtherItemsScreen
+import com.zephyr.boreal.ui.screens.SelectOtherItemsViewModel
 import com.zephyr.boreal.ui.screens.SelectPartnerScreen
 import com.zephyr.boreal.ui.screens.SelectPartnerViewModel
 import com.zephyr.boreal.ui.screens.SettingsScreen
@@ -136,6 +138,9 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
     }
     composable("review_items") {
       ReviewItemsRoute(navController)
+    }
+    composable("select_other_items") {
+      SelectOtherItemsRoute(navController)
     }
   }
 }
@@ -354,5 +359,14 @@ private fun SelectItemsRoute(navController: androidx.navigation.NavHostControlle
     onNavigateNext = {
       navController.navigate("review_items")
     },
+  )
+}
+
+@Composable
+private fun SelectOtherItemsRoute(navController: androidx.navigation.NavHostController) {
+  val viewModel: SelectOtherItemsViewModel = hiltViewModel()
+  SelectOtherItemsScreen(
+    viewModel = viewModel,
+    onNavigateBack = { navController.popBackStack() },
   )
 }
