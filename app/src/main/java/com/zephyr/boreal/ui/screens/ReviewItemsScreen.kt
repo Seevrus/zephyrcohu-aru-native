@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zephyr.boreal.R
 import com.zephyr.boreal.domain.model.ReceiptItem
+import com.zephyr.boreal.domain.model.ReceiptOtherItem
 import com.zephyr.boreal.ui.components.BorealAlert
 import com.zephyr.boreal.ui.components.BorealButton
 import com.zephyr.boreal.ui.components.BorealTopAppBar
@@ -54,6 +55,7 @@ private const val ANIMATION_DURATION_MS = 300
 fun ReviewItemsScreen(
   viewModel: ReviewItemsViewModel,
   onNavigateHome: () -> Unit,
+  onNavigateToOtherItems: () -> Unit,
 ) {
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -73,8 +75,11 @@ fun ReviewItemsScreen(
   ReviewItemsScreenContent(
     uiState = uiState,
     onToggleExpanded = viewModel::onToggleExpanded,
+    onToggleOtherItemExpanded = viewModel::onToggleOtherItemExpanded,
     onRemoveItem = { id, expirationId -> viewModel.removeItem(id, expirationId, onNavigateHome) },
+    onRemoveOtherItem = viewModel::removeOtherItem,
     onCancelClick = viewModel::showCancelDialog,
+    onNavigateToOtherItems = onNavigateToOtherItems,
   )
 }
 
@@ -82,8 +87,11 @@ fun ReviewItemsScreen(
 internal fun ReviewItemsScreenContent(
   uiState: ReviewItemsUiState,
   onToggleExpanded: (String) -> Unit,
+  onToggleOtherItemExpanded: (Int) -> Unit,
   onRemoveItem: (Int, Int) -> Unit,
+  onRemoveOtherItem: (Int) -> Unit,
   onCancelClick: () -> Unit,
+  onNavigateToOtherItems: () -> Unit,
 ) {
   val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale("hu", "HU")) }
 
@@ -119,29 +127,65 @@ internal fun ReviewItemsScreenContent(
         BorealButton(
           text = stringResource(R.string.review_items_extra_items),
           variant = ButtonVariant.OK,
-          onClick = {},
+          onClick = onNavigateToOtherItems,
         )
       }
 
-      LazyColumn(
+      ReviewItemsList(
+        uiState = uiState,
+        currencyFormat = currencyFormat,
+        onToggleExpanded = onToggleExpanded,
+        onToggleOtherItemExpanded = onToggleOtherItemExpanded,
+        onRemoveItem = onRemoveItem,
+        onRemoveOtherItem = onRemoveOtherItem,
         modifier = Modifier.weight(1f),
-      ) {
-        items(
-          items = uiState.items,
-          key = { "${it.id}_${it.expirationId}" },
-        ) { item ->
-          val key = "${item.id}_${item.expirationId}"
-          val isExpanded = uiState.expandedItemKeys.contains(key)
+      )
+    }
+  }
+}
 
-          ReviewItemAccordion(
-            item = item,
-            isExpanded = isExpanded,
-            currencyFormat = currencyFormat,
-            onHeaderClick = { onToggleExpanded(key) },
-            onRemoveClick = { onRemoveItem(item.id, item.expirationId) },
-          )
-        }
-      }
+@Composable
+private fun ReviewItemsList(
+  uiState: ReviewItemsUiState,
+  currencyFormat: NumberFormat,
+  onToggleExpanded: (String) -> Unit,
+  onToggleOtherItemExpanded: (Int) -> Unit,
+  onRemoveItem: (Int, Int) -> Unit,
+  onRemoveOtherItem: (Int) -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  LazyColumn(
+    modifier = modifier,
+  ) {
+    items(
+      items = uiState.items,
+      key = { "${it.id}_${it.expirationId}" },
+    ) { item ->
+      val key = "${item.id}_${item.expirationId}"
+      val isExpanded = uiState.expandedItemKeys.contains(key)
+
+      ReviewItemAccordion(
+        item = item,
+        isExpanded = isExpanded,
+        currencyFormat = currencyFormat,
+        onHeaderClick = { onToggleExpanded(key) },
+        onRemoveClick = { onRemoveItem(item.id, item.expirationId) },
+      )
+    }
+
+    items(
+      items = uiState.otherItems,
+      key = { "other_${it.id}" },
+    ) { item ->
+      val isExpanded = uiState.expandedOtherItemIds.contains(item.id)
+
+      ReviewOtherItemAccordion(
+        item = item,
+        isExpanded = isExpanded,
+        currencyFormat = currencyFormat,
+        onHeaderClick = { onToggleOtherItemExpanded(item.id) },
+        onRemoveClick = { onRemoveOtherItem(item.id) },
+      )
     }
   }
 }
@@ -202,6 +246,109 @@ private fun ReviewItemAccordion(
         onRemoveClick = onRemoveClick,
       )
     }
+  }
+}
+
+@Suppress("MagicNumber")
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun ReviewOtherItemAccordion(
+  item: ReceiptOtherItem,
+  isExpanded: Boolean,
+  currencyFormat: NumberFormat,
+  onHeaderClick: () -> Unit,
+  onRemoveClick: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  val headerColor = if (isExpanded) BorealColors.Ok else BorealColors.Neutral
+  val bringIntoViewRequester = remember { BringIntoViewRequester() }
+  val quantityStr =
+    if (item.quantity % 1 == 0.0) item.quantity.toInt().toString() else item.quantity.toString()
+
+  LaunchedEffect(isExpanded) {
+    if (isExpanded) {
+      delay(ANIMATION_DURATION_MS.toLong() / 2)
+      bringIntoViewRequester.bringIntoView()
+    }
+  }
+
+  Column(
+    modifier =
+      modifier
+        .bringIntoViewRequester(bringIntoViewRequester)
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp, vertical = 8.dp)
+        .clip(RoundedCornerShape(8.dp))
+        .background(BorealColors.Neutral),
+  ) {
+    Row(
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .background(headerColor)
+          .clickable(onClick = onHeaderClick)
+          .padding(16.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text(
+        text = item.name,
+        style = MaterialTheme.typography.titleLarge,
+        color = BorealColors.White,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.weight(1f),
+      )
+    }
+
+    HorizontalDivider(color = Color.White, thickness = 1.dp)
+
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+      ReviewItemRow(stringResource(R.string.review_items_quantity_label), "$quantityStr ${item.unitName}")
+      ReviewItemRow(stringResource(R.string.review_items_gross_label), currencyFormat.format(item.grossAmount))
+    }
+
+    AnimatedVisibility(
+      visible = isExpanded,
+      enter = expandVertically(animationSpec = tween(ANIMATION_DURATION_MS)),
+      exit = shrinkVertically(animationSpec = tween(ANIMATION_DURATION_MS)),
+    ) {
+      ReviewOtherItemAccordionExpandedContent(
+        articleNumber = item.articleNumber,
+        comment = item.comment,
+        onRemoveClick = onRemoveClick,
+      )
+    }
+  }
+}
+
+@Composable
+private fun ReviewOtherItemAccordionExpandedContent(
+  articleNumber: String,
+  comment: String?,
+  onRemoveClick: () -> Unit,
+) {
+  Column(
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+  ) {
+    ReviewItemRow(
+      label = stringResource(R.string.review_items_article_number_label),
+      value = articleNumber,
+    )
+    if (!comment.isNullOrBlank()) {
+      ReviewItemRow(
+        label = stringResource(R.string.review_items_other_comment_label),
+        value = comment,
+      )
+    }
+    BorealButton(
+      text = stringResource(R.string.review_items_delete),
+      variant = ButtonVariant.WARNING,
+      onClick = onRemoveClick,
+      modifier = Modifier.padding(top = 12.dp),
+    )
   }
 }
 

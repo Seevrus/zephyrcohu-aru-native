@@ -335,6 +335,9 @@ private fun ReviewItemsRoute(navController: androidx.navigation.NavHostControlle
         popUpTo(0) { inclusive = true }
       }
     },
+    onNavigateToOtherItems = {
+      navController.navigate("select_other_items")
+    },
   )
 }
 

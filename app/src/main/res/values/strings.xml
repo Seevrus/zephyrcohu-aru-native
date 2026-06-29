@@ -203,6 +203,7 @@
     <string name="select_other_items_net_total_label">Nettó összesen:</string>
     <string name="select_other_items_gross_total_label">Bruttó összesen:</string>
     <string name="select_other_items_accept_description">Elfogadás</string>
+    <string name="review_items_other_comment_label">Megjegyzés:</string>
 
     <!-- Common Dialog -->
     <string name="dialog_yes">Igen</string>
