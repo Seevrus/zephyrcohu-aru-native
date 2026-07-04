@@ -94,6 +94,7 @@ internal fun SelectOtherItemsScreenContent(
               painter = painterResource(id = R.drawable.arrow_forward),
               contentDescription = stringResource(R.string.select_other_items_accept_description),
               tint = if (uiState.canAccept) BorealColors.White else BorealColors.Disabled,
+              modifier = Modifier.size(32.dp),
             )
           }
         },
@@ -190,30 +191,32 @@ private fun OtherItemSelectionAccordion(
         .background(BorealColors.Neutral),
   ) {
     OtherItemAccordionHeader(name = item.name, headerColor = headerColor, onHeaderClick = onHeaderClick)
-    HorizontalDivider(color = Color.White, thickness = 1.dp)
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-      OtherItemRow(
-        label = stringResource(R.string.review_items_quantity_label),
-        value = "$quantityStr ${item.unitName}",
-      )
-      OtherItemRow(
-        label = stringResource(R.string.review_items_gross_label),
-        value = currencyFormat.format(grossAmount),
-      )
-    }
     AnimatedVisibility(
       visible = isExpanded,
       enter = expandVertically(animationSpec = tween(ANIMATION_DURATION_MS)),
       exit = shrinkVertically(animationSpec = tween(ANIMATION_DURATION_MS)),
     ) {
-      OtherItemExpandedContent(
-        item = item,
-        qty = qty,
-        selection = selection,
-        onQuantityChange = onQuantityChange,
-        onNetPriceChange = onNetPriceChange,
-        onCommentChange = onCommentChange,
-      )
+      Column {
+        HorizontalDivider(color = Color.White, thickness = 1.dp)
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+          OtherItemRow(
+            label = stringResource(R.string.review_items_quantity_label),
+            value = "$quantityStr ${item.unitName}",
+          )
+          OtherItemRow(
+            label = stringResource(R.string.review_items_gross_label),
+            value = currencyFormat.format(grossAmount),
+          )
+        }
+        OtherItemExpandedContent(
+          item = item,
+          qty = qty,
+          selection = selection,
+          onQuantityChange = onQuantityChange,
+          onNetPriceChange = onNetPriceChange,
+          onCommentChange = onCommentChange,
+        )
+      }
     }
   }
 }
