@@ -83,7 +83,7 @@ internal fun SelectOtherItemsScreenContent(
   onCommentChanged: (Int, String?) -> Unit,
   onConfirm: () -> Unit,
 ) {
-  val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale("hu", "HU")) }
+  val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale.forLanguageTag("hu-HU")) }
 
   Scaffold(
     topBar = {
