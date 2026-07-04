@@ -41,16 +41,22 @@ class ReviewItemsScreenContentTest {
   private fun setContent(
     uiState: ReviewItemsUiState,
     onToggleExpanded: (String) -> Unit = {},
+    onToggleOtherItemExpanded: (Int) -> Unit = {},
     onRemoveItem: (Int, Int) -> Unit = { _, _ -> },
+    onRemoveOtherItem: (Int) -> Unit = {},
     onCancelClick: () -> Unit = {},
+    onNavigateToOtherItems: () -> Unit = {},
   ) {
     composeTestRule.setContent {
       BorealTheme {
         ReviewItemsScreenContent(
           uiState = uiState,
           onToggleExpanded = onToggleExpanded,
+          onToggleOtherItemExpanded = onToggleOtherItemExpanded,
           onRemoveItem = onRemoveItem,
+          onRemoveOtherItem = onRemoveOtherItem,
           onCancelClick = onCancelClick,
+          onNavigateToOtherItems = onNavigateToOtherItems,
         )
       }
     }
