@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
@@ -26,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +54,7 @@ import com.zephyr.boreal.ui.components.QuantityStepper
 import com.zephyr.boreal.ui.theme.BorealColors
 import com.zephyr.boreal.ui.theme.BorealFontSizes
 import com.zephyr.boreal.ui.theme.NunitoSansFamily
+import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -164,6 +169,7 @@ private fun OtherItemsList(
 }
 
 @Suppress("MagicNumber")
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun OtherItemSelectionAccordion(
   item: OtherItem,
@@ -182,10 +188,19 @@ private fun OtherItemSelectionAccordion(
     if (qty > 0) AmountCalculator.calculateAmounts(effectivePrice, qty, item.vatRate).grossAmount else 0.0
   val quantityStr = if (qty % 1 == 0.0) qty.toInt().toString() else qty.toString()
   val headerColor = if ((selection?.quantity ?: 0) > 0) BorealColors.Ok else BorealColors.Neutral
+  val bringIntoViewRequester = remember { BringIntoViewRequester() }
+
+  LaunchedEffect(isExpanded) {
+    if (isExpanded) {
+      delay(ANIMATION_DURATION_MS.toLong() / 2)
+      bringIntoViewRequester.bringIntoView()
+    }
+  }
 
   Column(
     modifier =
       modifier
+        .bringIntoViewRequester(bringIntoViewRequester)
         .fillMaxWidth()
         .padding(vertical = 8.dp)
         .clip(RoundedCornerShape(8.dp))
