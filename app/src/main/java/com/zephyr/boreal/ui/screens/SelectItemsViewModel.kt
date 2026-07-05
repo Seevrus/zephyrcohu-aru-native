@@ -6,7 +6,9 @@ import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.ItemsRepository
 import com.zephyr.boreal.data.repository.StoresRepository
 import com.zephyr.boreal.data.repository.UserRepository
+import com.zephyr.boreal.domain.model.DraftOrder
 import com.zephyr.boreal.domain.model.DraftReceiptItem
+import com.zephyr.boreal.domain.model.OrderItem
 import com.zephyr.boreal.domain.model.UserState
 import com.zephyr.boreal.domain.utils.AmountCalculator
 import com.zephyr.boreal.store.receipts.ReceiptsStore
@@ -19,7 +21,11 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+
+private val ORDER_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
 data class SellExpiration(
   val itemId: Int,
@@ -291,6 +297,20 @@ class SelectItemsViewModel
       if (!uiState.value.canConfirmItems) return
 
       val allItems = uiState.value.allItems
+
+      val ordered = receiptsStore.selectedOrderItems.value
+      val orderItems =
+        ordered.mapNotNull { (itemId, qty) ->
+          val item = allItems.find { it.id == itemId } ?: return@mapNotNull null
+          OrderItem(articleNumber = item.articleNumber, name = item.name, quantity = qty)
+        }
+      receiptsStore.setCurrentOrder(
+        DraftOrder(
+          partnerId = requireNotNull(receiptsStore.currentReceipt.value?.partnerId),
+          orderedAt = LocalDateTime.now().format(ORDER_DATE_FORMAT),
+          items = orderItems,
+        ),
+      )
 
       receiptsStore.updateCurrentReceipt { draft ->
         val selected = receiptsStore.selectedItems.value

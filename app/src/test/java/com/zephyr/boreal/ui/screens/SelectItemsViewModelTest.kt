@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -201,6 +202,86 @@ class SelectItemsViewModelTest {
 
       assertTrue(successCalled)
       verify(receiptsStore).updateCurrentReceipt(any())
+      job.cancel()
+    }
+
+  @Test
+  fun `confirmItemsHandler builds and stores the current order from selectedOrderItems`() =
+    runTest {
+      val item1 = mock<Item>()
+      whenever(item1.id).thenReturn(1)
+      whenever(item1.name).thenReturn("Item 1")
+      whenever(item1.articleNumber).thenReturn("ART-1")
+      whenever(item1.unitName).thenReturn("kg")
+      whenever(item1.vatRate).thenReturn("27")
+      whenever(item1.netPrice).thenReturn(100.0)
+      whenever(item1.cnCode).thenReturn("1234")
+      whenever(item1.expirations).thenReturn(emptyList())
+
+      itemsFlow.value = ApiResource.Success(listOf(item1))
+
+      val draftReceipt =
+        com.zephyr.boreal.domain.model
+          .DraftReceipt(partnerId = 99)
+      currentReceiptFlow.value = draftReceipt
+      selectedItemsFlow.value = mapOf(1 to mapOf(10 to 2.0))
+      selectedOrderItemsFlow.value = mapOf(1 to 3.0)
+
+      val viewModel = createViewModel()
+      val job = backgroundScope.launch { viewModel.uiState.collect {} }
+      advanceUntilIdle()
+
+      viewModel.confirmItemsHandler {}
+
+      val captor = argumentCaptor<com.zephyr.boreal.domain.model.DraftOrder>()
+      verify(receiptsStore).setCurrentOrder(captor.capture())
+      assertEquals(99, captor.firstValue.partnerId)
+      assertEquals(1, captor.firstValue.items.size)
+      assertEquals(
+        "ART-1",
+        captor.firstValue.items
+          .first()
+          .articleNumber,
+      )
+      assertEquals(
+        3.0,
+        captor.firstValue.items
+          .first()
+          .quantity,
+      )
+      job.cancel()
+    }
+
+  @Test
+  fun `confirmItemsHandler stores an order with no items when nothing was ordered`() =
+    runTest {
+      val item1 = mock<Item>()
+      whenever(item1.id).thenReturn(1)
+      whenever(item1.name).thenReturn("Item 1")
+      whenever(item1.articleNumber).thenReturn("ART-1")
+      whenever(item1.unitName).thenReturn("kg")
+      whenever(item1.vatRate).thenReturn("27")
+      whenever(item1.netPrice).thenReturn(100.0)
+      whenever(item1.cnCode).thenReturn("1234")
+      whenever(item1.expirations).thenReturn(emptyList())
+
+      itemsFlow.value = ApiResource.Success(listOf(item1))
+
+      val draftReceipt =
+        com.zephyr.boreal.domain.model
+          .DraftReceipt(partnerId = 99)
+      currentReceiptFlow.value = draftReceipt
+      selectedItemsFlow.value = mapOf(1 to mapOf(10 to 2.0))
+
+      val viewModel = createViewModel()
+      val job = backgroundScope.launch { viewModel.uiState.collect {} }
+      advanceUntilIdle()
+
+      viewModel.confirmItemsHandler {}
+
+      val captor = argumentCaptor<com.zephyr.boreal.domain.model.DraftOrder>()
+      verify(receiptsStore).setCurrentOrder(captor.capture())
+      assertTrue(captor.firstValue.items.isEmpty())
       job.cancel()
     }
 }

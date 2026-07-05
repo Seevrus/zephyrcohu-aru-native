@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew detekt*)",
+      "Bash(./gradlew ktlintFormat*)",
+      "Bash(./gradlew :app:testDebugUnitTest*)",
+      "Bash(./gradlew test*)",
+      "Bash(./gradlew :app:compileDebugKotlin*)",
+      "Bash(./gradlew :app:compileDebugUnitTestKotlin*)",
+      "Bash(./gradlew :app:compileDebugAndroidTestKotlin*)",
+      "Bash(./gradlew :app:compileDebugJavaWithJavac*)",
+      "Bash(./gradlew assembleDebug*)",
+      "Bash(git show*)",
+      "Bash(git log*)",
+      "Bash(xargs grep*)"
+    ]
+  }
+}

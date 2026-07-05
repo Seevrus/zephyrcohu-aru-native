@@ -4,9 +4,12 @@ import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.ReceiptsRepository
 import com.zephyr.boreal.data.repository.UserRepository
 import com.zephyr.boreal.domain.model.Company
+import com.zephyr.boreal.domain.model.CreatedOrder
+import com.zephyr.boreal.domain.model.DraftOrder
 import com.zephyr.boreal.domain.model.DraftReceipt
 import com.zephyr.boreal.domain.model.DraftReceiptItem
 import com.zephyr.boreal.domain.model.InvoiceType
+import com.zephyr.boreal.domain.model.OrderItem
 import com.zephyr.boreal.domain.model.Receipt
 import com.zephyr.boreal.domain.model.ReceiptBuyer
 import com.zephyr.boreal.domain.model.ReceiptItem
@@ -47,6 +50,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 
+@Suppress("LargeClass")
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReviewItemsViewModelTest {
   private val receiptsStore: ReceiptsStore = mock()
@@ -56,6 +60,7 @@ class ReviewItemsViewModelTest {
   private val connectivityObserver: ConnectivityObserver = mock()
 
   private val currentReceiptFlow = MutableStateFlow<DraftReceipt?>(null)
+  private val currentOrderFlow = MutableStateFlow<DraftOrder?>(null)
   private val receiptsFlow = MutableStateFlow<List<Receipt>>(emptyList())
   private val userFlow = MutableStateFlow<ApiResource<User?>>(ApiResource.Success(null))
   private val storeFlow = MutableStateFlow<StoreDetails?>(null)
@@ -210,6 +215,7 @@ class ReviewItemsViewModelTest {
   fun setUp() {
     Dispatchers.setMain(testDispatcher)
     whenever(receiptsStore.currentReceipt).thenReturn(currentReceiptFlow)
+    whenever(receiptsStore.currentOrder).thenReturn(currentOrderFlow)
     whenever(receiptsStore.receipts).thenReturn(receiptsFlow)
     whenever(userRepository.getCurrentUser()).thenReturn(userFlow)
     whenever(storeSessionStore.selectedStoreCurrentState).thenReturn(storeFlow)
@@ -731,5 +737,108 @@ class ReviewItemsViewModelTest {
       runCurrent()
 
       verify(receiptsRepository, times(1)).createReceipt(any())
+    }
+
+  private fun buildOrder(items: List<OrderItem> = listOf(OrderItem("ART-1", "Item 1", 3.0))) =
+    DraftOrder(partnerId = 7, orderedAt = "2026-07-05 08:00:00", items = items)
+
+  private suspend fun stubOrderSuccess() {
+    whenever(receiptsRepository.createOrders(any()))
+      .thenReturn(ApiResource.Success(listOf(CreatedOrder(1, 7, "2026-07-05 08:00:00", emptyList()))))
+  }
+
+  @Test
+  fun `confirmFinalize submits the order, then the receipt, then decrements store quantities`() =
+    runTest {
+      val item = buildItem(id = 1, expirationId = 3, grossAmount = 254.0)
+      currentReceiptFlow.value = buildDraft().copy(items = listOf(item))
+      currentOrderFlow.value = buildOrder()
+      userFlow.value = ApiResource.Success(buildUser())
+      storeFlow.value = buildStore()
+      stubOrderSuccess()
+      whenever(receiptsRepository.createReceipt(any())).thenReturn(ApiResource.Success(buildReceipt()))
+      val viewModel = createViewModel()
+      runCurrent()
+
+      viewModel.confirmFinalize()
+      runCurrent()
+
+      val orderCaptor = argumentCaptor<List<com.zephyr.boreal.api.dto.request.OrderRequestDataDto>>()
+      verify(receiptsRepository).createOrders(orderCaptor.capture())
+      assertEquals(7, orderCaptor.firstValue.first().partnerId)
+      assertEquals(
+        1,
+        orderCaptor.firstValue
+          .first()
+          .items.size,
+      )
+
+      val storeCaptor = argumentCaptor<Map<Int, Map<Int, Double>>>()
+      verify(storeSessionStore).sellItems(storeCaptor.capture())
+      assertEquals(mapOf(1 to mapOf(3 to 2.0)), storeCaptor.firstValue)
+
+      assertTrue(viewModel.uiState.value.isSentSuccessfully)
+    }
+
+  @Test
+  fun `confirmFinalize skips order submission when currentOrder has no items`() =
+    runTest {
+      currentReceiptFlow.value = buildDraft()
+      currentOrderFlow.value = buildOrder(items = emptyList())
+      userFlow.value = ApiResource.Success(buildUser())
+      storeFlow.value = buildStore()
+      whenever(receiptsRepository.createReceipt(any())).thenReturn(ApiResource.Success(buildReceipt()))
+      val viewModel = createViewModel()
+      runCurrent()
+
+      viewModel.confirmFinalize()
+      runCurrent()
+
+      verify(receiptsRepository, never()).createOrders(any())
+      verify(receiptsRepository).createReceipt(any())
+      assertTrue(viewModel.uiState.value.isSentSuccessfully)
+    }
+
+  @Test
+  fun `confirmFinalize stops before creating a receipt when order submission fails`() =
+    runTest {
+      currentReceiptFlow.value = buildDraft()
+      currentOrderFlow.value = buildOrder()
+      userFlow.value = ApiResource.Success(buildUser())
+      storeFlow.value = buildStore()
+      whenever(receiptsRepository.createOrders(any())).thenReturn(ApiResource.Error("order boom"))
+      val viewModel = createViewModel()
+      runCurrent()
+
+      viewModel.confirmFinalize()
+      runCurrent()
+
+      verify(receiptsRepository, never()).createReceipt(any())
+      assertTrue(viewModel.uiState.value.isSentWithErrors)
+      assertFalse(viewModel.uiState.value.isSentSuccessfully)
+    }
+
+  @Test
+  fun `retryReceipt does not resubmit an already-succeeded order`() =
+    runTest {
+      currentReceiptFlow.value = buildDraft()
+      currentOrderFlow.value = buildOrder()
+      userFlow.value = ApiResource.Success(buildUser())
+      storeFlow.value = buildStore()
+      stubOrderSuccess()
+      whenever(receiptsRepository.createReceipt(any()))
+        .thenReturn(ApiResource.Error("boom"))
+        .thenReturn(ApiResource.Success(buildReceipt()))
+      val viewModel = createViewModel()
+      runCurrent()
+
+      viewModel.confirmFinalize()
+      runCurrent()
+      viewModel.retryReceipt()
+      runCurrent()
+
+      verify(receiptsRepository, times(1)).createOrders(any())
+      verify(receiptsRepository, times(2)).createReceipt(any())
+      assertTrue(viewModel.uiState.value.isSentSuccessfully)
     }
 }

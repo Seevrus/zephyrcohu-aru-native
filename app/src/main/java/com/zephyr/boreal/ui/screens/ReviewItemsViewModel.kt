@@ -2,6 +2,7 @@ package com.zephyr.boreal.ui.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zephyr.boreal.data.mapper.toDto
 import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.ReceiptsRepository
 import com.zephyr.boreal.data.repository.UserRepository
@@ -68,6 +69,8 @@ class ReviewItemsViewModel
   ) : ViewModel() {
     private val _uiState = MutableStateFlow(ReviewItemsUiState())
     val uiState: StateFlow<ReviewItemsUiState> = _uiState.asStateFlow()
+
+    private var isOrderSubmitted = false
 
     init {
       viewModelScope.launch {
@@ -226,6 +229,10 @@ class ReviewItemsViewModel
       draft: DraftReceipt,
       user: User,
     ) {
+      if (!submitOrderIfNeeded(user)) {
+        return
+      }
+
       val store = requireNotNull(storeSessionStore.selectedStoreCurrentState.value)
       val round = requireNotNull(user.lastRound)
 
@@ -263,6 +270,11 @@ class ReviewItemsViewModel
       when (val result = receiptsRepository.createReceipt(request)) {
         is ApiResource.Success -> {
           receiptsStore.addReceipt(result.data)
+          storeSessionStore.sellItems(
+            draft.items
+              .groupBy { it.id }
+              .mapValues { (_, items) -> items.associate { it.expirationId to it.quantity } },
+          )
           _uiState.update {
             it.copy(
               errorMessage = null,
@@ -275,6 +287,36 @@ class ReviewItemsViewModel
         }
         is ApiResource.Error -> handleSubmitError(user, result.message)
         is ApiResource.Loading -> {}
+      }
+    }
+
+    /**
+     * Submits the order built when items were confirmed on the select-items screen, if any.
+     * Guarded by [isOrderSubmitted] so a retry after a receipt-only failure doesn't resubmit an
+     * order that already succeeded (mirrors the RN app's saveOrder/saveReceipt/saveStorage steps).
+     * @return true if the order step succeeded (or there was nothing to submit), false on error.
+     */
+    private suspend fun submitOrderIfNeeded(user: User): Boolean {
+      val order = receiptsStore.currentOrder.value
+
+      return when {
+        isOrderSubmitted -> true
+        order == null || order.items.isEmpty() -> {
+          isOrderSubmitted = true
+          true
+        }
+        else ->
+          when (val result = receiptsRepository.createOrders(listOf(order.toDto()))) {
+            is ApiResource.Success -> {
+              isOrderSubmitted = true
+              true
+            }
+            is ApiResource.Error -> {
+              handleSubmitError(user, result.message)
+              false
+            }
+            is ApiResource.Loading -> false
+          }
       }
     }
 

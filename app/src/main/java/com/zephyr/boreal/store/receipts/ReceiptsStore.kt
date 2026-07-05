@@ -1,5 +1,6 @@
 package com.zephyr.boreal.store.receipts
 
+import com.zephyr.boreal.domain.model.DraftOrder
 import com.zephyr.boreal.domain.model.DraftReceipt
 import com.zephyr.boreal.domain.model.Receipt
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,15 +26,23 @@ class ReceiptsStore
     private val _selectedOrderItems = MutableStateFlow<Map<Int, Double>>(emptyMap())
     val selectedOrderItems: StateFlow<Map<Int, Double>> = _selectedOrderItems.asStateFlow()
 
+    private val _currentOrder = MutableStateFlow<DraftOrder?>(null)
+    val currentOrder: StateFlow<DraftOrder?> = _currentOrder.asStateFlow()
+
     fun resetReceipts() {
       _receipts.value = emptyList()
       _currentReceipt.value = null
       _selectedItems.value = emptyMap()
       _selectedOrderItems.value = emptyMap()
+      _currentOrder.value = null
     }
 
     fun setCurrentReceipt(receipt: DraftReceipt?) {
       _currentReceipt.value = receipt
+    }
+
+    fun setCurrentOrder(order: DraftOrder?) {
+      _currentOrder.value = order
     }
 
     fun upsertSelectedItem(
