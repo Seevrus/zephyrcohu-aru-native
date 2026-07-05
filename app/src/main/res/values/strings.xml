@@ -193,6 +193,13 @@
     <string name="review_items_cancel_message">Ez a lépés törli a jelenlegi árulevételi munkamenetet és visszairányít a kezdőoldalra. Biztosan folytatni szeretné?</string>
     <string name="review_items_cancel_confirm">Folytatás</string>
     <string name="review_items_cancel_dismiss">Mégsem</string>
+    <string name="review_items_finalize_title">Árulevétel véglegesítése</string>
+    <string name="review_items_finalize_message">Ez a lépés számlakészítéssel jár, ezután már nem lesz lehetőség semmilyen módosításra. Biztosan folytatni szeretné?</string>
+    <string name="review_items_finalize_confirm">Folytatás</string>
+    <string name="review_items_finalize_dismiss">Mégsem</string>
+    <string name="review_items_retry">Újraküldés</string>
+    <string name="review_items_continue">Továbblépés</string>
+    <string name="review_items_no_internet">A számla véglegesítéséhez internetkapcsolat szükséges.</string>
 
     <!-- Select Other Items -->
     <string name="select_other_items_title">Extra tételek</string>

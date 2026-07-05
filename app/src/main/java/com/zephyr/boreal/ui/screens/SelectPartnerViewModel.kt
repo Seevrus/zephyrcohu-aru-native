@@ -5,7 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.zephyr.boreal.data.repository.PartnersRepository
 import com.zephyr.boreal.data.repository.UserRepository
 import com.zephyr.boreal.domain.model.DraftReceipt
+import com.zephyr.boreal.domain.model.LocationType
 import com.zephyr.boreal.domain.model.Partner
+import com.zephyr.boreal.domain.model.PartnerLocation
+import com.zephyr.boreal.domain.model.ReceiptBuyer
 import com.zephyr.boreal.domain.model.canAddPartner
 import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.receipts.ReceiptsStore
@@ -156,10 +159,34 @@ class SelectPartnerViewModel
           partnerId = partner.id,
           partnerCode = partner.code,
           partnerSiteCode = partner.siteCode,
+          buyer = partner.toBuyer(),
           paymentDays = partner.paymentDays,
           invoiceType = partner.invoiceType,
         ),
       )
       onSuccess()
+    }
+
+    private fun Partner.toBuyer(): ReceiptBuyer {
+      val central = locations.find { it.locationType == LocationType.CENTRAL }
+      val delivery = locations.find { it.locationType == LocationType.DELIVERY }
+      val primary: PartnerLocation? = central ?: delivery
+
+      return ReceiptBuyer(
+        id = id,
+        name = primary?.name ?: name,
+        country = primary?.country.orEmpty(),
+        postalCode = primary?.postalCode.orEmpty(),
+        city = primary?.city.orEmpty(),
+        address = primary?.address.orEmpty(),
+        deliveryName = delivery?.name ?: name,
+        deliveryCountry = delivery?.country.orEmpty(),
+        deliveryPostalCode = delivery?.postalCode.orEmpty(),
+        deliveryCity = delivery?.city.orEmpty(),
+        deliveryAddress = delivery?.address.orEmpty(),
+        iban = iban,
+        bankAccount = bankAccount,
+        vatNumber = vatNumber,
+      )
     }
   }

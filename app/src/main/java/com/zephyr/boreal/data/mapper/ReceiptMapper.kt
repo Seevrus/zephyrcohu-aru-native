@@ -1,5 +1,6 @@
 package com.zephyr.boreal.data.mapper
 
+import com.zephyr.boreal.api.dto.request.CreateReceiptItemDto
 import com.zephyr.boreal.api.dto.response.ReceiptBuyerDto
 import com.zephyr.boreal.api.dto.response.ReceiptItemDto
 import com.zephyr.boreal.api.dto.response.ReceiptOtherItemDto
@@ -7,6 +8,7 @@ import com.zephyr.boreal.api.dto.response.ReceiptResponseDataDto
 import com.zephyr.boreal.api.dto.response.ReceiptUserDto
 import com.zephyr.boreal.api.dto.response.ReceiptVatAmountDto
 import com.zephyr.boreal.api.dto.response.ReceiptVendorDto
+import com.zephyr.boreal.domain.model.DraftReceiptItem
 import com.zephyr.boreal.domain.model.Receipt
 import com.zephyr.boreal.domain.model.ReceiptBuyer
 import com.zephyr.boreal.domain.model.ReceiptItem
@@ -27,7 +29,6 @@ fun ReceiptResponseDataDto.toDomain(): Receipt =
     yearCode = yearCode,
     cancelSerialNumber = cancelSerialNumber,
     cancelYearCode = cancelYearCode,
-    originalCopiesPrinted = originalCopiesPrinted,
     vendor = vendor.toDomain(),
     buyer = buyer.toDomain(),
     invoiceDate = invoiceDate,
@@ -52,7 +53,7 @@ fun ReceiptResponseDataDto.toDomain(): Receipt =
 fun ReceiptUserDto.toDomain(): ReceiptUser =
   ReceiptUser(
     id = id,
-    code = code,
+    userName = userName,
     name = name,
     phoneNumber = phoneNumber,
   )
@@ -101,7 +102,6 @@ fun ReceiptItemDto.toDomain(): ReceiptItem =
     vatAmount = vatAmount,
     grossAmount = grossAmount,
     discountName = discountName,
-    expirationId = expirationId,
     cnCode = cnCode,
     expiresAt = expiresAt,
   )
@@ -123,6 +123,47 @@ fun ReceiptOtherItemDto.toDomain(): ReceiptOtherItem =
 
 fun ReceiptVatAmountDto.toDomain(): ReceiptVatAmount =
   ReceiptVatAmount(
+    vatRate = vatRate,
+    netAmount = netAmount,
+    vatAmount = vatAmount,
+    grossAmount = grossAmount,
+  )
+
+fun DraftReceiptItem.toDto(): CreateReceiptItemDto =
+  CreateReceiptItemDto(
+    id = id,
+    articleNumber = articleNumber,
+    name = name,
+    quantity = quantity,
+    unitName = unitName,
+    netPrice = netPrice,
+    netAmount = netAmount,
+    vatRate = vatRate,
+    vatAmount = vatAmount,
+    grossAmount = grossAmount,
+    discountName = discountName,
+    expirationId = expirationId,
+    cnCode = cnCode,
+    expiresAt = expiresAt,
+  )
+
+fun ReceiptOtherItem.toDto(): ReceiptOtherItemDto =
+  ReceiptOtherItemDto(
+    id = id,
+    articleNumber = articleNumber,
+    name = name,
+    quantity = quantity,
+    unitName = unitName,
+    netPrice = netPrice,
+    netAmount = netAmount,
+    vatRate = vatRate,
+    vatAmount = vatAmount,
+    grossAmount = grossAmount,
+    comment = comment,
+  )
+
+fun ReceiptVatAmount.toDto(): ReceiptVatAmountDto =
+  ReceiptVatAmountDto(
     vatRate = vatRate,
     netAmount = netAmount,
     vatAmount = vatAmount,

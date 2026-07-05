@@ -1,5 +1,6 @@
 package com.zephyr.boreal.data.repository
 
+import android.util.Log
 import com.zephyr.boreal.api.ReceiptApiService
 import com.zephyr.boreal.api.dto.request.CreateCancelReceiptDataDto
 import com.zephyr.boreal.api.dto.request.CreateCancelReceiptsRequestDto
@@ -16,6 +17,8 @@ import com.zephyr.boreal.store.user.UserSessionStore
 import javax.inject.Inject
 import javax.inject.Singleton
 
+private const val TAG = "ReceiptsRepository"
+
 @Singleton
 class ReceiptsRepository
   @Inject
@@ -31,6 +34,7 @@ class ReceiptsRepository
         // Original TS returns response.data.data (array), we take the first one
         ApiResource.Success(response.data.first().toDomain())
       } catch (e: Exception) {
+        Log.e(TAG, "createReceipt failed", e)
         ApiResource.Error(e.localizedMessage ?: "Failed to create receipt")
       }
 
@@ -39,6 +43,7 @@ class ReceiptsRepository
         val response = apiService.cancelReceipt(CreateCancelReceiptsRequestDto(listOf(request)))
         ApiResource.Success(response.data.first().toDomain())
       } catch (e: Exception) {
+        Log.e(TAG, "cancelReceipt failed", e)
         ApiResource.Error(e.localizedMessage ?: "Failed to cancel receipt")
       }
 
@@ -47,6 +52,7 @@ class ReceiptsRepository
         val response = apiService.createOrders(CreateOrdersRequestDto(request))
         ApiResource.Success(response.data.map { it.toDomain() })
       } catch (e: Exception) {
+        Log.e(TAG, "createOrders failed", e)
         ApiResource.Error(e.localizedMessage ?: "Failed to create orders")
       }
   }

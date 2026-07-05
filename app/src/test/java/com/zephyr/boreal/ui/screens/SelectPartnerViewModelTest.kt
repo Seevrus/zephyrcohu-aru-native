@@ -238,6 +238,83 @@ class SelectPartnerViewModelTest {
       collectJob.cancel()
     }
 
+  private fun mockPartnerWithLocations(): Partner =
+    Partner(
+      id = 1,
+      code = "P1",
+      siteCode = "S1",
+      name = "Test Partner",
+      vatNumber = "12345678-1-42",
+      invoiceType = com.zephyr.boreal.domain.model.InvoiceType.PAPER,
+      invoiceCopies = 1,
+      paymentDays = 8,
+      iban = "HU00",
+      bankAccount = "11111111",
+      locations =
+        listOf(
+          com.zephyr.boreal.domain.model.PartnerLocation(
+            name = "Central Name",
+            locationType = com.zephyr.boreal.domain.model.LocationType.CENTRAL,
+            country = "HU",
+            postalCode = "1000",
+            city = "Budapest",
+            address = "Fő utca 1.",
+            createdAt = "",
+            updatedAt = "",
+          ),
+          com.zephyr.boreal.domain.model.PartnerLocation(
+            name = "Delivery Name",
+            locationType = com.zephyr.boreal.domain.model.LocationType.DELIVERY,
+            country = "HU",
+            postalCode = "2000",
+            city = "Szentendre",
+            address = "Kossuth utca 2.",
+            createdAt = "",
+            updatedAt = "",
+          ),
+        ),
+      createdAt = "",
+      updatedAt = "",
+    )
+
+  @Test
+  fun `selectPartner builds buyer from the partner's central and delivery locations`() =
+    runTest {
+      val partner = mockPartnerWithLocations()
+      partnersFlow.value = ApiResource.Success(listOf(partner))
+      partnerListsFlow.value = ApiResource.Success(emptyList())
+      userFlow.value = ApiResource.Success(null)
+
+      val viewModel = SelectPartnerViewModel(partnersRepository, userRepository, receiptsStore, connectivityObserver)
+      val collectJob =
+        backgroundScope.launch(kotlinx.coroutines.test.UnconfinedTestDispatcher(testScheduler)) {
+          viewModel.uiState.collect { }
+        }
+      viewModel.onTabSelected(PartnerTab.ALL_STORES)
+      viewModel.onTogglePartnerExpanded(1)
+      advanceUntilIdle()
+
+      viewModel.selectPartner {}
+
+      val captor = argumentCaptor<com.zephyr.boreal.domain.model.DraftReceipt>()
+      verify(receiptsStore).setCurrentReceipt(captor.capture())
+      val buyer = captor.firstValue.buyer
+      assertEquals(1, buyer?.id)
+      assertEquals("Central Name", buyer?.name)
+      assertEquals("1000", buyer?.postalCode)
+      assertEquals("Budapest", buyer?.city)
+      assertEquals("Fő utca 1.", buyer?.address)
+      assertEquals("Delivery Name", buyer?.deliveryName)
+      assertEquals("2000", buyer?.deliveryPostalCode)
+      assertEquals("Szentendre", buyer?.deliveryCity)
+      assertEquals("Kossuth utca 2.", buyer?.deliveryAddress)
+      assertEquals("HU00", buyer?.iban)
+      assertEquals("11111111", buyer?.bankAccount)
+      assertEquals("12345678-1-42", buyer?.vatNumber)
+
+      collectJob.cancel()
+    }
+
   @Test
   fun `isInternetReachable reflects connectivity state`() =
     runTest {

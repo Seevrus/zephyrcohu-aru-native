@@ -4,13 +4,14 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.zephyr.boreal.domain.model.ReceiptItem
+import com.zephyr.boreal.domain.model.DraftReceiptItem
 import com.zephyr.boreal.ui.components.BorealAlert
 import com.zephyr.boreal.ui.components.ButtonVariant
 import com.zephyr.boreal.ui.theme.BorealTheme
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 
 class ReviewItemsScreenContentTest {
@@ -21,7 +22,7 @@ class ReviewItemsScreenContentTest {
     id: Int = 1,
     expirationId: Int = 1,
     grossAmount: Double = 1270.0,
-  ) = ReceiptItem(
+  ) = DraftReceiptItem(
     id = id,
     articleNumber = "ART-00$id",
     name = "Teszt termék $id",
@@ -45,6 +46,9 @@ class ReviewItemsScreenContentTest {
     onRemoveItem: (Int, Int) -> Unit = { _, _ -> },
     onRemoveOtherItem: (Int) -> Unit = {},
     onCancelClick: () -> Unit = {},
+    onFinalizeClick: () -> Unit = {},
+    onRetryClick: () -> Unit = {},
+    onContinueClick: () -> Unit = {},
     onNavigateToOtherItems: () -> Unit = {},
   ) {
     composeTestRule.setContent {
@@ -56,6 +60,9 @@ class ReviewItemsScreenContentTest {
           onRemoveItem = onRemoveItem,
           onRemoveOtherItem = onRemoveOtherItem,
           onCancelClick = onCancelClick,
+          onFinalizeClick = onFinalizeClick,
+          onRetryClick = onRetryClick,
+          onContinueClick = onContinueClick,
           onNavigateToOtherItems = onNavigateToOtherItems,
         )
       }
@@ -172,6 +179,72 @@ class ReviewItemsScreenContentTest {
     composeTestRule.onNodeWithText("Folytatás").performClick()
 
     verify(onConfirmClick).invoke()
+  }
+
+  @Test
+  fun finalizeButtonIsDisabledWhenCanFinalizeIsFalse() {
+    val onFinalizeClick: () -> Unit = mock()
+    setContent(uiState = ReviewItemsUiState(canFinalize = false), onFinalizeClick = onFinalizeClick)
+
+    composeTestRule.onNodeWithText("Véglegesítés").performClick()
+
+    verify(onFinalizeClick, never()).invoke()
+  }
+
+  @Test
+  fun finalizeButtonTriggersOnFinalizeClickWhenCanFinalizeIsTrue() {
+    val onFinalizeClick: () -> Unit = mock()
+    setContent(uiState = ReviewItemsUiState(canFinalize = true), onFinalizeClick = onFinalizeClick)
+
+    composeTestRule.onNodeWithText("Véglegesítés").performClick()
+
+    verify(onFinalizeClick).invoke()
+  }
+
+  @Test
+  fun showsRetryButtonAndHidesCancelFinalizeWhenSentWithErrors() {
+    setContent(uiState = ReviewItemsUiState(isSent = true, isSentWithErrors = true))
+
+    composeTestRule.onNodeWithText("Újraküldés").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Elvetés").assertDoesNotExist()
+    composeTestRule.onNodeWithText("Véglegesítés").assertDoesNotExist()
+  }
+
+  @Test
+  fun showsContinueButtonWhenSentSuccessfully() {
+    setContent(uiState = ReviewItemsUiState(isSent = true, isSentSuccessfully = true))
+
+    composeTestRule.onNodeWithText("Továbblépés").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Elvetés").assertDoesNotExist()
+  }
+
+  @Test
+  fun showsErrorCardWhenErrorMessageIsSet() {
+    setContent(uiState = ReviewItemsUiState(errorMessage = "Számla beküldése sikertelen."))
+
+    composeTestRule.onNodeWithText("Számla beküldése sikertelen.").assertIsDisplayed()
+  }
+
+  @Test
+  fun showsSuccessCardWhenSuccessMessageIsSet() {
+    setContent(uiState = ReviewItemsUiState(successMessage = "Számla sikeresen beküldve."))
+
+    composeTestRule.onNodeWithText("Számla sikeresen beküldve.").assertIsDisplayed()
+  }
+
+  @Test
+  fun showsNoInternetCardWhenOffline() {
+    setContent(uiState = ReviewItemsUiState(isInternetReachable = false))
+
+    composeTestRule.onNodeWithText("A számla véglegesítéséhez internetkapcsolat szükséges.").assertIsDisplayed()
+  }
+
+  @Test
+  fun showsLoadingIndicatorWhenLoading() {
+    setContent(uiState = ReviewItemsUiState(isLoading = true))
+
+    composeTestRule.onNodeWithText("Elvetés").assertDoesNotExist()
+    composeTestRule.onNodeWithText("Véglegesítés").assertDoesNotExist()
   }
 
   @Test

@@ -39,11 +39,16 @@ data class ReceiptBuyerDto(
 @Serializable
 data class ReceiptUserDto(
   val id: Int,
-  val code: String,
+  val userName: String,
   val name: String,
   val phoneNumber: String,
 )
 
+/**
+ * A finalized receipt line as returned by the API (ReceiptItemResource). Never carries an
+ * expirationId — see [com.zephyr.boreal.api.dto.request.CreateReceiptItemDto] for the
+ * request-side shape, which does.
+ */
 @Serializable
 data class ReceiptItemDto(
   val id: Int,
@@ -57,7 +62,6 @@ data class ReceiptItemDto(
   val vatAmount: Double,
   val grossAmount: Double,
   val discountName: String? = null,
-  val expirationId: Int,
   @SerialName("CNCode")
   val cnCode: String,
   val expiresAt: String,
@@ -98,7 +102,6 @@ data class ReceiptResponseDataDto(
   val yearCode: Int,
   val cancelSerialNumber: Int? = null,
   val cancelYearCode: Int? = null,
-  val originalCopiesPrinted: Int,
   val vendor: ReceiptVendorDto,
   val buyer: ReceiptBuyerDto,
   val invoiceDate: String,

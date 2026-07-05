@@ -1,5 +1,6 @@
 package com.zephyr.boreal.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -7,6 +8,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,12 +38,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zephyr.boreal.R
-import com.zephyr.boreal.domain.model.ReceiptItem
+import com.zephyr.boreal.domain.model.DraftReceiptItem
 import com.zephyr.boreal.domain.model.ReceiptOtherItem
 import com.zephyr.boreal.ui.components.BorealAlert
 import com.zephyr.boreal.ui.components.BorealButton
 import com.zephyr.boreal.ui.components.BorealTopAppBar
 import com.zephyr.boreal.ui.components.ButtonVariant
+import com.zephyr.boreal.ui.components.ErrorCard
+import com.zephyr.boreal.ui.components.LoadingIndicator
+import com.zephyr.boreal.ui.components.SuccessCard
 import com.zephyr.boreal.ui.theme.BorealColors
 import com.zephyr.boreal.ui.theme.BorealFontSizes
 import com.zephyr.boreal.ui.theme.NunitoSansFamily
@@ -59,6 +64,12 @@ fun ReviewItemsScreen(
 ) {
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+  BackHandler(enabled = uiState.isSentWithErrors || uiState.isSentSuccessfully) {
+    if (uiState.isSentWithErrors) {
+      viewModel.showCancelDialog()
+    }
+  }
+
   if (uiState.showCancelConfirmation) {
     BorealAlert(
       title = stringResource(R.string.review_items_cancel_title),
@@ -72,6 +83,19 @@ fun ReviewItemsScreen(
     )
   }
 
+  if (uiState.showFinalizeConfirmation) {
+    BorealAlert(
+      title = stringResource(R.string.review_items_finalize_title),
+      message = stringResource(R.string.review_items_finalize_message),
+      confirmButtonText = stringResource(R.string.review_items_finalize_confirm),
+      confirmButtonVariant = ButtonVariant.WARNING,
+      cancelButtonText = stringResource(R.string.review_items_finalize_dismiss),
+      onConfirmClick = { viewModel.confirmFinalize() },
+      onCancelClick = { viewModel.dismissFinalizeDialog() },
+      onDismissRequest = { viewModel.dismissFinalizeDialog() },
+    )
+  }
+
   ReviewItemsScreenContent(
     uiState = uiState,
     onToggleExpanded = viewModel::onToggleExpanded,
@@ -79,6 +103,9 @@ fun ReviewItemsScreen(
     onRemoveItem = { id, expirationId -> viewModel.removeItem(id, expirationId, onNavigateHome) },
     onRemoveOtherItem = viewModel::removeOtherItem,
     onCancelClick = viewModel::showCancelDialog,
+    onFinalizeClick = viewModel::showFinalizeDialog,
+    onRetryClick = viewModel::retryReceipt,
+    onContinueClick = {},
     onNavigateToOtherItems = onNavigateToOtherItems,
   )
 }
@@ -91,44 +118,59 @@ internal fun ReviewItemsScreenContent(
   onRemoveItem: (Int, Int) -> Unit,
   onRemoveOtherItem: (Int) -> Unit,
   onCancelClick: () -> Unit,
+  onFinalizeClick: () -> Unit,
+  onRetryClick: () -> Unit,
+  onContinueClick: () -> Unit,
   onNavigateToOtherItems: () -> Unit,
 ) {
   val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale("hu", "HU")) }
+  val isNotSent = !uiState.isSent
 
   Scaffold(
     topBar = {
       BorealTopAppBar(title = stringResource(R.string.review_items_title))
     },
     bottomBar = {
-      Column {
-        HorizontalDivider(color = Color.White, thickness = 1.dp)
-        ReviewItemsFooter(
-          grossTotal = uiState.grossTotal,
-          currencyFormat = currencyFormat,
-          onCancelClick = onCancelClick,
-        )
+      if (!uiState.isLoading) {
+        Column {
+          HorizontalDivider(color = Color.White, thickness = 1.dp)
+          ReviewItemsFooter(
+            grossTotal = uiState.grossTotal,
+            currencyFormat = currencyFormat,
+            isNotSent = isNotSent,
+            canFinalize = uiState.canFinalize,
+            isSentWithErrors = uiState.isSentWithErrors,
+            isSentSuccessfully = uiState.isSentSuccessfully,
+            onCancelClick = onCancelClick,
+            onFinalizeClick = onFinalizeClick,
+            onRetryClick = onRetryClick,
+            onContinueClick = onContinueClick,
+          )
+        }
       }
     },
     containerColor = BorealColors.Background,
   ) { paddingValues ->
+    if (uiState.isLoading) {
+      Box(
+        modifier = Modifier.fillMaxSize().padding(paddingValues),
+        contentAlignment = Alignment.Center,
+      ) {
+        LoadingIndicator()
+      }
+      return@Scaffold
+    }
+
     Column(
       modifier =
         Modifier
           .fillMaxSize()
           .padding(paddingValues),
     ) {
-      Row(
-        modifier =
-          Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.End,
-      ) {
-        BorealButton(
-          text = stringResource(R.string.review_items_extra_items),
-          variant = ButtonVariant.OK,
-          onClick = onNavigateToOtherItems,
-        )
+      ReviewItemsStatusCards(uiState = uiState)
+
+      if (isNotSent) {
+        ReviewItemsExtraItemsButton(onNavigateToOtherItems = onNavigateToOtherItems)
       }
 
       ReviewItemsList(
@@ -141,6 +183,39 @@ internal fun ReviewItemsScreenContent(
         modifier = Modifier.weight(1f),
       )
     }
+  }
+}
+
+@Composable
+private fun ReviewItemsStatusCards(uiState: ReviewItemsUiState) {
+  uiState.errorMessage?.let {
+    ErrorCard(message = it, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+  }
+  uiState.successMessage?.let {
+    SuccessCard(message = it, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+  }
+  if (!uiState.isInternetReachable) {
+    ErrorCard(
+      message = stringResource(R.string.review_items_no_internet),
+      modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+  }
+}
+
+@Composable
+private fun ReviewItemsExtraItemsButton(onNavigateToOtherItems: () -> Unit) {
+  Row(
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp, vertical = 8.dp),
+    horizontalArrangement = Arrangement.End,
+  ) {
+    BorealButton(
+      text = stringResource(R.string.review_items_extra_items),
+      variant = ButtonVariant.OK,
+      onClick = onNavigateToOtherItems,
+    )
   }
 }
 
@@ -194,7 +269,7 @@ private fun ReviewItemsList(
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun ReviewItemAccordion(
-  item: ReceiptItem,
+  item: DraftReceiptItem,
   isExpanded: Boolean,
   currencyFormat: NumberFormat,
   onHeaderClick: () -> Unit,
@@ -437,7 +512,14 @@ private fun ReviewItemRow(
 private fun ReviewItemsFooter(
   grossTotal: Double,
   currencyFormat: NumberFormat,
+  isNotSent: Boolean,
+  canFinalize: Boolean,
+  isSentWithErrors: Boolean,
+  isSentSuccessfully: Boolean,
   onCancelClick: () -> Unit,
+  onFinalizeClick: () -> Unit,
+  onRetryClick: () -> Unit,
+  onContinueClick: () -> Unit,
 ) {
   Column(
     modifier =
@@ -458,16 +540,34 @@ private fun ReviewItemsFooter(
     Row(
       horizontalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-      BorealButton(
-        text = stringResource(R.string.review_items_cancel),
-        variant = ButtonVariant.WARNING,
-        onClick = onCancelClick,
-      )
-      BorealButton(
-        text = stringResource(R.string.review_items_finalize),
-        variant = ButtonVariant.OK,
-        onClick = {},
-      )
+      when {
+        isNotSent -> {
+          BorealButton(
+            text = stringResource(R.string.review_items_cancel),
+            variant = ButtonVariant.WARNING,
+            onClick = onCancelClick,
+          )
+          BorealButton(
+            text = stringResource(R.string.review_items_finalize),
+            variant = if (canFinalize) ButtonVariant.OK else ButtonVariant.DISABLED,
+            onClick = onFinalizeClick,
+          )
+        }
+        isSentWithErrors -> {
+          BorealButton(
+            text = stringResource(R.string.review_items_retry),
+            variant = if (canFinalize) ButtonVariant.OK else ButtonVariant.DISABLED,
+            onClick = onRetryClick,
+          )
+        }
+        isSentSuccessfully -> {
+          BorealButton(
+            text = stringResource(R.string.review_items_continue),
+            variant = ButtonVariant.OK,
+            onClick = onContinueClick,
+          )
+        }
+      }
     }
   }
 }

@@ -11,7 +11,6 @@ data class Receipt(
   val yearCode: Int,
   val cancelSerialNumber: Int?,
   val cancelYearCode: Int?,
-  val originalCopiesPrinted: Int,
   val vendor: ReceiptVendor,
   val buyer: ReceiptBuyer,
   val invoiceDate: String, // yyyy-MM-dd
@@ -48,7 +47,7 @@ data class Receipt(
 
 data class ReceiptUser(
   val id: Int,
-  val code: String,
+  val userName: String,
   val name: String,
   val phoneNumber: String,
 )
@@ -94,7 +93,6 @@ data class ReceiptItem(
   val vatAmount: Double,
   val grossAmount: Double,
   val discountName: String?,
-  val expirationId: Int,
   val cnCode: String,
   val expiresAt: String,
 )

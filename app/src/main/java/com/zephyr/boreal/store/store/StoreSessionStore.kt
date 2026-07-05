@@ -1,6 +1,5 @@
 package com.zephyr.boreal.store.store
 
-import com.zephyr.boreal.domain.model.ReceiptItem
 import com.zephyr.boreal.domain.model.StoreDetails
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,31 +44,6 @@ class StoreSessionStore
               val soldQuantity = soldQuantities[expiration.itemId]?.get(expiration.expirationId) ?: 0.0
               if (soldQuantity > 0.0) {
                 expiration.copy(quantity = maxOf(0.0, expiration.quantity - soldQuantity))
-              } else {
-                expiration
-              }
-            },
-        )
-      }
-    }
-
-    /**
-     * Restores expiration quantities to the current store from a canceled receipt.
-     * @param canceledItems List of ReceiptItem from the canceled transaction
-     */
-    fun restoreCanceledItems(canceledItems: List<ReceiptItem>) {
-      val canceledMap =
-        canceledItems
-          .groupBy { it.id to it.expirationId }
-          .mapValues { (_, items) -> items.sumOf { it.quantity } }
-
-      _selectedStoreCurrentState.update { current ->
-        current?.copy(
-          expirations =
-            current.expirations.map { expiration ->
-              val restoreQuantity = canceledMap[expiration.itemId to expiration.expirationId] ?: 0.0
-              if (restoreQuantity > 0.0) {
-                expiration.copy(quantity = expiration.quantity + restoreQuantity)
               } else {
                 expiration
               }

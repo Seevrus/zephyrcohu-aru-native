@@ -220,7 +220,6 @@ class EndErrandViewModelTest {
           yearCode = 2026,
           cancelSerialNumber = null,
           cancelYearCode = null,
-          originalCopiesPrinted = 1,
           vendor =
             com.zephyr.boreal.domain.model
               .ReceiptVendor("V", "HU", "1", "Budapest", "A", "F", "I", "B", "VAT"),

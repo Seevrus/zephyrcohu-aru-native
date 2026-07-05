@@ -6,7 +6,7 @@ import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.ItemsRepository
 import com.zephyr.boreal.data.repository.StoresRepository
 import com.zephyr.boreal.data.repository.UserRepository
-import com.zephyr.boreal.domain.model.ReceiptItem
+import com.zephyr.boreal.domain.model.DraftReceiptItem
 import com.zephyr.boreal.domain.model.UserState
 import com.zephyr.boreal.domain.utils.AmountCalculator
 import com.zephyr.boreal.store.receipts.ReceiptsStore
@@ -294,7 +294,7 @@ class SelectItemsViewModel
 
       receiptsStore.updateCurrentReceipt { draft ->
         val selected = receiptsStore.selectedItems.value
-        val itemsList = mutableListOf<ReceiptItem>()
+        val itemsList = mutableListOf<DraftReceiptItem>()
 
         selected.forEach { (itemId, expMap) ->
           val item = allItems.find { it.id == itemId }
@@ -305,7 +305,7 @@ class SelectItemsViewModel
               val expiresAtStr = expiration?.expiresAt?.take(6) ?: ""
 
               itemsList.add(
-                ReceiptItem(
+                DraftReceiptItem(
                   id = item.id,
                   articleNumber = item.articleNumber,
                   name = item.name,
