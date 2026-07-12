@@ -6,6 +6,7 @@ import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.ItemsRepository
 import com.zephyr.boreal.data.repository.StoresRepository
 import com.zephyr.boreal.data.repository.UserRepository
+import com.zephyr.boreal.domain.model.Discount
 import com.zephyr.boreal.domain.model.DraftOrder
 import com.zephyr.boreal.domain.model.DraftReceiptItem
 import com.zephyr.boreal.domain.model.OrderItem
@@ -44,6 +45,7 @@ data class SellItem(
   val vatRate: String,
   val cnCode: String,
   val expirations: List<SellExpiration>,
+  val discounts: List<Discount> = emptyList(),
 )
 
 data class SelectItemsUiState(
@@ -182,6 +184,7 @@ class SelectItemsViewModel
               vatRate = item.vatRate,
               cnCode = item.cnCode,
               expirations = sellExpirations,
+              discounts = item.discounts,
             )
           }
 
@@ -340,6 +343,7 @@ class SelectItemsViewModel
                   expirationId = expirationId,
                   cnCode = item.cnCode,
                   expiresAt = expiresAtStr,
+                  availableDiscounts = item.discounts,
                 ),
               )
             }

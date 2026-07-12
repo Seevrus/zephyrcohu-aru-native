@@ -1,10 +1,12 @@
 # Task 01 · Sell: per-item discounts
 
 ## Goal
+
 Let the salesperson apply discounts to an individual regular item line during review, before
 the receipt is finalized, and have those discounts flow into all money totals.
 
 ## Business context
+
 On the sell **Review** screen each regular (non-"other") item line can carry discounts defined
 for that item on the server. A line can have up to three discount types available
 simultaneously, each applied to a chosen quantity of that line:
@@ -19,6 +21,7 @@ any remaining, undiscounted quantity keeps the normal price. Discounts change th
 VAT and gross amounts, and therefore the receipt's grand total and per-VAT-rate breakdown.
 
 ## Starting / resulting state
+
 - **Start**: Review screen lists regular + other items with per-line gross and a grand total,
   and finalizes the receipt/order (already built). Item lines expose available discounts in the
   domain model (`Item.discounts`, `DraftReceipt`/`SelectedDiscount` already exist) but there is
@@ -28,6 +31,7 @@ VAT and gross amounts, and therefore the receipt's grand total and per-VAT-rate 
   reflect the discount; finalization sends the discounted amounts and each item's discount name.
 
 ## Data requirements
+
 - Reuse `Item.discounts` (available discounts: id, name, type, amount) and the existing
   `SelectedDiscount` domain model (id, name, type, quantity, amount?, price?).
 - A regular review-item must retain its **selected discounts** in the sell-flow draft state so
@@ -36,10 +40,13 @@ VAT and gross amounts, and therefore the receipt's grand total and per-VAT-rate 
   — already a field on `DraftReceiptItem`/`CreateReceiptItemDto`; populate it.
 
 ## Behavioral requirements
+
 - Entry point: selecting a regular line on Review (or a dedicated control on the line) opens the
   Discounts screen for that specific item + expiration batch. Other-item lines have no discounts.
+- Discounts button is only available if the item has available discounts
 - Show line identity (name + expiry month `yyyyMM`), the line quantity/unit, and one input group
-  per available discount type, prefilled with any previously chosen quantities/price.
+  per available discount type (not every discount is available for ever item),
+  prefilled with any previously chosen quantities/price.
 - Free-form price defaults to the negative of the item's net price when none chosen yet.
 - **Validation** (block apply, show Hungarian error, mark offending fields): all inputs numeric;
   sum of discounted quantities ≤ line quantity ("Túl nagy megadott mennyiség."); free-form price
@@ -54,16 +61,19 @@ VAT and gross amounts, and therefore the receipt's grand total and per-VAT-rate 
   discounts; extend it to the discounted calculation if it currently ignores them.
 
 ## API requirements
+
 - No new endpoint. Discounts are computed client-side and included in the existing
   `POST /receipts` (`create_receipts`) payload: per-line discounted `netAmount`/`vatAmount`/
   `grossAmount`, aggregated `vatAmounts`, and each line's `discountName`.
 
 ## UI/UX notes
+
 - Reuse `BorealTextInput`, `BorealButton`, `ErrorCard`, `LoadingIndicator`. One scrollable form,
   keyboard-aware. Hungarian labels: "Mennyiség", "Elérhető kedvezmények", "Típus"
   (abszolút/százalékos/tetszőleges), "Mértéke", "Ár", "Kedvezmények érvényesítése".
 
 ## Testing requirements
+
 - ViewModel unit tests: prefill from existing selection; validation branches (non-numeric, over
   quantity, positive free-form price); clearing discounts; building `SelectedDiscount` lists.
 - Unit tests on the discounted-amount + receipt-totals calculation for each type and mixed
@@ -71,12 +81,21 @@ VAT and gross amounts, and therefore the receipt's grand total and per-VAT-rate 
 - Instrumented test: open discounts from a review line, apply, see the line + grand total update.
 
 ## Non-goals
+
 - No new discount types; no server-side discount editing; other-items keep no discounts.
 
 ## Depends on
+
 Native sell flow through Review + finalization (frontier).
 
+## Reference design
+
+- [Item tile on Review with available discounts](./screenshots/01-01-review-item-with-discounts-available.png)
+- [Discounts form](./screenshots/01-02-discounts-form.png)
+- [Item tile on Review with selected discounts](./screenshots/01-03-review-item-with-discounts-selected.png)
+
 ## RN reference paths
+
 - `resources/frontend/screens/sell/review/Discounts.tsx`, `useDiscountsData.ts`
 - `resources/frontend/screens/sell/review/Review.tsx`, `useReviewData.ts`
 - `resources/frontend/utils/calculateDiscountedItemAmounts.ts`, `calculateReceiptTotals.ts`,

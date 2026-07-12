@@ -50,6 +50,7 @@ class ReviewItemsScreenContentTest {
     onRetryClick: () -> Unit = {},
     onContinueClick: () -> Unit = {},
     onNavigateToOtherItems: () -> Unit = {},
+    onNavigateToDiscounts: (Int, Int) -> Unit = { _, _ -> },
   ) {
     composeTestRule.setContent {
       BorealTheme {
@@ -64,6 +65,7 @@ class ReviewItemsScreenContentTest {
           onRetryClick = onRetryClick,
           onContinueClick = onContinueClick,
           onNavigateToOtherItems = onNavigateToOtherItems,
+          onNavigateToDiscounts = onNavigateToDiscounts,
         )
       }
     }

@@ -16,6 +16,9 @@ import com.zephyr.boreal.domain.model.ReceiptOtherItem
 import com.zephyr.boreal.domain.model.ReceiptUser
 import com.zephyr.boreal.domain.model.ReceiptVatAmount
 import com.zephyr.boreal.domain.model.ReceiptVendor
+import com.zephyr.boreal.domain.model.SelectedDiscount
+import com.zephyr.boreal.domain.utils.AmountCalculator
+import com.zephyr.boreal.domain.utils.DiscountCalculator
 
 fun ReceiptResponseDataDto.toDomain(): Receipt =
   Receipt(
@@ -146,6 +149,68 @@ fun DraftReceiptItem.toDto(): CreateReceiptItemDto =
     cnCode = cnCode,
     expiresAt = expiresAt,
   )
+
+/**
+ * Splits a line's selected discounts into individual API rows (one per discount, plus one for
+ * any undiscounted remainder), matching the RN app's createUniqueDiscountedItems.ts submission
+ * behavior. Lines without discounts map to a single row via [toDto].
+ */
+fun DraftReceiptItem.toDtos(): List<CreateReceiptItemDto> {
+  if (selectedDiscounts.isEmpty()) {
+    return listOf(toDto())
+  }
+
+  var discountedQuantity = 0.0
+  val discountedRows =
+    selectedDiscounts.map { discount ->
+      discountedQuantity += discount.quantity
+      toDiscountedDto(discount)
+    }
+
+  val remainingQuantity = quantity - discountedQuantity
+  return if (remainingQuantity <= 0) discountedRows else discountedRows + toRemainderDto(remainingQuantity)
+}
+
+private fun DraftReceiptItem.toDiscountedDto(discount: SelectedDiscount): CreateReceiptItemDto {
+  val unitNetPrice = DiscountCalculator.calculateDiscountedUnitNetPrice(netPrice, discount)
+  val amounts = AmountCalculator.calculateAmounts(unitNetPrice, discount.quantity, vatRate)
+  return CreateReceiptItemDto(
+    id = id,
+    articleNumber = articleNumber,
+    name = name,
+    quantity = discount.quantity,
+    unitName = unitName,
+    netPrice = unitNetPrice,
+    netAmount = amounts.netAmount,
+    vatRate = vatRate,
+    vatAmount = amounts.vatAmount,
+    grossAmount = amounts.grossAmount,
+    discountName = discount.name,
+    expirationId = expirationId,
+    cnCode = cnCode,
+    expiresAt = expiresAt,
+  )
+}
+
+private fun DraftReceiptItem.toRemainderDto(remainingQuantity: Double): CreateReceiptItemDto {
+  val amounts = AmountCalculator.calculateAmounts(netPrice, remainingQuantity, vatRate)
+  return CreateReceiptItemDto(
+    id = id,
+    articleNumber = articleNumber,
+    name = name,
+    quantity = remainingQuantity,
+    unitName = unitName,
+    netPrice = netPrice,
+    netAmount = amounts.netAmount,
+    vatRate = vatRate,
+    vatAmount = amounts.vatAmount,
+    grossAmount = amounts.grossAmount,
+    discountName = null,
+    expirationId = expirationId,
+    cnCode = cnCode,
+    expiresAt = expiresAt,
+  )
+}
 
 fun ReceiptOtherItem.toDto(): ReceiptOtherItemDto =
   ReceiptOtherItemDto(

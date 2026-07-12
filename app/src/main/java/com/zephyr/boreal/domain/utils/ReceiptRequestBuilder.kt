@@ -4,6 +4,7 @@ import com.zephyr.boreal.api.dto.request.CreateReceiptRequestDataDto
 import com.zephyr.boreal.api.dto.response.ReceiptBuyerDto
 import com.zephyr.boreal.api.dto.response.ReceiptVendorDto
 import com.zephyr.boreal.data.mapper.toDto
+import com.zephyr.boreal.data.mapper.toDtos
 import com.zephyr.boreal.domain.model.Company
 import com.zephyr.boreal.domain.model.DraftReceipt
 import com.zephyr.boreal.domain.model.ReceiptBuyer
@@ -47,7 +48,7 @@ fun buildCreateReceiptRequest(
     invoiceType = requireNotNull(draft.invoiceType),
     paymentDays = requireNotNull(draft.paymentDays),
     paidDate = dates.paidDate,
-    items = draft.items.map { it.toDto() },
+    items = draft.items.flatMap { it.toDtos() },
     otherItems = draft.otherItems.map { it.toDto() },
     quantity = totals.quantity,
     netAmount = totals.netAmount,

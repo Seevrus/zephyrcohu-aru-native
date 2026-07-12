@@ -3,6 +3,7 @@
     "allow": [
       "Bash(./gradlew detekt*)",
       "Bash(./gradlew ktlintFormat*)",
+      "Bash(./gradlew.bat ktlintFormat*)",
       "Bash(./gradlew :app:testDebugUnitTest*)",
       "Bash(./gradlew test*)",
       "Bash(./gradlew :app:compileDebugKotlin*)",

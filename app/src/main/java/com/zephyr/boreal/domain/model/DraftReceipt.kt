@@ -37,6 +37,8 @@ data class DraftReceiptItem(
   val expirationId: Int,
   val cnCode: String,
   val expiresAt: String,
+  val availableDiscounts: List<Discount> = emptyList(),
+  val selectedDiscounts: List<SelectedDiscount> = emptyList(),
 )
 
 /**

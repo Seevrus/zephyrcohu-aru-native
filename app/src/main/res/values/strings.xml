@@ -211,6 +211,22 @@
     <string name="select_other_items_gross_total_label">Bruttó összesen:</string>
     <string name="select_other_items_accept_description">Elfogadás</string>
     <string name="review_items_other_comment_label">Megjegyzés:</string>
+    <string name="review_items_discounts_button">Kedvezmények</string>
+
+    <!-- Discounts -->
+    <string name="discounts_title">Kedvezmények</string>
+    <string name="discounts_quantity_label">Mennyiség</string>
+    <string name="discounts_available_label">Elérhető kedvezmények:</string>
+    <string name="discounts_type_label">Típus</string>
+    <string name="discounts_name_label">Név</string>
+    <string name="discounts_rate_label">Mértéke</string>
+    <string name="discounts_type_absolute">abszolút</string>
+    <string name="discounts_type_percentage">százalékos</string>
+    <string name="discounts_type_free_form">tetszőleges</string>
+    <string name="discounts_quantity_input_label">Mennyiség:</string>
+    <string name="discounts_price_input_label">Új ár:</string>
+    <string name="discounts_apply_button">Kedvezmények érvényesítése</string>
+    <string name="discounts_summary_label">Érvényes kedvezmények</string>
 
     <!-- Common Dialog -->
     <string name="dialog_yes">Igen</string>

@@ -1,6 +1,7 @@
 package com.zephyr.boreal.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -38,8 +39,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zephyr.boreal.R
+import com.zephyr.boreal.domain.model.Discount
+import com.zephyr.boreal.domain.model.DiscountType
 import com.zephyr.boreal.domain.model.DraftReceiptItem
 import com.zephyr.boreal.domain.model.ReceiptOtherItem
+import com.zephyr.boreal.domain.model.SelectedDiscount
 import com.zephyr.boreal.ui.components.BorealAlert
 import com.zephyr.boreal.ui.components.BorealButton
 import com.zephyr.boreal.ui.components.BorealTopAppBar
@@ -61,6 +65,7 @@ fun ReviewItemsScreen(
   viewModel: ReviewItemsViewModel,
   onNavigateHome: () -> Unit,
   onNavigateToOtherItems: () -> Unit,
+  onNavigateToDiscounts: (Int, Int) -> Unit,
 ) {
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -107,6 +112,7 @@ fun ReviewItemsScreen(
     onRetryClick = viewModel::retryReceipt,
     onContinueClick = {},
     onNavigateToOtherItems = onNavigateToOtherItems,
+    onNavigateToDiscounts = onNavigateToDiscounts,
   )
 }
 
@@ -122,6 +128,7 @@ internal fun ReviewItemsScreenContent(
   onRetryClick: () -> Unit,
   onContinueClick: () -> Unit,
   onNavigateToOtherItems: () -> Unit,
+  onNavigateToDiscounts: (Int, Int) -> Unit,
 ) {
   val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale("hu", "HU")) }
   val isNotSent = !uiState.isSent
@@ -132,21 +139,15 @@ internal fun ReviewItemsScreenContent(
     },
     bottomBar = {
       if (!uiState.isLoading) {
-        Column {
-          HorizontalDivider(color = Color.White, thickness = 1.dp)
-          ReviewItemsFooter(
-            grossTotal = uiState.grossTotal,
-            currencyFormat = currencyFormat,
-            isNotSent = isNotSent,
-            canFinalize = uiState.canFinalize,
-            isSentWithErrors = uiState.isSentWithErrors,
-            isSentSuccessfully = uiState.isSentSuccessfully,
-            onCancelClick = onCancelClick,
-            onFinalizeClick = onFinalizeClick,
-            onRetryClick = onRetryClick,
-            onContinueClick = onContinueClick,
-          )
-        }
+        ReviewItemsBottomBar(
+          uiState = uiState,
+          currencyFormat = currencyFormat,
+          isNotSent = isNotSent,
+          onCancelClick = onCancelClick,
+          onFinalizeClick = onFinalizeClick,
+          onRetryClick = onRetryClick,
+          onContinueClick = onContinueClick,
+        )
       }
     },
     containerColor = BorealColors.Background,
@@ -180,9 +181,37 @@ internal fun ReviewItemsScreenContent(
         onToggleOtherItemExpanded = onToggleOtherItemExpanded,
         onRemoveItem = onRemoveItem,
         onRemoveOtherItem = onRemoveOtherItem,
+        onNavigateToDiscounts = onNavigateToDiscounts,
         modifier = Modifier.weight(1f),
       )
     }
+  }
+}
+
+@Composable
+private fun ReviewItemsBottomBar(
+  uiState: ReviewItemsUiState,
+  currencyFormat: NumberFormat,
+  isNotSent: Boolean,
+  onCancelClick: () -> Unit,
+  onFinalizeClick: () -> Unit,
+  onRetryClick: () -> Unit,
+  onContinueClick: () -> Unit,
+) {
+  Column {
+    HorizontalDivider(color = Color.White, thickness = 1.dp)
+    ReviewItemsFooter(
+      grossTotal = uiState.grossTotal,
+      currencyFormat = currencyFormat,
+      isNotSent = isNotSent,
+      canFinalize = uiState.canFinalize,
+      isSentWithErrors = uiState.isSentWithErrors,
+      isSentSuccessfully = uiState.isSentSuccessfully,
+      onCancelClick = onCancelClick,
+      onFinalizeClick = onFinalizeClick,
+      onRetryClick = onRetryClick,
+      onContinueClick = onContinueClick,
+    )
   }
 }
 
@@ -227,6 +256,7 @@ private fun ReviewItemsList(
   onToggleOtherItemExpanded: (Int) -> Unit,
   onRemoveItem: (Int, Int) -> Unit,
   onRemoveOtherItem: (Int) -> Unit,
+  onNavigateToDiscounts: (Int, Int) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   LazyColumn(
@@ -245,6 +275,7 @@ private fun ReviewItemsList(
         currencyFormat = currencyFormat,
         onHeaderClick = { onToggleExpanded(key) },
         onRemoveClick = { onRemoveItem(item.id, item.expirationId) },
+        onOpenDiscounts = { onNavigateToDiscounts(item.id, item.expirationId) },
       )
     }
 
@@ -274,6 +305,7 @@ private fun ReviewItemAccordion(
   currencyFormat: NumberFormat,
   onHeaderClick: () -> Unit,
   onRemoveClick: () -> Unit,
+  onOpenDiscounts: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val headerColor = if (isExpanded) BorealColors.Ok else BorealColors.Neutral
@@ -318,7 +350,11 @@ private fun ReviewItemAccordion(
     ) {
       ReviewItemAccordionExpandedContent(
         articleNumber = item.articleNumber,
+        availableDiscounts = item.availableDiscounts,
+        selectedDiscounts = item.selectedDiscounts,
+        unitName = item.unitName,
         onRemoveClick = onRemoveClick,
+        onOpenDiscounts = onOpenDiscounts,
       )
     }
   }
@@ -464,19 +500,78 @@ private fun ReviewItemAccordionHeader(
 @Composable
 private fun ReviewItemAccordionExpandedContent(
   articleNumber: String,
+  availableDiscounts: List<Discount>,
+  selectedDiscounts: List<SelectedDiscount>,
+  unitName: String,
   onRemoveClick: () -> Unit,
+  onOpenDiscounts: () -> Unit,
 ) {
   Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
     ReviewItemRow(
       label = stringResource(R.string.review_items_article_number_label),
       value = articleNumber,
     )
-    BorealButton(
-      text = stringResource(R.string.review_items_delete),
-      variant = ButtonVariant.WARNING,
-      onClick = onRemoveClick,
+    if (selectedDiscounts.isNotEmpty()) {
+      SelectedDiscountsSummary(selectedDiscounts = selectedDiscounts, unitName = unitName)
+    }
+    Row(
       modifier = Modifier.padding(top = 12.dp),
+      horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+      BorealButton(
+        text = stringResource(R.string.review_items_delete),
+        variant = ButtonVariant.WARNING,
+        onClick = onRemoveClick,
+      )
+      if (availableDiscounts.isNotEmpty()) {
+        BorealButton(
+          text = stringResource(R.string.review_items_discounts_button),
+          variant = ButtonVariant.OK,
+          onClick = onOpenDiscounts,
+        )
+      }
+    }
+  }
+}
+
+@StringRes
+private fun discountTypeLabel(type: DiscountType): Int =
+  when (type) {
+    DiscountType.ABSOLUTE -> R.string.discounts_type_absolute
+    DiscountType.PERCENTAGE -> R.string.discounts_type_percentage
+    DiscountType.FREE_FORM -> R.string.discounts_type_free_form
+  }
+
+private fun discountRateText(
+  discount: SelectedDiscount,
+  unitName: String,
+): String =
+  when (discount.type) {
+    DiscountType.PERCENTAGE -> "${discount.amount?.toInt()}% / $unitName"
+    DiscountType.ABSOLUTE -> "${discount.amount?.toInt()} Ft / $unitName"
+    DiscountType.FREE_FORM -> "${discount.price?.toInt()} Ft / $unitName"
+  }
+
+@Composable
+private fun SelectedDiscountsSummary(
+  selectedDiscounts: List<SelectedDiscount>,
+  unitName: String,
+) {
+  Column(modifier = Modifier.padding(top = 8.dp)) {
+    Text(
+      text = stringResource(R.string.discounts_summary_label),
+      color = BorealColors.White,
+      fontFamily = NunitoSansFamily,
+      fontSize = BorealFontSizes.Input,
+      fontWeight = FontWeight.Bold,
+      modifier = Modifier.padding(bottom = 4.dp),
     )
+    selectedDiscounts.forEach { discount ->
+      ReviewItemRow(stringResource(R.string.discounts_type_label), stringResource(discountTypeLabel(discount.type)))
+      ReviewItemRow(stringResource(R.string.discounts_name_label), discount.name)
+      ReviewItemRow(stringResource(R.string.review_items_quantity_label), discount.quantity.toInt().toString())
+      ReviewItemRow(stringResource(R.string.discounts_rate_label), discountRateText(discount, unitName))
+    }
   }
 }
 

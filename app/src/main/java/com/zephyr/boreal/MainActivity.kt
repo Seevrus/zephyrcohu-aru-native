@@ -23,6 +23,8 @@ import com.zephyr.boreal.ui.screens.AddPartnerScreen
 import com.zephyr.boreal.ui.screens.AddPartnerViewModel
 import com.zephyr.boreal.ui.screens.AppLockedScreen
 import com.zephyr.boreal.ui.screens.ChangePasswordScreen
+import com.zephyr.boreal.ui.screens.DiscountsScreen
+import com.zephyr.boreal.ui.screens.DiscountsViewModel
 import com.zephyr.boreal.ui.screens.EndErrandScreen
 import com.zephyr.boreal.ui.screens.EndErrandViewModel
 import com.zephyr.boreal.ui.screens.ErrandsScreen
@@ -141,6 +143,16 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
     }
     composable("select_other_items") {
       SelectOtherItemsRoute(navController)
+    }
+    composable(
+      "discounts/{itemId}/{expirationId}",
+      arguments =
+        listOf(
+          navArgument("itemId") { type = NavType.IntType },
+          navArgument("expirationId") { type = NavType.IntType },
+        ),
+    ) {
+      DiscountsRoute(navController)
     }
   }
 }
@@ -343,6 +355,18 @@ private fun ReviewItemsRoute(navController: androidx.navigation.NavHostControlle
     onNavigateToOtherItems = {
       navController.navigate("select_other_items")
     },
+    onNavigateToDiscounts = { itemId, expirationId ->
+      navController.navigate("discounts/$itemId/$expirationId")
+    },
+  )
+}
+
+@Composable
+private fun DiscountsRoute(navController: androidx.navigation.NavHostController) {
+  val viewModel: DiscountsViewModel = hiltViewModel()
+  DiscountsScreen(
+    viewModel = viewModel,
+    onNavigateBack = { navController.popBackStack() },
   )
 }
 

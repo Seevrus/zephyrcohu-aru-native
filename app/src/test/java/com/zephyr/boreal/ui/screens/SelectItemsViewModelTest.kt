@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -182,6 +181,16 @@ class SelectItemsViewModelTest {
       whenever(exp1.id).thenReturn(10)
       whenever(exp1.expiresAt).thenReturn("2026-03")
       whenever(item1.expirations).thenReturn(listOf(exp1))
+      val discount1 =
+        com.zephyr.boreal.domain.model.Discount(
+          id = 1,
+          name = "Fix kedvezmény",
+          type = com.zephyr.boreal.domain.model.DiscountType.ABSOLUTE,
+          amount = 200.0,
+          createdAt = "",
+          updatedAt = "",
+        )
+      whenever(item1.discounts).thenReturn(listOf(discount1))
 
       itemsFlow.value = ApiResource.Success(listOf(item1))
 
@@ -201,7 +210,15 @@ class SelectItemsViewModelTest {
       }
 
       assertTrue(successCalled)
-      verify(receiptsStore).updateCurrentReceipt(any())
+      val captor =
+        argumentCaptor<
+          (
+            com.zephyr.boreal.domain.model.DraftReceipt,
+          ) -> com.zephyr.boreal.domain.model.DraftReceipt,
+        >()
+      verify(receiptsStore).updateCurrentReceipt(captor.capture())
+      val resultItem = captor.firstValue(draftReceipt).items.first()
+      assertEquals(listOf(discount1), resultItem.availableDiscounts)
       job.cancel()
     }
 

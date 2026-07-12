@@ -18,7 +18,7 @@ data class DiscountDto(
   val id: Int,
   val name: String,
   val type: DiscountType,
-  val amount: Double,
+  val amount: Double? = null,
   val createdAt: String,
   val updatedAt: String,
 )
