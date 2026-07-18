@@ -9,6 +9,7 @@ import com.zephyr.boreal.data.local.dao.OtherItemDao
 import com.zephyr.boreal.data.local.dao.PartnerDao
 import com.zephyr.boreal.data.local.dao.PartnerListDao
 import com.zephyr.boreal.data.local.dao.PriceListDao
+import com.zephyr.boreal.data.local.dao.ReceiptDao
 import com.zephyr.boreal.data.local.dao.RoundDao
 import com.zephyr.boreal.data.local.dao.StoreDao
 import com.zephyr.boreal.data.local.dao.StoreDetailsDao
@@ -69,4 +70,7 @@ object DatabaseModule {
 
   @Provides
   fun provideCacheMetadataDao(database: BorealDatabase): CacheMetadataDao = database.cacheMetadataDao()
+
+  @Provides
+  fun provideReceiptDao(database: BorealDatabase): ReceiptDao = database.receiptDao()
 }
