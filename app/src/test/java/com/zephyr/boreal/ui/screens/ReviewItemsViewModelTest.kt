@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -371,6 +372,7 @@ class ReviewItemsViewModelTest {
       runCurrent()
 
       viewModel.removeItem(id = 1, expirationId = 1, onNavigateHome = onNavigateHome)
+      advanceUntilIdle()
 
       verify(receiptsStore).resetReceipts()
       verify(onNavigateHome).invoke()
@@ -396,6 +398,7 @@ class ReviewItemsViewModelTest {
       val viewModel = createViewModel()
 
       viewModel.cancelReceipt(onNavigateHome)
+      advanceUntilIdle()
 
       verify(receiptsStore).resetReceipts()
       verify(onNavigateHome).invoke()

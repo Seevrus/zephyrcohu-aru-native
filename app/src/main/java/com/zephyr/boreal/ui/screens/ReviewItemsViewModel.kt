@@ -142,8 +142,10 @@ class ReviewItemsViewModel
           ?.items
           .isNullOrEmpty()
       ) {
-        receiptsStore.resetReceipts()
-        onNavigateHome()
+        viewModelScope.launch {
+          receiptsStore.resetReceipts()
+          onNavigateHome()
+        }
       }
     }
 
@@ -162,8 +164,10 @@ class ReviewItemsViewModel
     }
 
     fun cancelReceipt(onNavigateHome: () -> Unit) {
-      receiptsStore.resetReceipts()
-      onNavigateHome()
+      viewModelScope.launch {
+        receiptsStore.resetReceipts()
+        onNavigateHome()
+      }
     }
 
     fun showFinalizeDialog() {

@@ -1,11 +1,19 @@
 package com.zephyr.boreal.store.receipts
 
+import com.zephyr.boreal.data.local.dao.ReceiptDao
+import com.zephyr.boreal.data.mapper.toDomain
+import com.zephyr.boreal.data.mapper.toEntity
 import com.zephyr.boreal.domain.model.DraftOrder
 import com.zephyr.boreal.domain.model.DraftReceipt
 import com.zephyr.boreal.domain.model.Receipt
+import com.zephyr.boreal.store.core.ApplicationScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -13,9 +21,15 @@ import javax.inject.Singleton
 @Singleton
 class ReceiptsStore
   @Inject
-  constructor() {
-    private val _receipts = MutableStateFlow<List<Receipt>>(emptyList())
-    val receipts: StateFlow<List<Receipt>> = _receipts.asStateFlow()
+  constructor(
+    private val receiptDao: ReceiptDao,
+    @param:ApplicationScope scope: CoroutineScope,
+  ) {
+    val receipts: StateFlow<List<Receipt>> =
+      receiptDao
+        .getAllReceipts()
+        .map { entities -> entities.map { it.toDomain() } }
+        .stateIn(scope = scope, started = SharingStarted.Eagerly, initialValue = emptyList())
 
     private val _currentReceipt = MutableStateFlow<DraftReceipt?>(null)
     val currentReceipt: StateFlow<DraftReceipt?> = _currentReceipt.asStateFlow()
@@ -29,8 +43,12 @@ class ReceiptsStore
     private val _currentOrder = MutableStateFlow<DraftOrder?>(null)
     val currentOrder: StateFlow<DraftOrder?> = _currentOrder.asStateFlow()
 
-    fun resetReceipts() {
-      _receipts.value = emptyList()
+    suspend fun addReceipt(receipt: Receipt) {
+      receiptDao.insertReceipt(receipt.toEntity())
+    }
+
+    suspend fun resetReceipts() {
+      receiptDao.clearReceipts()
       _currentReceipt.value = null
       _selectedItems.value = emptyMap()
       _selectedOrderItems.value = emptyMap()
@@ -84,9 +102,5 @@ class ReceiptsStore
         val active = current ?: DraftReceipt()
         updateFn(active)
       }
-    }
-
-    fun addReceipt(receipt: Receipt) {
-      _receipts.update { it + receipt }
     }
   }

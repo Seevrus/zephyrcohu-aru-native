@@ -357,6 +357,8 @@ class SelectItemsViewModel
     }
 
     fun resetReceipts() {
-      receiptsStore.resetReceipts()
+      viewModelScope.launch {
+        receiptsStore.resetReceipts()
+      }
     }
   }
