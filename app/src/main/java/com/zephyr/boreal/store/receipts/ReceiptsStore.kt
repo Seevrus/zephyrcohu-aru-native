@@ -25,6 +25,12 @@ class ReceiptsStore
     private val receiptDao: ReceiptDao,
     @param:ApplicationScope scope: CoroutineScope,
   ) {
+    /**
+     * Backed by Room, so [addReceipt] only writes to the database — this flow updates
+     * asynchronously once Room's invalidation tracker re-runs the query on [scope]. Do not
+     * assume `receipts.value` already reflects a receipt added earlier in the same coroutine;
+     * read it before submitting, not right after.
+     */
     val receipts: StateFlow<List<Receipt>> =
       receiptDao
         .getAllReceipts()
@@ -43,6 +49,7 @@ class ReceiptsStore
     private val _currentOrder = MutableStateFlow<DraftOrder?>(null)
     val currentOrder: StateFlow<DraftOrder?> = _currentOrder.asStateFlow()
 
+    /** [receipts] does not reflect this receipt until Room re-queries — see its KDoc. */
     suspend fun addReceipt(receipt: Receipt) {
       receiptDao.insertReceipt(receipt.toEntity())
     }
