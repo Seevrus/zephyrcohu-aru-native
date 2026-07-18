@@ -27,27 +27,35 @@ Already built and working in the native app:
   garbage collection of stale cached data.
 - **Errand (round) admin**: start errand, end errand, print end errand.
 - **Sell flow up to finalization**: select partner (stored + tax-number search + add partner),
-  select items (barcode, quantities), select other items, review items, **and receipt + order
-  creation to the API** (`ReviewItemsViewModel` already builds totals, VAT breakdown, rounding,
-  serial numbers, vendor/buyer, and calls `receiptsRepository.createReceipt` / `createOrders`).
+  select items (barcode, quantities), select other items, review items (including per-item
+  discounts, Task 01), **and receipt + order creation to the API** (`ReviewItemsViewModel`
+  already builds totals, VAT breakdown, rounding, serial numbers, vendor/buyer, and calls
+  `receiptsRepository.createReceipt` / `createOrders`).
 - **Data layer**: Retrofit API service + repositories (items, partners, receipts, rounds,
-  stores, user), Room persistence, DataStore session/app-state, connectivity observer.
+  stores, user), Room persistence (including Room-backed local receipts list, Task 01b),
+  DataStore session/app-state, connectivity observer.
 
 ## What is still missing (this backlog)
 
-| # | Task | Area | Depends on |
-|---|------|------|-----------|
-| 01 | Sell · per-item discounts | Sell | frontier |
-| 02 | Sell · summary screen & flow completion | Sell | 01 |
-| 03 | Sell · print sales receipt (shared print section) | Sell / Print | 02 |
-| 04 | Receipts · list of receipts | Receipts | 03 |
-| 05 | Receipts · details, reprint & storno (cancel) | Receipts | 04 |
-| 06 | Storage · select store (lock to user) | Storage | frontier |
-| 07 | Storage · select items from store (batches, barcode, quantities) | Storage | 06 |
-| 08 | Storage · review, save & summary (load + unlock + print) | Storage / Print | 07, 03 |
-| 09 | Errand history · list rounds & round details | Errand history | frontier |
-| 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier |
-| 11 | Cross-cutting · app-update / version gate | Infra | frontier |
+| # | Task | Area | Depends on | Status |
+|---|------|------|-----------|--------|
+| 01 | Sell · per-item discounts | Sell | frontier | ✅ Done |
+| 01b | Sell · persist local receipts across process death | Sell / Data | 01 | ✅ Done |
+| 01c | Sell · persist in-progress draft state across process death | Sell / Data | 01b | Not started |
+| 02 | Sell · summary screen & flow completion | Sell | 01 | Not started |
+| 03 | Sell · print sales receipt (shared print section) | Sell / Print | 02 | Not started |
+| 04 | Receipts · list of receipts | Receipts | 03 | Not started |
+| 05 | Receipts · details, reprint & storno (cancel) | Receipts | 04 | Not started |
+| 06 | Storage · select store (lock to user) | Storage | frontier | Not started |
+| 07 | Storage · select items from store (batches, barcode, quantities) | Storage | 06 | Not started |
+| 08 | Storage · review, save & summary (load + unlock + print) | Storage / Print | 07, 03 | Not started |
+| 09 | Errand history · list rounds & round details | Errand history | frontier | Not started |
+| 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier | Not started |
+| 11 | Cross-cutting · app-update / version gate | Infra | frontier | Not started |
+
+**Next up:** Task 02 (Sell · summary screen & flow completion) is unblocked — Task 01 is done.
+Task 01c (draft-state persistence) is also unblocked but lower priority (UX polish, not a
+correctness bug — see its file for why). Neither is started yet.
 
 Excluded from scope (per decision): the RN debug screens (`BoundStore`, `Queries`).
 

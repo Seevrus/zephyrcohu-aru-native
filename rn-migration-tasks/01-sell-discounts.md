@@ -1,5 +1,9 @@
 # Task 01 · Sell: per-item discounts
 
+**Status:** ✅ Done — implemented, tested, and verified on-device. Surfaced two follow-on gaps,
+split into [Task 01b](01b-persist-local-receipts.md) (done) and
+[Task 01c](01c-persist-sell-draft-state.md) (not started).
+
 ## Goal
 
 Let the salesperson apply discounts to an individual regular item line during review, before

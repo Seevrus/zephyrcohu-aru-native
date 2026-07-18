@@ -1,5 +1,12 @@
 # Task 01b · Sell: persist local receipts across process death
 
+**Status:** ✅ Done — merged to `main` (commits `24d0ecf..5ef8e74`: Room entity/DAO/converters,
+domain↔entity mappers, `ReceiptsStore` Room-backed rewrite + call-site updates, final
+whole-branch review clean). `ReceiptsRepository`'s serial-number retry loop was reviewed and
+kept unchanged — it remains a defense-in-depth safety net for scenarios this fix doesn't fully
+close (reinstall/data-clear mid-round, multi-device). User-verified on-device: create receipt,
+force-kill mid-round, relaunch, create second receipt — no serial collision.
+
 ## Goal
 Make `ReceiptsStore.receipts` (the list of receipts created during the active round) durable
 across app/process restarts, so serial-number derivation and end-of-round reporting stay correct
