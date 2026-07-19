@@ -1,5 +1,16 @@
 # Task 01c · Sell: persist in-progress draft state across process death
 
+**Status:** ✅ Done — `ReceiptsStore` gained a `DataStore<Preferences>`-backed draft blob
+(`DraftSellFlowState`) covering `currentReceipt`, `currentOrder`, `selectedItems`,
+`selectedOrderItems`, and a new `otherItemSelections` field that `SelectOtherItemsViewModel`
+now writes through to on every edit instead of only at confirm time. Mutators stayed
+synchronous (fire-and-forget persist on the existing `@ApplicationScope`) so no call sites
+changed. All existing regression suites (`ReviewItemsViewModelTest`, `SelectItemsViewModelTest`,
+`SelectOtherItemsViewModelTest`) pass unchanged; full unit suite (261 tests) green,
+ktlint/detekt clean. Per explicit decision, `resetReceipts()` is still not called on a
+successful submit — that stays Task 02's job (`02-sell-summary.md` already plans clearing the
+draft on Summary-screen exit), so no change was needed there.
+
 ## Goal
 Make the in-progress sell-flow state — the draft receipt, draft order, item/order-quantity
 selections, and other-items temp selections — durable across app/process restarts, so a

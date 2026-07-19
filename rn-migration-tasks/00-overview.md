@@ -33,7 +33,8 @@ Already built and working in the native app:
   `receiptsRepository.createReceipt` / `createOrders`).
 - **Data layer**: Retrofit API service + repositories (items, partners, receipts, rounds,
   stores, user), Room persistence (including Room-backed local receipts list, Task 01b),
-  DataStore session/app-state, connectivity observer.
+  DataStore session/app-state (including the persisted sell-flow draft, Task 01c),
+  connectivity observer.
 
 ## What is still missing (this backlog)
 
@@ -41,7 +42,7 @@ Already built and working in the native app:
 |---|------|------|-----------|--------|
 | 01 | Sell · per-item discounts | Sell | frontier | ✅ Done |
 | 01b | Sell · persist local receipts across process death | Sell / Data | 01 | ✅ Done |
-| 01c | Sell · persist in-progress draft state across process death | Sell / Data | 01b | Not started |
+| 01c | Sell · persist in-progress draft state across process death | Sell / Data | 01b | ✅ Done |
 | 02 | Sell · summary screen & flow completion | Sell | 01 | Not started |
 | 03 | Sell · print sales receipt (shared print section) | Sell / Print | 02 | Not started |
 | 04 | Receipts · list of receipts | Receipts | 03 | Not started |
@@ -53,9 +54,8 @@ Already built and working in the native app:
 | 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier | Not started |
 | 11 | Cross-cutting · app-update / version gate | Infra | frontier | Not started |
 
-**Next up:** Task 02 (Sell · summary screen & flow completion) is unblocked — Task 01 is done.
-Task 01c (draft-state persistence) is also unblocked but lower priority (UX polish, not a
-correctness bug — see its file for why). Neither is started yet.
+**Next up:** Task 02 (Sell · summary screen & flow completion) is unblocked — Task 01 is done —
+and not started yet.
 
 Excluded from scope (per decision): the RN debug screens (`BoundStore`, `Queries`).
 
