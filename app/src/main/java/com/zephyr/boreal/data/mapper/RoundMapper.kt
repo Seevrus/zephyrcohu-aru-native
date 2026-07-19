@@ -1,5 +1,7 @@
 package com.zephyr.boreal.data.mapper
 
+import com.zephyr.boreal.api.dto.request.FinishRoundReceiptBuyerDto
+import com.zephyr.boreal.api.dto.request.FinishRoundReceiptDto
 import com.zephyr.boreal.api.dto.response.RoundPartnerListDto
 import com.zephyr.boreal.api.dto.response.RoundReceiptDto
 import com.zephyr.boreal.api.dto.response.RoundResponseDataDto
@@ -90,8 +92,8 @@ fun RoundReceiptDto.toDomain(): RoundReceipt =
     roundedAmount = roundedAmount,
   )
 
-fun com.zephyr.boreal.domain.model.Receipt.toRoundReceiptDto(): RoundReceiptDto =
-  RoundReceiptDto(
+fun com.zephyr.boreal.domain.model.Receipt.toFinishRoundReceiptDto(): FinishRoundReceiptDto =
+  FinishRoundReceiptDto(
     id = id,
     serialNumber = serialNumber,
     yearCode = yearCode,
@@ -99,9 +101,7 @@ fun com.zephyr.boreal.domain.model.Receipt.toRoundReceiptDto(): RoundReceiptDto 
     cancelYearCode = cancelYearCode,
     invoiceType = invoiceType,
     paymentDays = paymentDays,
-    buyer =
-      com.zephyr.boreal.api.dto.response
-        .RoundReceiptBuyerDto(buyer.name, buyer.vatNumber),
+    buyer = FinishRoundReceiptBuyerDto(buyer.name, buyer.vatNumber),
     quantity = quantity,
     netAmount = netAmount,
     vatAmount = vatAmount,

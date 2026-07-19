@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 class RoundMapperTest {
   @Test
   @Suppress("LongMethod")
-  fun `toRoundReceiptDto correctly maps domain model properties to DTO`() {
+  fun `toFinishRoundReceiptDto correctly maps domain model properties to DTO`() {
     val receipt =
       Receipt(
         id = 123,
@@ -58,7 +58,7 @@ class RoundMapperTest {
         updatedAt = "",
       )
 
-    val dto = receipt.toRoundReceiptDto()
+    val dto = receipt.toFinishRoundReceiptDto()
 
     assertEquals(123, dto.id)
     assertEquals(42, dto.serialNumber)
@@ -78,7 +78,7 @@ class RoundMapperTest {
   }
 
   @Test
-  fun `toRoundReceiptDto handles null cancellation fields correctly`() {
+  fun `toFinishRoundReceiptDto handles null cancellation fields correctly`() {
     val receipt =
       Receipt(
         id = 123,
@@ -125,7 +125,7 @@ class RoundMapperTest {
         updatedAt = "",
       )
 
-    val dto = receipt.toRoundReceiptDto()
+    val dto = receipt.toFinishRoundReceiptDto()
 
     assertNull(dto.cancelSerialNumber)
     assertNull(dto.cancelYearCode)

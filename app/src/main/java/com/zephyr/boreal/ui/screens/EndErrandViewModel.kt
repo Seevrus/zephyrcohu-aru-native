@@ -3,7 +3,7 @@ package com.zephyr.boreal.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zephyr.boreal.api.dto.request.FinishRoundRequestDataDto
-import com.zephyr.boreal.data.mapper.toRoundReceiptDto
+import com.zephyr.boreal.data.mapper.toFinishRoundReceiptDto
 import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.RoundsRepository
 import com.zephyr.boreal.data.repository.StoresRepository
@@ -114,7 +114,7 @@ class EndErrandViewModel
             roundId = activeRound.id,
             lastSerialNumber = lastSerialNumber,
             yearCode = activeStore?.yearCode,
-            receipts = receipts.map { it.toRoundReceiptDto() },
+            receipts = receipts.map { it.toFinishRoundReceiptDto() },
           )
 
         _uiState.update { it.copy(isEndErrandPending = true) }
