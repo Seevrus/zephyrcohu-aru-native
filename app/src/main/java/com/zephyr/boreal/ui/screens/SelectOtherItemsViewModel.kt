@@ -6,6 +6,7 @@ import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.ItemsRepository
 import com.zephyr.boreal.domain.model.OtherItem
 import com.zephyr.boreal.domain.model.ReceiptOtherItem
+import com.zephyr.boreal.domain.model.TempSelection
 import com.zephyr.boreal.domain.utils.AmountCalculator
 import com.zephyr.boreal.store.receipts.ReceiptsStore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,12 +17,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.roundToInt
-
-data class TempSelection(
-  val netPrice: Double? = null,
-  val quantity: Int? = null,
-  val comment: String? = null,
-)
 
 data class SelectOtherItemsUiState(
   val isLoading: Boolean = true,
@@ -47,15 +42,18 @@ class SelectOtherItemsViewModel
     val uiState: StateFlow<SelectOtherItemsUiState> = _uiState.asStateFlow()
 
     init {
-      val existing = receiptsStore.currentReceipt.value?.otherItems ?: emptyList()
+      val persisted = receiptsStore.otherItemSelections.value
       val initialSelections =
-        existing.associate { item ->
-          item.id to
-            TempSelection(
-              netPrice = item.netPrice,
-              quantity = item.quantity.roundToInt(),
-              comment = item.comment?.takeIf { it.isNotBlank() },
-            )
+        persisted.ifEmpty {
+          val existing = receiptsStore.currentReceipt.value?.otherItems ?: emptyList()
+          existing.associate { item ->
+            item.id to
+              TempSelection(
+                netPrice = item.netPrice,
+                quantity = item.quantity.roundToInt(),
+                comment = item.comment?.takeIf { it.isNotBlank() },
+              )
+          }
         }
       _uiState.update { it.copy(selections = initialSelections) }
 
@@ -123,6 +121,7 @@ class SelectOtherItemsViewModel
           canAccept = newSelections.any { (_, sel) -> (sel.quantity ?: 0) > 0 },
         )
       }
+      receiptsStore.setOtherItemSelections(newSelections)
     }
 
     fun onSearchQueryChanged(query: String) {
@@ -171,11 +170,10 @@ class SelectOtherItemsViewModel
       comment: String?,
     ) {
       val sanitized = comment?.takeIf { it.isNotBlank() }
-      _uiState.update { state ->
-        val existing = state.selections[itemId] ?: TempSelection()
-        val newSelections = state.selections + (itemId to existing.copy(comment = sanitized))
-        state.copy(selections = newSelections)
-      }
+      val existing = _uiState.value.selections[itemId] ?: TempSelection()
+      val newSelections = _uiState.value.selections + (itemId to existing.copy(comment = sanitized))
+      _uiState.update { state -> state.copy(selections = newSelections) }
+      receiptsStore.setOtherItemSelections(newSelections)
     }
 
     fun confirmHandler(onSuccess: () -> Unit) {

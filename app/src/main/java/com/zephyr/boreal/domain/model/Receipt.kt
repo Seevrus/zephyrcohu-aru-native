@@ -1,5 +1,7 @@
 package com.zephyr.boreal.domain.model
 
+import kotlinx.serialization.Serializable
+
 data class Receipt(
   val id: Int,
   val companyId: Int,
@@ -64,6 +66,7 @@ data class ReceiptVendor(
   val vatNumber: String,
 )
 
+@Serializable
 data class ReceiptBuyer(
   val id: Int,
   val name: String,
@@ -97,6 +100,7 @@ data class ReceiptItem(
   val expiresAt: String,
 )
 
+@Serializable
 data class ReceiptOtherItem(
   val id: Int,
   val articleNumber: String,

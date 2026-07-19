@@ -5,6 +5,7 @@ import com.zephyr.boreal.data.repository.ItemsRepository
 import com.zephyr.boreal.domain.model.DraftReceipt
 import com.zephyr.boreal.domain.model.OtherItem
 import com.zephyr.boreal.domain.model.ReceiptOtherItem
+import com.zephyr.boreal.domain.model.TempSelection
 import com.zephyr.boreal.store.receipts.ReceiptsStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -33,6 +34,7 @@ class SelectOtherItemsViewModelTest {
 
   private val otherItemsFlow = MutableStateFlow<ApiResource<List<OtherItem>>>(ApiResource.Loading())
   private val currentReceiptFlow = MutableStateFlow<DraftReceipt?>(null)
+  private val otherItemSelectionsFlow = MutableStateFlow<Map<Int, TempSelection>>(emptyMap())
 
   private val testDispatcher = StandardTestDispatcher()
 
@@ -41,6 +43,7 @@ class SelectOtherItemsViewModelTest {
     Dispatchers.setMain(testDispatcher)
     whenever(itemsRepository.getOtherItems()).thenReturn(otherItemsFlow)
     whenever(receiptsStore.currentReceipt).thenReturn(currentReceiptFlow)
+    whenever(receiptsStore.otherItemSelections).thenReturn(otherItemSelectionsFlow)
   }
 
   @AfterEach
@@ -212,6 +215,55 @@ class SelectOtherItemsViewModelTest {
       assertEquals(800.0, selection!!.netPrice)
       assertEquals(2, selection.quantity)
       assertEquals("Note", selection.comment)
+    }
+
+  @Test
+  fun `init prefers persisted otherItemSelections over currentReceipt otherItems when both are present`() =
+    runTest {
+      val receiptItem = buildReceiptOtherItem(id = 1, netPrice = 800.0, quantity = 2.0, comment = "From receipt")
+      currentReceiptFlow.value = DraftReceipt(otherItems = listOf(receiptItem))
+      otherItemSelectionsFlow.value =
+        mapOf(1 to TempSelection(netPrice = 950.0, quantity = 5, comment = "From persisted draft"))
+      otherItemsFlow.value = ApiResource.Success(listOf(buildOtherItem(id = 1)))
+
+      val vm = createViewModel()
+      runCurrent()
+
+      val selection = vm.uiState.value.selections[1]
+      assertNotNull(selection)
+      assertEquals(950.0, selection!!.netPrice)
+      assertEquals(5, selection.quantity)
+      assertEquals("From persisted draft", selection.comment)
+    }
+
+  @Test
+  fun `onQuantityChanged writes selections through to receiptsStore`() =
+    runTest {
+      otherItemsFlow.value = ApiResource.Success(listOf(buildOtherItem(id = 1)))
+      val vm = createViewModel()
+      runCurrent()
+
+      vm.onQuantityChanged(1, 3)
+      runCurrent()
+
+      val captor = argumentCaptor<Map<Int, TempSelection>>()
+      verify(receiptsStore).setOtherItemSelections(captor.capture())
+      assertEquals(3, captor.firstValue[1]?.quantity)
+    }
+
+  @Test
+  fun `onCommentChanged writes selections through to receiptsStore`() =
+    runTest {
+      otherItemsFlow.value = ApiResource.Success(listOf(buildOtherItem(id = 1)))
+      val vm = createViewModel()
+      runCurrent()
+
+      vm.onCommentChanged(1, "Test comment")
+      runCurrent()
+
+      val captor = argumentCaptor<Map<Int, TempSelection>>()
+      verify(receiptsStore).setOtherItemSelections(captor.capture())
+      assertEquals("Test comment", captor.firstValue[1]?.comment)
     }
 
   @Test

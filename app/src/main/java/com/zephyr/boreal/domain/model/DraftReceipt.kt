@@ -1,9 +1,12 @@
 package com.zephyr.boreal.domain.model
 
+import kotlinx.serialization.Serializable
+
 /**
  * Represents a receipt under construction (equivalent to `Partial<ContextReceipt>` in TypeScript).
  * Fields are nullable or default to empty values so they can be set incrementally during the sell flow.
  */
+@Serializable
 data class DraftReceipt(
   val partnerId: Int? = null,
   val partnerCode: String? = null,
@@ -22,6 +25,7 @@ data class DraftReceipt(
  * storage decrements). The backend never accepts or returns expirationId for receipts, so it
  * has no place on the finalized [ReceiptItem].
  */
+@Serializable
 data class DraftReceiptItem(
   val id: Int,
   val articleNumber: String,
@@ -44,6 +48,7 @@ data class DraftReceiptItem(
 /**
  * Represents a discount that was selected for a specific item quantity.
  */
+@Serializable
 data class SelectedDiscount(
   val id: Int,
   val name: String,

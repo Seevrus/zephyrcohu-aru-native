@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zephyr.boreal.R
 import com.zephyr.boreal.domain.model.OtherItem
+import com.zephyr.boreal.domain.model.TempSelection
 import com.zephyr.boreal.domain.utils.AmountCalculator
 import com.zephyr.boreal.ui.components.BorealSearchField
 import com.zephyr.boreal.ui.components.BorealTextInput

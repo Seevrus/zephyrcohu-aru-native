@@ -1,5 +1,7 @@
 package com.zephyr.boreal.domain.model
 
+import kotlinx.serialization.Serializable
+
 data class Item(
   val id: Int,
   val articleNumber: String,
@@ -25,6 +27,7 @@ data class Expiration(
   val updatedAt: String,
 )
 
+@Serializable
 data class Discount(
   val id: Int,
   val name: String,
