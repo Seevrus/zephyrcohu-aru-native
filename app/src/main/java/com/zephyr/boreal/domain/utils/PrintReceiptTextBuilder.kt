@@ -109,7 +109,7 @@ object PrintReceiptTextBuilder {
     val vendor = vendorBlock(receipt)
     val buyer = buyerBlock(receipt)
     val hasDeliveryData = receipt.buyer.deliveryName.isNotEmpty()
-    val deliveryData = if (hasDeliveryData) "${deliveryBlock(receipt)}\n" else ""
+    val deliveryData = if (hasDeliveryData) deliveryBlock(receipt) else ""
     val metadata = metadataBlock(user, receipt, partner)
     val totals = totalsBlock(isCancel, receipt, partner)
 
@@ -118,7 +118,7 @@ object PrintReceiptTextBuilder {
       "$vendor\n\n" +
       "$buyer\n" +
       deliveryData +
-      "\n" +
+      "\n\n" +
       "=".repeat(ROW_WIDTH) + "\n" +
       "$metadata\n" +
       itemsList(isCancel, receipt.items, receipt.otherItems) +

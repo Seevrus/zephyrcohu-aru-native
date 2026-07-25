@@ -227,6 +227,28 @@ class PrintReceiptTextBuilderTest {
   }
 
   @Test
+  fun `build has exactly one blank line before the item-table divider when delivery data is present`() {
+    val text = PrintReceiptTextBuilder.build(false, user, buildReceipt(), buildPartner())
+
+    assertEquals(1, blankLinesBeforeFirstDivider(text))
+  }
+
+  @Test
+  fun `build has exactly two blank lines before the item-table divider when delivery data is empty`() {
+    val receiptWithoutDelivery = buildReceipt().copy(buyer = buyer.copy(deliveryName = ""))
+    val text = PrintReceiptTextBuilder.build(false, user, receiptWithoutDelivery, buildPartner())
+
+    assertEquals(2, blankLinesBeforeFirstDivider(text))
+  }
+
+  private fun blankLinesBeforeFirstDivider(text: String): Int {
+    val dividerIndex = text.indexOf("=".repeat(67))
+    val before = text.substring(0, dividerIndex)
+    val trailingNewlines = before.length - before.trimEnd('\n').length
+    return trailingNewlines - 1
+  }
+
+  @Test
   fun `build shows the rounding line for ad-hoc partners but not for wire-transfer partners`() {
     val cashReceipt = buildReceipt()
     val adhocText = PrintReceiptTextBuilder.build(false, user, cashReceipt, null)
