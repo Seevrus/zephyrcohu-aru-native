@@ -9,7 +9,9 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.whenever
 
 class BluetoothHelperTest {
@@ -87,5 +89,41 @@ class BluetoothHelperTest {
     val devices = bluetoothHelper.getPairedDevices()
 
     assertTrue(devices.isEmpty())
+  }
+
+  @Test
+  fun `getPairedDevices excludes the dev test device when neither DEBUG nor isDev`() {
+    val spyHelper = spy(bluetoothHelper)
+    doReturn(false).whenever(spyHelper).isDebugBuild()
+    whenever(bluetoothAdapter.isEnabled).thenReturn(true)
+    whenever(bluetoothAdapter.bondedDevices).thenReturn(emptySet())
+
+    val devices = spyHelper.getPairedDevices(isDev = false)
+
+    assertTrue(devices.none { it.address == "00:00:00:00:00:00" })
+  }
+
+  @Test
+  fun `getPairedDevices includes the dev test device when isDev is true even on a non-debug build`() {
+    val spyHelper = spy(bluetoothHelper)
+    doReturn(false).whenever(spyHelper).isDebugBuild()
+    whenever(bluetoothAdapter.isEnabled).thenReturn(true)
+    whenever(bluetoothAdapter.bondedDevices).thenReturn(emptySet())
+
+    val devices = spyHelper.getPairedDevices(isDev = true)
+
+    assertTrue(devices.any { it.address == "00:00:00:00:00:00" && it.name == "Dev Test" })
+  }
+
+  @Test
+  fun `getPairedDevices includes the dev test device when DEBUG is true regardless of isDev`() {
+    val spyHelper = spy(bluetoothHelper)
+    doReturn(true).whenever(spyHelper).isDebugBuild()
+    whenever(bluetoothAdapter.isEnabled).thenReturn(true)
+    whenever(bluetoothAdapter.bondedDevices).thenReturn(emptySet())
+
+    val devices = spyHelper.getPairedDevices(isDev = false)
+
+    assertTrue(devices.any { it.address == "00:00:00:00:00:00" && it.name == "Dev Test" })
   }
 }

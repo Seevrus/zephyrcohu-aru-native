@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothManager
 import android.content.Context
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -37,7 +38,7 @@ class BorealPrinterTest {
     }
 
   @Test
-  fun `printTaggedText in dev test mode should return success`() =
+  fun `printTaggedText in dev test mode should return a SaveToFile outcome carrying the text`() =
     runTest {
       // connect to dev test first
       borealPrinter.connect("00:00:00:00:00:00")
@@ -45,6 +46,7 @@ class BorealPrinterTest {
       val result = borealPrinter.printTaggedText("Test Text")
 
       assertTrue(result.isSuccess)
+      assertEquals(PrintOutcome.SaveToFile("Test Text"), result.getOrNull())
     }
 
   @Test

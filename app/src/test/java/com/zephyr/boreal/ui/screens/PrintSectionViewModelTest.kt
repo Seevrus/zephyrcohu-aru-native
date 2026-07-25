@@ -186,6 +186,7 @@ class PrintSectionViewModelTest {
         viewModel.uiState.value.receiptToPrint
           ?.contains("102/26") == true,
       )
+      assertEquals("Partner Ltd._2026-07-01_102.txt", viewModel.uiState.value.suggestedFileName)
     }
 
   @Test

@@ -1,5 +1,7 @@
 package com.zephyr.boreal.ui.components
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +26,7 @@ import com.zephyr.boreal.ui.theme.BorealFontSizes
 @Composable
 fun PrinterConnector(
   textToPrint: String,
+  suggestedFileName: String,
   onPrintSuccess: () -> Unit,
   modifier: Modifier = Modifier,
   viewModel: PrinterConnectorViewModel = hiltViewModel(),
@@ -33,10 +37,21 @@ fun PrinterConnector(
     onDispose { viewModel.disconnect() }
   }
 
+  val saveFileLauncher =
+    rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+      viewModel.onSaveFileResult(uri)
+    }
+
+  LaunchedEffect(uiState.saveFileRequest) {
+    uiState.saveFileRequest?.let { request ->
+      saveFileLauncher.launch(request.suggestedFileName)
+    }
+  }
+
   PrinterConnectorContent(
     uiState = uiState,
     onConnectClick = viewModel::connect,
-    onPrintClick = { viewModel.print(textToPrint, onPrintSuccess) },
+    onPrintClick = { viewModel.print(textToPrint, suggestedFileName, onPrintSuccess) },
     modifier = modifier,
   )
 }

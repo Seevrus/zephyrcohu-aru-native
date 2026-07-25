@@ -46,8 +46,8 @@ internal fun PrintSectionContent(
   uiState: PrintSectionUiState,
   onPrintSuccess: () -> Unit,
   modifier: Modifier = Modifier,
-  printerConnector: @Composable (String, () -> Unit) -> Unit = { text, onSuccess ->
-    PrinterConnector(textToPrint = text, onPrintSuccess = onSuccess)
+  printerConnector: @Composable (String, String, () -> Unit) -> Unit = { text, fileName, onSuccess ->
+    PrinterConnector(textToPrint = text, suggestedFileName = fileName, onPrintSuccess = onSuccess)
   },
 ) {
   if (uiState.isLoading) {
@@ -73,7 +73,7 @@ internal fun PrintSectionContent(
       Spacer(modifier = Modifier.height(8.dp))
       Text(text = stringResource(R.string.print_section_description, uiState.copyCount))
       Spacer(modifier = Modifier.height(8.dp))
-      printerConnector(uiState.receiptToPrint, onPrintSuccess)
+      printerConnector(uiState.receiptToPrint, uiState.suggestedFileName, onPrintSuccess)
     } else {
       Spacer(modifier = Modifier.height(8.dp))
       Text(text = stringResource(R.string.print_section_missing_data))

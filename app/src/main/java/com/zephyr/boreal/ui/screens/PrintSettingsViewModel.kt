@@ -2,6 +2,7 @@ package com.zephyr.boreal.ui.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zephyr.boreal.data.repository.UserRepository
 import com.zephyr.boreal.printer.BluetoothDeviceData
 import com.zephyr.boreal.printer.BluetoothHelper
 import com.zephyr.boreal.store.print.PrintSettingsStore
@@ -32,6 +33,7 @@ class PrintSettingsViewModel
   constructor(
     private val printSettingsStore: PrintSettingsStore,
     private val bluetoothHelper: BluetoothHelper,
+    private val userRepository: UserRepository,
   ) : ViewModel() {
     private val _uiState = MutableStateFlow(PrintSettingsUiState())
     val uiState: StateFlow<PrintSettingsUiState> = _uiState.asStateFlow()
@@ -48,25 +50,26 @@ class PrintSettingsViewModel
         }
       }
       viewModelScope.launch {
-        _uiState
-          .map { it.hasPermissions }
-          .distinctUntilChanged()
-          .combine(bluetoothHelper.observeBluetoothState()) { hasPerms, isEnabled ->
-            val pairedDevices =
-              if (isEnabled || hasPerms) {
-                bluetoothHelper.getPairedDevices()
-              } else {
-                emptyList()
-              }
-            isEnabled to pairedDevices
-          }.collect { (isEnabled, pairedDevices) ->
-            _uiState.update {
-              it.copy(
-                isBluetoothEnabled = isEnabled,
-                pairedDevices = pairedDevices,
-              )
+        combine(
+          _uiState.map { it.hasPermissions }.distinctUntilChanged(),
+          bluetoothHelper.observeBluetoothState(),
+          userRepository.getCurrentUser().map { it.getOrNull()?.isDev ?: false }.distinctUntilChanged(),
+        ) { hasPerms, isEnabled, isDev ->
+          val pairedDevices =
+            if (isEnabled || hasPerms) {
+              bluetoothHelper.getPairedDevices(isDev)
+            } else {
+              emptyList()
             }
+          isEnabled to pairedDevices
+        }.collect { (isEnabled, pairedDevices) ->
+          _uiState.update {
+            it.copy(
+              isBluetoothEnabled = isEnabled,
+              pairedDevices = pairedDevices,
+            )
           }
+        }
       }
     }
 

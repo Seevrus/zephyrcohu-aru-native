@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.zephyr.boreal.data.repository.PartnersRepository
 import com.zephyr.boreal.data.repository.UserRepository
 import com.zephyr.boreal.domain.model.Receipt
+import com.zephyr.boreal.domain.utils.DevPrintFileNameBuilder
 import com.zephyr.boreal.domain.utils.PrintReceiptTextBuilder
 import com.zephyr.boreal.store.receipts.ReceiptsStore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +22,7 @@ data class PrintSectionUiState(
   val receiptFormat: String = "",
   val copyCount: Int = 0,
   val receiptToPrint: String? = null,
+  val suggestedFileName: String = "",
 )
 
 /**
@@ -78,6 +80,7 @@ class PrintSectionViewModel
               } else {
                 null
               },
+            suggestedFileName = receipt?.let { r -> DevPrintFileNameBuilder.build(r) } ?: "",
           )
         }
       }

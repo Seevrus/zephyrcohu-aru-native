@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothSocket
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import com.datecs.printer.Printer
 import com.datecs.printer.ProtocolAdapter
@@ -11,12 +12,21 @@ import com.zephyr.boreal.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.charset.Charset
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+
+sealed class PrintOutcome {
+  data object Printed : PrintOutcome()
+
+  data class SaveToFile(
+    val text: String,
+  ) : PrintOutcome()
+}
 
 @Singleton
 class BorealPrinter
@@ -96,14 +106,13 @@ class BorealPrinter
         }
       }
 
-    suspend fun printTaggedText(taggedText: String): Result<Unit> =
+    suspend fun printTaggedText(taggedText: String): Result<PrintOutcome> =
       withContext(Dispatchers.IO) {
         try {
           if (printer == null) {
             // Check if mock dev test
             if (printerSocket == null) {
-              Log.d(TAG, context.getString(R.string.printer_log_mock_print, taggedText))
-              return@withContext Result.success(Unit)
+              return@withContext Result.success(PrintOutcome.SaveToFile(taggedText))
             }
             return@withContext Result.failure(
               Exception(context.getString(R.string.printer_error_not_connected)),
@@ -118,8 +127,29 @@ class BorealPrinter
           printer?.feedPaper(PAPER_FEED_AMOUNT)
           printer?.flush()
 
-          Result.success(Unit)
+          Result.success(PrintOutcome.Printed)
         } catch (e: Exception) {
+          Log.e(TAG, context.getString(R.string.printer_log_printing_error, e.message), e)
+          Result.failure(e)
+        }
+      }
+
+    /**
+     * Writes [text] as UTF-8 to the SAF-picked [uri], for the dev-mode "save print string" flow
+     * (Task 03b). Lives here (rather than in [com.zephyr.boreal.ui.components.PrinterConnectorViewModel])
+     * so the IO dispatch is a mockable suspend call, consistent with this class's other operations.
+     */
+    suspend fun writeToUri(
+      uri: Uri,
+      text: String,
+    ): Result<Unit> =
+      withContext(Dispatchers.IO) {
+        try {
+          context.contentResolver.openOutputStream(uri)?.use { output ->
+            output.write(text.toByteArray(Charsets.UTF_8))
+          }
+          Result.success(Unit)
+        } catch (e: IOException) {
           Log.e(TAG, context.getString(R.string.printer_log_printing_error, e.message), e)
           Result.failure(e)
         }

@@ -64,7 +64,6 @@
     <string name="printer_error_not_connected">Nyomtató nincs csatlakoztatva.</string>
     <string name="printer_log_connection_error">Kapcsolódási hiba: %1$s</string>
     <string name="printer_log_disconnection_error">Leválasztási hiba: %1$s</string>
-    <string name="printer_log_mock_print">MOCK PRINT: %1$s</string>
     <string name="printer_log_printing_error">Nyomtatási hiba: %1$s</string>
     <string name="printer_log_battery_low">Akkumulátor alacsony: %1$b</string>
     <string name="printer_log_paper_out">Nincs papír: %1$b</string>

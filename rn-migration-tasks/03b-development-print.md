@@ -124,3 +124,58 @@ with no changes needed on their part.
 - native `printer/BluetoothHelper.kt` (`getPairedDevices`, `getDevTestDevice`),
   `printer/BorealPrinter.kt` (`connect`, `printTaggedText`, the `"00:00:00:00:00:00"` mock
   branches), `ui/screens/PrintSettingsViewModel.kt`.
+
+## Status: ✅ Done
+
+- **`BluetoothHelper.kt`**: `getPairedDevices(isDev: Boolean = false)` now gates the "Dev Test"
+  entry on `isDebugBuild() || isDev` (both ORed, per spec). `isDebugBuild()` is a new `internal
+  open` method wrapping `BuildConfig.DEBUG` so it can be overridden with a Mockito spy in tests —
+  `BuildConfig.DEBUG` itself is always `true` in the JVM unit-test build type, so it couldn't be
+  exercised directly.
+- **`PrintSettingsViewModel.kt`**: now injects `UserRepository` and folds
+  `getCurrentUser().map { it.getOrNull()?.isDev ?: false }` into the existing `combine` chain that
+  recomputes the paired-device list, passing the result into `getPairedDevices(isDev)`.
+- **`printer/BorealPrinter.kt`**: added `sealed class PrintOutcome` (`Printed` /
+  `SaveToFile(text)`). `printTaggedText()` now returns `Result<PrintOutcome>` — the dev/mock branch
+  (`printerSocket == null`) returns `PrintOutcome.SaveToFile(taggedText)` instead of logging and
+  returning a plain success. Also added `suspend fun writeToUri(uri, text): Result<Unit>`, which
+  does the actual UTF-8 file write via `context.contentResolver.openOutputStream` on
+  `Dispatchers.IO` — kept here (not in the ViewModel) so it stays a single mockable suspend call,
+  matching this class's existing IO-dispatch convention.
+- **`PrinterConnectorViewModel.kt`**: `print()` now takes a `suggestedFileName` param and branches
+  on the `PrintOutcome`: `Printed` behaves exactly as before; `SaveToFile` stores the pending
+  `onPrintSuccess` callback and surfaces a new `saveFileRequest: SaveFileRequest?` field on
+  `PrinterConnectorUiState` instead of returning to `CONNECTED` immediately. New
+  `onSaveFileResult(uri: Uri?)` always returns the phase to `CONNECTED` and clears the request; a
+  non-null `uri` calls `borealPrinter.writeToUri` and invokes the pending success callback only on
+  a successful write, a `null` `uri` (picker canceled) is a no-op — neither surfaces a printer
+  error, per spec.
+- **`PrinterConnector.kt`**: added a
+  `rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain"))`
+  launcher; a `LaunchedEffect` keyed on `uiState.saveFileRequest` launches it with the suggested
+  filename, and its result callback forwards straight to `viewModel.onSaveFileResult(uri)`.
+- **Filename**: new pure `domain/utils/DevPrintFileNameBuilder.build(receipt)` builds
+  `{buyer.name}_{invoiceDate}_{serialNumber}.txt`, sanitizing `\/:*?"<>|` to `_`. Uses
+  `Receipt.buyer.name` directly — the same field `PrintReceiptTextBuilder`'s buyer block renders —
+  so ad-hoc partners (no `Partner` record) resolve consistently with no separate fallback needed.
+  `Receipt.invoiceDate` was already `yyyy-MM-dd`, matching the backend format with no conversion.
+  `PrintSectionUiState` gained `suggestedFileName: String`, computed in
+  `PrintSectionViewModel.initialize()` and threaded through `PrintSection`'s `printerConnector`
+  slot (now `@Composable (String, String, () -> Unit) -> Unit`) down to `PrinterConnector`.
+- **Copy count untouched**: the save action still fires once per `print()` call regardless of
+  `PrintSection`'s copy-count display — `PrintOutcome.SaveToFile` is returned once per
+  `printTaggedText` call, and nothing loops that call N times.
+
+**Testing added:** `BluetoothHelperTest` (dev device presence across `isDebugBuild()`/`isDev`
+combinations, via a Mockito spy overriding `isDebugBuild()`), `PrintSettingsViewModelTest` (dev
+device surfaced when `isDev = true` even without bluetooth permissions),
+`BorealPrinterTest` (dev-address print returns `PrintOutcome.SaveToFile` carrying the text),
+`PrinterConnectorViewModelTest` (SaveToFile surfaces `saveFileRequest` without firing
+`onPrintSuccess`; `onSaveFileResult` with a real `Uri` writes via `borealPrinter.writeToUri` and
+then fires `onPrintSuccess`; a `null` `Uri` returns to `CONNECTED` with no error and no success
+callback), and a new `DevPrintFileNameBuilderTest` (normal partner, illegal-character
+sanitization, ad-hoc buyer name, and a storno receipt's distinct serial number producing a
+distinct filename). Existing `PrintSectionContentTest`/`PrinterConnectorContentTest`/
+`PrintSettingsScreenTest` instrumented tests were re-verified on a connected emulator after the
+signature changes (no behavioral changes needed there — `PrinterConnectorContent`'s stateless
+signature was untouched).

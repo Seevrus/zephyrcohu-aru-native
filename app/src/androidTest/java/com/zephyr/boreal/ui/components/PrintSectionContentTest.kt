@@ -22,7 +22,7 @@ class PrintSectionContentTest {
           onPrintSuccess = {},
           // Avoid the real PrinterConnector here: it resolves a Hilt ViewModel, which needs a
           // Hilt-enabled activity this plain compose rule doesn't provide.
-          printerConnector = { _, _ -> Text("printer connector stub") },
+          printerConnector = { _, _, _ -> Text("printer connector stub") },
         )
       }
     }

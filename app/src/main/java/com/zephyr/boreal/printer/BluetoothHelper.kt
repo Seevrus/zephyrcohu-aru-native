@@ -23,6 +23,8 @@ open class BluetoothHelper(
   private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
   private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
 
+  internal open fun isDebugBuild(): Boolean = com.zephyr.boreal.BuildConfig.DEBUG
+
   open fun isBluetoothEnabled(): Boolean =
     try {
       bluetoothAdapter?.isEnabled == true
@@ -58,7 +60,7 @@ open class BluetoothHelper(
       }
     }.onStart { emit(isBluetoothEnabled()) }
 
-  open fun getPairedDevices(): List<BluetoothDeviceData> {
+  open fun getPairedDevices(isDev: Boolean = false): List<BluetoothDeviceData> {
     try {
       if (!isBluetoothEnabled()) {
         return emptyList()
@@ -73,7 +75,7 @@ open class BluetoothHelper(
         devices.add(BluetoothDeviceData(name = deviceName, address = deviceHardwareAddress))
       }
 
-      if (com.zephyr.boreal.BuildConfig.DEBUG) {
+      if (isDebugBuild() || isDev) {
         devices.add(getDevTestDevice())
       }
 

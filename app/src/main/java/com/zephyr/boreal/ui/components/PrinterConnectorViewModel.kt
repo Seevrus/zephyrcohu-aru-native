@@ -1,9 +1,11 @@
 package com.zephyr.boreal.ui.components
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zephyr.boreal.printer.BluetoothHelper
 import com.zephyr.boreal.printer.BorealPrinter
+import com.zephyr.boreal.printer.PrintOutcome
 import com.zephyr.boreal.store.print.PrintSettingsStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,11 +31,17 @@ sealed class PrinterConnectorError {
   ) : PrinterConnectorError()
 }
 
+data class SaveFileRequest(
+  val suggestedFileName: String,
+  val content: String,
+)
+
 data class PrinterConnectorUiState(
   val phase: PrinterConnectorPhase = PrinterConnectorPhase.IDLE,
   val isBluetoothEnabled: Boolean = false,
   val selectedPrinterAddress: String? = null,
   val error: PrinterConnectorError? = null,
+  val saveFileRequest: SaveFileRequest? = null,
 )
 
 private const val TIMEOUT_MARKER = "timeout"
@@ -55,6 +63,8 @@ class PrinterConnectorViewModel
   ) : ViewModel() {
     private val _uiState = MutableStateFlow(PrinterConnectorUiState())
     val uiState: StateFlow<PrinterConnectorUiState> = _uiState.asStateFlow()
+
+    private var pendingOnPrintSuccess: (() -> Unit)? = null
 
     init {
       viewModelScope.launch {
@@ -94,6 +104,7 @@ class PrinterConnectorViewModel
 
     fun print(
       textToPrint: String,
+      suggestedFileName: String,
       onPrintSuccess: () -> Unit,
     ) {
       if (_uiState.value.phase != PrinterConnectorPhase.CONNECTED) {
@@ -103,9 +114,19 @@ class PrinterConnectorViewModel
       _uiState.update { it.copy(phase = PrinterConnectorPhase.PRINTING, error = null) }
       viewModelScope.launch {
         borealPrinter.printTaggedText(textToPrint).fold(
-          onSuccess = {
-            _uiState.update { it.copy(phase = PrinterConnectorPhase.CONNECTED, error = null) }
-            onPrintSuccess()
+          onSuccess = { outcome ->
+            when (outcome) {
+              PrintOutcome.Printed -> {
+                _uiState.update { it.copy(phase = PrinterConnectorPhase.CONNECTED, error = null) }
+                onPrintSuccess()
+              }
+              is PrintOutcome.SaveToFile -> {
+                pendingOnPrintSuccess = onPrintSuccess
+                _uiState.update {
+                  it.copy(saveFileRequest = SaveFileRequest(suggestedFileName, outcome.text))
+                }
+              }
+            }
           },
           onFailure = { exception ->
             val message = exception.message.orEmpty()
@@ -120,6 +141,29 @@ class PrinterConnectorViewModel
             }
           },
         )
+      }
+    }
+
+    /**
+     * Called by [PrinterConnector] once the SAF "Save As" picker resolves for a [PrintOutcome.SaveToFile]
+     * request. A `null` [uri] means the user canceled the picker — treated as neutral, not an error,
+     * per the dev-print spec: it returns to CONNECTED without surfacing a printer error or marking
+     * the receipt printed.
+     */
+    fun onSaveFileResult(uri: Uri?) {
+      val request = _uiState.value.saveFileRequest
+      val onPrintSuccess = pendingOnPrintSuccess
+      pendingOnPrintSuccess = null
+      _uiState.update { it.copy(phase = PrinterConnectorPhase.CONNECTED, saveFileRequest = null) }
+
+      if (uri == null || request == null) {
+        return
+      }
+
+      viewModelScope.launch {
+        borealPrinter.writeToUri(uri, request.content).onSuccess {
+          onPrintSuccess?.invoke()
+        }
       }
     }
 

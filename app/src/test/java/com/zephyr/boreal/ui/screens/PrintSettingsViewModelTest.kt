@@ -1,5 +1,10 @@
 package com.zephyr.boreal.ui.screens
 
+import com.zephyr.boreal.data.repository.ApiResource
+import com.zephyr.boreal.data.repository.UserRepository
+import com.zephyr.boreal.domain.model.Company
+import com.zephyr.boreal.domain.model.User
+import com.zephyr.boreal.domain.model.UserState
 import com.zephyr.boreal.printer.BluetoothDeviceData
 import com.zephyr.boreal.printer.BluetoothHelper
 import com.zephyr.boreal.store.print.PrintSettingsState
@@ -7,6 +12,7 @@ import com.zephyr.boreal.store.print.PrintSettingsStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -26,17 +32,54 @@ import org.mockito.kotlin.whenever
 class PrintSettingsViewModelTest {
   private val printSettingsStore: PrintSettingsStore = mock()
   private val bluetoothHelper: BluetoothHelper = mock()
+  private val userRepository: UserRepository = mock()
   private val testDispatcher = StandardTestDispatcher()
 
   private val printSettingsStateFlow = MutableStateFlow(PrintSettingsState())
   private val bluetoothStateFlow = MutableStateFlow(false)
+
+  private val company =
+    Company(
+      id = 1,
+      name = "Boreal Kft.",
+      code = "BOR",
+      country = "HU",
+      postalCode = "1000",
+      city = "Budapest",
+      address = "Fő utca 1.",
+      felir = "FELIR1",
+      vatNumber = "12345678-1-42",
+      iban = "HU00",
+      bankAccount = "11111111",
+    )
+
+  private fun buildUser(isDev: Boolean) =
+    User(
+      id = 1,
+      userName = "teszt",
+      state = UserState.ON_ROUND,
+      name = "Teszt Elek",
+      phoneNumber = null,
+      isDev = isDev,
+      roles = emptyList(),
+      storeInUseId = null,
+      storeOwnedId = null,
+      lastActive = "2026-07-01T00:00:00Z",
+      createdAt = "2026-07-01T00:00:00Z",
+      updatedAt = "2026-07-01T00:00:00Z",
+      company = company,
+      lastRound = null,
+    )
 
   @BeforeEach
   fun setUp() {
     Dispatchers.setMain(testDispatcher)
     whenever(printSettingsStore.printSettingsState).thenReturn(printSettingsStateFlow)
     whenever(bluetoothHelper.observeBluetoothState()).thenReturn(bluetoothStateFlow)
+    whenever(userRepository.getCurrentUser()).thenReturn(flowOf(ApiResource.Success(null)))
   }
+
+  private fun createViewModel() = PrintSettingsViewModel(printSettingsStore, bluetoothHelper, userRepository)
 
   @AfterEach
   fun tearDown() {
@@ -54,7 +97,7 @@ class PrintSettingsViewModelTest {
           printFullStorageList = expectedFullStorageList,
         )
 
-      val viewModel = PrintSettingsViewModel(printSettingsStore, bluetoothHelper)
+      val viewModel = createViewModel()
       runCurrent()
 
       assertEquals(expectedAddress, viewModel.uiState.value.selectedPrinterAddress)
@@ -66,9 +109,9 @@ class PrintSettingsViewModelTest {
     runTest {
       whenever(bluetoothHelper.isBluetoothEnabled()).thenReturn(true)
       bluetoothStateFlow.value = true
-      whenever(bluetoothHelper.getPairedDevices()).thenReturn(listOf(BluetoothDeviceData("Test", "Address")))
+      whenever(bluetoothHelper.getPairedDevices(false)).thenReturn(listOf(BluetoothDeviceData("Test", "Address")))
 
-      val viewModel = PrintSettingsViewModel(printSettingsStore, bluetoothHelper)
+      val viewModel = createViewModel()
       runCurrent()
 
       viewModel.updatePermissionsState(hasPermissions = true, canAskPermissions = false)
@@ -82,9 +125,31 @@ class PrintSettingsViewModelTest {
     }
 
   @Test
+  fun `surfaces dev device when current user isDev is true even without bluetooth permissions`() =
+    runTest {
+      whenever(bluetoothHelper.isBluetoothEnabled()).thenReturn(true)
+      bluetoothStateFlow.value = true
+      whenever(userRepository.getCurrentUser())
+        .thenReturn(flowOf(ApiResource.Success(buildUser(isDev = true))))
+      whenever(bluetoothHelper.getPairedDevices(true))
+        .thenReturn(listOf(BluetoothDeviceData("Dev Test", "00:00:00:00:00:00")))
+
+      val viewModel = createViewModel()
+      runCurrent()
+
+      assertEquals(1, viewModel.uiState.value.pairedDevices.size)
+      assertEquals(
+        "Dev Test",
+        viewModel.uiState.value.pairedDevices
+          .first()
+          .name,
+      )
+    }
+
+  @Test
   fun `onPrinterSelected should update uiState`() =
     runTest {
-      val viewModel = PrintSettingsViewModel(printSettingsStore, bluetoothHelper)
+      val viewModel = createViewModel()
       val address = "AA:BB:CC"
 
       viewModel.onPrinterSelected(address)
@@ -95,7 +160,7 @@ class PrintSettingsViewModelTest {
   @Test
   fun `onPrintFullStorageListChanged should update uiState`() =
     runTest {
-      val viewModel = PrintSettingsViewModel(printSettingsStore, bluetoothHelper)
+      val viewModel = createViewModel()
 
       viewModel.onPrintFullStorageListChanged(true)
 
@@ -105,7 +170,7 @@ class PrintSettingsViewModelTest {
   @Test
   fun `saveSettings should call printSettingsStore updateSettings`() =
     runTest {
-      val viewModel = PrintSettingsViewModel(printSettingsStore, bluetoothHelper)
+      val viewModel = createViewModel()
       runCurrent() // Process initial collection in init
 
       val address = "AA:BB:CC"
@@ -122,7 +187,7 @@ class PrintSettingsViewModelTest {
   @Test
   fun `finishInitialCheck should update state`() =
     runTest {
-      val viewModel = PrintSettingsViewModel(printSettingsStore, bluetoothHelper)
+      val viewModel = createViewModel()
 
       viewModel.finishInitialCheck()
 

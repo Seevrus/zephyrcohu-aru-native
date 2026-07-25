@@ -1,7 +1,9 @@
 package com.zephyr.boreal.ui.components
 
+import android.net.Uri
 import com.zephyr.boreal.printer.BluetoothHelper
 import com.zephyr.boreal.printer.BorealPrinter
+import com.zephyr.boreal.printer.PrintOutcome
 import com.zephyr.boreal.store.print.PrintSettingsState
 import com.zephyr.boreal.store.print.PrintSettingsStore
 import kotlinx.coroutines.Dispatchers
@@ -110,7 +112,7 @@ class PrinterConnectorViewModelTest {
       val viewModel = createViewModel()
       advanceUntilIdle()
 
-      viewModel.print("receipt text") {}
+      viewModel.print("receipt text", "file.txt") {}
       advanceUntilIdle()
 
       verify(borealPrinter, org.mockito.kotlin.never()).printTaggedText(org.mockito.kotlin.any())
@@ -120,14 +122,14 @@ class PrinterConnectorViewModelTest {
   fun `print success stays CONNECTED and invokes onPrintSuccess`() =
     runTest(testDispatcher) {
       whenever(borealPrinter.connect("00:11:22:33:44:55")).thenReturn(Result.success(Unit))
-      whenever(borealPrinter.printTaggedText("receipt text")).thenReturn(Result.success(Unit))
+      whenever(borealPrinter.printTaggedText("receipt text")).thenReturn(Result.success(PrintOutcome.Printed))
       val viewModel = createViewModel()
       advanceUntilIdle()
       viewModel.connect()
       advanceUntilIdle()
 
       var successCalled = false
-      viewModel.print("receipt text") { successCalled = true }
+      viewModel.print("receipt text", "file.txt") { successCalled = true }
       advanceUntilIdle()
 
       assertTrue(successCalled)
@@ -145,11 +147,86 @@ class PrinterConnectorViewModelTest {
       viewModel.connect()
       advanceUntilIdle()
 
-      viewModel.print("receipt text") {}
+      viewModel.print("receipt text", "file.txt") {}
       advanceUntilIdle()
 
       assertEquals(PrinterConnectorPhase.IDLE, viewModel.uiState.value.phase)
       assertEquals(PrinterConnectorError.ProbablyOff, viewModel.uiState.value.error)
+    }
+
+  @Test
+  fun `print of a SaveToFile outcome surfaces a saveFileRequest without calling onPrintSuccess yet`() =
+    runTest(testDispatcher) {
+      whenever(borealPrinter.connect("00:00:00:00:00:00")).thenReturn(Result.success(Unit))
+      whenever(borealPrinter.printTaggedText("receipt text"))
+        .thenReturn(Result.success(PrintOutcome.SaveToFile("receipt text")))
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:00:00:00:00:00")
+      val viewModel = createViewModel()
+      advanceUntilIdle()
+      viewModel.connect()
+      advanceUntilIdle()
+
+      var successCalled = false
+      viewModel.print("receipt text", "partner_2026-01-01_1.txt") { successCalled = true }
+      advanceUntilIdle()
+
+      assertTrue(!successCalled)
+      assertEquals(
+        SaveFileRequest("partner_2026-01-01_1.txt", "receipt text"),
+        viewModel.uiState.value.saveFileRequest,
+      )
+    }
+
+  @Test
+  fun `onSaveFileResult with a uri writes content, invokes onPrintSuccess, and returns to CONNECTED`() =
+    runTest(testDispatcher) {
+      whenever(borealPrinter.connect("00:00:00:00:00:00")).thenReturn(Result.success(Unit))
+      whenever(borealPrinter.printTaggedText("receipt text"))
+        .thenReturn(Result.success(PrintOutcome.SaveToFile("receipt text")))
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:00:00:00:00:00")
+      val viewModel = createViewModel()
+      advanceUntilIdle()
+      viewModel.connect()
+      advanceUntilIdle()
+
+      val uri: Uri = mock()
+      whenever(borealPrinter.writeToUri(uri, "receipt text")).thenReturn(Result.success(Unit))
+
+      var successCalled = false
+      viewModel.print("receipt text", "file.txt") { successCalled = true }
+      advanceUntilIdle()
+
+      viewModel.onSaveFileResult(uri)
+      advanceUntilIdle()
+
+      assertTrue(successCalled)
+      verify(borealPrinter).writeToUri(uri, "receipt text")
+      assertEquals(PrinterConnectorPhase.CONNECTED, viewModel.uiState.value.phase)
+      assertNull(viewModel.uiState.value.saveFileRequest)
+    }
+
+  @Test
+  fun `onSaveFileResult with a null uri returns to CONNECTED without error or onPrintSuccess`() =
+    runTest(testDispatcher) {
+      whenever(borealPrinter.connect("00:00:00:00:00:00")).thenReturn(Result.success(Unit))
+      whenever(borealPrinter.printTaggedText("receipt text"))
+        .thenReturn(Result.success(PrintOutcome.SaveToFile("receipt text")))
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:00:00:00:00:00")
+      val viewModel = createViewModel()
+      advanceUntilIdle()
+      viewModel.connect()
+      advanceUntilIdle()
+
+      var successCalled = false
+      viewModel.print("receipt text", "file.txt") { successCalled = true }
+      advanceUntilIdle()
+
+      viewModel.onSaveFileResult(null)
+      advanceUntilIdle()
+
+      assertTrue(!successCalled)
+      assertNull(viewModel.uiState.value.error)
+      assertEquals(PrinterConnectorPhase.CONNECTED, viewModel.uiState.value.phase)
     }
 
   @Test
