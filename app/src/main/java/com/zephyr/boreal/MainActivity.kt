@@ -45,6 +45,8 @@ import com.zephyr.boreal.ui.screens.SelectPartnerViewModel
 import com.zephyr.boreal.ui.screens.SettingsScreen
 import com.zephyr.boreal.ui.screens.StartErrandScreen
 import com.zephyr.boreal.ui.screens.StartErrandViewModel
+import com.zephyr.boreal.ui.screens.SummaryScreen
+import com.zephyr.boreal.ui.screens.SummaryViewModel
 import com.zephyr.boreal.ui.theme.BorealColors
 import com.zephyr.boreal.ui.theme.BorealTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -140,6 +142,9 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
     }
     composable("review_items") {
       ReviewItemsRoute(navController)
+    }
+    composable("summary") {
+      SummaryRoute(navController)
     }
     composable("select_other_items") {
       SelectOtherItemsRoute(navController)
@@ -357,6 +362,24 @@ private fun ReviewItemsRoute(navController: androidx.navigation.NavHostControlle
     },
     onNavigateToDiscounts = { itemId, expirationId ->
       navController.navigate("discounts/$itemId/$expirationId")
+    },
+    onNavigateToSummary = {
+      navController.navigate("summary") {
+        popUpTo(0) { inclusive = true }
+      }
+    },
+  )
+}
+
+@Composable
+private fun SummaryRoute(navController: androidx.navigation.NavHostController) {
+  val viewModel: SummaryViewModel = hiltViewModel()
+  SummaryScreen(
+    viewModel = viewModel,
+    onNavigateHome = {
+      navController.navigate("main") {
+        popUpTo(0) { inclusive = true }
+      }
     },
   )
 }

@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.File
@@ -318,6 +319,53 @@ class ReceiptsStoreTest {
       assertTrue(store.selectedOrderItems.value.isEmpty())
       assertNull(store.currentOrder.value)
       assertTrue(store.otherItemSelections.value.isEmpty())
+    }
+
+  @Test
+  fun `resetSellFlowDraft clears the in-memory draft but not receiptDao`() =
+    runTest(testDispatcher) {
+      val receiptDao: ReceiptDao = mock()
+      whenever(receiptDao.getAllReceipts()).thenReturn(flowOf(emptyList()))
+      val store = ReceiptsStore(receiptDao, FakeDataStore(), testScope)
+      runCurrent()
+
+      store.setCurrentReceipt(DraftReceipt(partnerId = 7))
+      store.upsertSelectedItem(itemId = 1, expirationId = 1, quantity = 2.0)
+      store.upsertOrderItem(itemId = 1, quantity = 3.0)
+      store.setCurrentOrder(DraftOrder(partnerId = 7, orderedAt = "2026-07-01 08:00:00", items = emptyList()))
+      store.setOtherItemSelections(mapOf(1 to TempSelection(netPrice = 500.0, quantity = 2, comment = "note")))
+      runCurrent()
+
+      store.resetSellFlowDraft()
+      runCurrent()
+
+      verify(receiptDao, never()).clearReceipts()
+      assertNull(store.currentReceipt.value)
+      assertTrue(store.selectedItems.value.isEmpty())
+      assertTrue(store.selectedOrderItems.value.isEmpty())
+      assertNull(store.currentOrder.value)
+      assertTrue(store.otherItemSelections.value.isEmpty())
+    }
+
+  @Test
+  fun `resetSellFlowDraft clears the persisted draft, not just memory`() =
+    runTest(testDispatcher) {
+      val receiptDao: ReceiptDao = mock()
+      whenever(receiptDao.getAllReceipts()).thenReturn(flowOf(emptyList()))
+      val sharedDataStore = FakeDataStore()
+
+      val firstStore = ReceiptsStore(receiptDao, sharedDataStore, testScope)
+      runCurrent()
+      firstStore.setCurrentReceipt(DraftReceipt(partnerId = 9))
+      runCurrent()
+
+      firstStore.resetSellFlowDraft()
+      runCurrent()
+
+      val secondStore = ReceiptsStore(receiptDao, sharedDataStore, testScope)
+      runCurrent()
+
+      assertNull(secondStore.currentReceipt.value)
     }
 
   @Test

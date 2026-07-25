@@ -16,12 +16,43 @@ receipt body is a fixed textual layout (vendor block, buyer block, line items wi
 prices, VAT breakdown, totals, rounding, payment terms) built from local data.
 
 ## Starting / resulting state
-- **Start**: Summary screen (Task 02) has a print slot but no printing; the Datecs printer module
-  (`printer/BorealPrinter.kt`, `BluetoothHelper.kt`) and print settings already exist and are used
-  by "print end errand".
+- **Start**: Summary screen (Task 02, done) has a print slot but no printing; the Datecs printer
+  module (`printer/BorealPrinter.kt`, `BluetoothHelper.kt`) and print settings already exist.
+  **Correction**: `PrintEndErrandScreen.kt` is still a TODO stub with no printer call — it is
+  *not* a working connect-then-print UI pattern to copy, despite earlier notes in this backlog.
+  `PrintSettingsViewModel.kt` is the only screen currently driving `BorealPrinter.connect` (for a
+  test print); that connect/error-handling shape is the closest existing reference, but the
+  connect-then-print-N-times *flow* (RN's `PrinterConnector.tsx`) doesn't have a native precedent
+  yet and needs to be built fresh here.
 - **Result**: a reusable **PrintSection** composable + supporting logic that, given a receipt
   serial number and a cancel/normal flag, connects to the printer, prints the correctly-formatted
   receipt N times, and records the printed state. Summary hosts it for the just-created receipt.
+
+## Starting point for Task 03
+
+- **The print slot**: `SummaryPrintSectionSlot(receipt: Receipt?)`, a private composable near the
+  bottom of `SummaryScreen.kt`, called from `SummaryScreenContent` right after the `SuccessCard`.
+  Replace its body; it should end up looking like RN's `PrintSection` — taking `isCancel: Boolean`
+  and `receiptSerialNumber: Int` (RN's actual prop shape) rather than a whole `Receipt`, so Task 05
+  can reuse it identically for storno reprints. `SummaryViewModel.uiState.receipt` already exposes
+  the just-finalized `Receipt` (read as `receiptsStore.receipts.value.lastOrNull()`) to source
+  `receiptSerialNumber` from.
+- **`Receipt.isPrinted` does not exist yet** on either the domain model
+  (`domain/model/Receipt.kt`) or the Room entity (`data/local/ReceiptEntity.kt`) — this task must
+  add it (plus the mapper in `data/mapper/ReceiptMapper.kt`). `BorealDatabase.kt` is at
+  `version = 18` with `fallbackToDestructiveMigration(true)` (`di/DatabaseModule.kt:38`) and no
+  exported schema, so bumping to `version = 19` is sufficient — no explicit `Migration` object
+  needed, matching how prior schema bumps in this app were done.
+- **Updating a persisted receipt's `isPrinted` flag**: `ReceiptDao` currently only has
+  `getAllReceipts()`/`insertReceipt()`/`clearReceipts()` — add an update/upsert method for
+  flipping the flag on the existing row (an `@Update` or a partial-update `@Query`), and a
+  `ReceiptsStore` method that calls it, following the `addReceipt`/`resetReceipts` pattern already
+  there.
+- **Printer connect pattern to build from**: `BorealPrinter.connect(address): Result<Unit>` plus
+  whatever print/text-send method it exposes (read the rest of the file — `connect` was the only
+  part read while scoping Task 02) and `PrintSettingsViewModel.kt`'s usage of it for
+  connect-state/error handling conventions. There is a `"00:00:00:00:00:00"` dev-mock address
+  short-circuit in `connect` worth knowing about for tests.
 
 ## Data requirements
 - Read the receipt (by serial number) from the receipts store, the matching partner (by buyer id)

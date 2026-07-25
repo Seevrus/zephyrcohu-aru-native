@@ -66,6 +66,7 @@ fun ReviewItemsScreen(
   onNavigateHome: () -> Unit,
   onNavigateToOtherItems: () -> Unit,
   onNavigateToDiscounts: (Int, Int) -> Unit,
+  onNavigateToSummary: () -> Unit,
 ) {
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -110,7 +111,7 @@ fun ReviewItemsScreen(
     onCancelClick = viewModel::showCancelDialog,
     onFinalizeClick = viewModel::showFinalizeDialog,
     onRetryClick = viewModel::retryReceipt,
-    onContinueClick = {},
+    onContinueClick = onNavigateToSummary,
     onNavigateToOtherItems = onNavigateToOtherItems,
     onNavigateToDiscounts = onNavigateToDiscounts,
   )

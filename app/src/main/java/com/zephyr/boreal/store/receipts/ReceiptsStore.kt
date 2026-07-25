@@ -121,6 +121,21 @@ class ReceiptsStore
       dataStore.edit { it.remove(DRAFT_SELL_FLOW_STATE) }
     }
 
+    /**
+     * Clears only the in-progress sell-flow draft, unlike [resetReceipts] which also wipes
+     * persisted receipt history via [ReceiptDao.clearReceipts]. Use this when ending a sell
+     * session after a receipt has already been finalized and must be kept (e.g. leaving the
+     * Summary screen), where clearing history would delete the receipt just created.
+     */
+    suspend fun resetSellFlowDraft() {
+      _currentReceipt.value = null
+      _selectedItems.value = emptyMap()
+      _selectedOrderItems.value = emptyMap()
+      _currentOrder.value = null
+      _otherItemSelections.value = emptyMap()
+      dataStore.edit { it.remove(DRAFT_SELL_FLOW_STATE) }
+    }
+
     fun setCurrentReceipt(receipt: DraftReceipt?) {
       _currentReceipt.value = receipt
       persistDraftState()

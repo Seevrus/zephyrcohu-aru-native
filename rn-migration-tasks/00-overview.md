@@ -25,12 +25,16 @@ Already built and working in the native app:
   password, settings, printer settings + Datecs printer module (`BorealPrinter`, Bluetooth).
 - **Main screen**: tiles with per-state enable/disable, round info, connectivity handling,
   garbage collection of stale cached data.
-- **Errand (round) admin**: start errand, end errand, print end errand.
-- **Sell flow up to finalization**: select partner (stored + tax-number search + add partner),
-  select items (barcode, quantities), select other items, review items (including per-item
-  discounts, Task 01), **and receipt + order creation to the API** (`ReviewItemsViewModel`
+- **Errand (round) admin**: start errand, end errand. `PrintEndErrandScreen.kt` is currently a
+  TODO stub (no Datecs call) — don't treat it as a working printer-UI pattern to copy from;
+  `PrintSettingsViewModel.kt` is the only screen that actually drives `BorealPrinter.connect`
+  today.
+- **Sell flow through finalization and summary**: select partner (stored + tax-number search +
+  add partner), select items (barcode, quantities), select other items, review items (including
+  per-item discounts, Task 01), receipt + order creation to the API (`ReviewItemsViewModel`
   already builds totals, VAT breakdown, rounding, serial numbers, vendor/buyer, and calls
-  `receiptsRepository.createReceipt` / `createOrders`).
+  `receiptsRepository.createReceipt` / `createOrders`), and a terminal **Summary screen** (Task
+  02: success confirmation, offline notice, empty print-section slot, reset-on-exit).
 - **Data layer**: Retrofit API service + repositories (items, partners, receipts, rounds,
   stores, user), Room persistence (including Room-backed local receipts list, Task 01b),
   DataStore session/app-state (including the persisted sell-flow draft, Task 01c),
@@ -43,7 +47,7 @@ Already built and working in the native app:
 | 01 | Sell · per-item discounts | Sell | frontier | ✅ Done |
 | 01b | Sell · persist local receipts across process death | Sell / Data | 01 | ✅ Done |
 | 01c | Sell · persist in-progress draft state across process death | Sell / Data | 01b | ✅ Done |
-| 02 | Sell · summary screen & flow completion | Sell | 01 | Not started |
+| 02 | Sell · summary screen & flow completion | Sell | 01 | ✅ Done |
 | 03 | Sell · print sales receipt (shared print section) | Sell / Print | 02 | Not started |
 | 04 | Receipts · list of receipts | Receipts | 03 | Not started |
 | 05 | Receipts · details, reprint & storno (cancel) | Receipts | 04 | Not started |
@@ -54,8 +58,9 @@ Already built and working in the native app:
 | 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier | Not started |
 | 11 | Cross-cutting · app-update / version gate | Infra | frontier | Not started |
 
-**Next up:** Task 02 (Sell · summary screen & flow completion) is unblocked — Task 01 is done —
-and not started yet.
+**Next up:** Task 03 (Sell · print sales receipt) is unblocked — Task 02 is done — and not started
+yet. See "Starting point for Task 03" in `03-sell-print-receipt.md` for the exact native state
+(print slot location, printer module reality, DB schema) to build from.
 
 Excluded from scope (per decision): the RN debug screens (`BoundStore`, `Queries`).
 
