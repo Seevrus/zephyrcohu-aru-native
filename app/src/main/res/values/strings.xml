@@ -234,6 +234,23 @@
     <string name="discounts_apply_button">Kedvezmények érvényesítése</string>
     <string name="discounts_summary_label">Érvényes kedvezmények</string>
 
+    <!-- Print Section -->
+    <string name="print_section_format_label">Az eredeti számla formátuma:</string>
+    <string name="print_section_description">A számla nyomtatása - a nyomtatóhoz történő kapcsolódás után - a \"Nyomtatás indítása\" gombra koppintva indítható el. A nyomtatás %1$d példányban történik, melyek közül az egyik a vevőé.</string>
+    <string name="print_section_missing_data">Nem áll rendelkezésre minden adat a nyomtatáshoz.</string>
+
+    <!-- Printer Connector -->
+    <string name="printer_connector_bluetooth_on">Bluetooth bekapcsolva</string>
+    <string name="printer_connector_bluetooth_off">Bluetooth kikapcsolva</string>
+    <string name="printer_connector_error">Nyomtató hiba: %1$s</string>
+    <string name="printer_connector_connecting">Kapcsolódás…</string>
+    <string name="printer_connector_connect">Kapcsolódás a nyomtatóhoz</string>
+    <string name="printer_connector_printing">Nyomtatás…</string>
+    <string name="printer_connector_print">Nyomtatás indítása</string>
+    <string name="printer_connector_generic_connect_error">Váratlan hiba a kapcsolódás során</string>
+    <string name="printer_connector_probably_off">A nyomtató valószínűleg nincs bekapcsolva.</string>
+    <string name="printer_connector_generic_print_error">Váratlan hiba a nyomtatás során</string>
+
     <!-- Common Dialog -->
     <string name="dialog_yes">Igen</string>
     <string name="dialog_cancel">Mégsem</string>

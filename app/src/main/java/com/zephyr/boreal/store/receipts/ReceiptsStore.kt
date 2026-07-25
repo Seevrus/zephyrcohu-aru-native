@@ -111,6 +111,10 @@ class ReceiptsStore
       receiptDao.insertReceipt(receipt.toEntity())
     }
 
+    suspend fun markReceiptPrinted(id: Int) {
+      receiptDao.updatePrintedState(id, true)
+    }
+
     suspend fun resetReceipts() {
       receiptDao.clearReceipts()
       _currentReceipt.value = null

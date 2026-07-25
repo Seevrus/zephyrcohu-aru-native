@@ -323,6 +323,7 @@ fun Receipt.toEntity(): ReceiptEntity =
     lastDownloadedAt = lastDownloadedAt,
     createdAt = createdAt,
     updatedAt = updatedAt,
+    isPrinted = isPrinted,
   )
 
 fun ReceiptEntity.toDomain(): Receipt =
@@ -356,4 +357,5 @@ fun ReceiptEntity.toDomain(): Receipt =
     lastDownloadedAt = lastDownloadedAt,
     createdAt = createdAt,
     updatedAt = updatedAt,
+    isPrinted = isPrinted,
   )

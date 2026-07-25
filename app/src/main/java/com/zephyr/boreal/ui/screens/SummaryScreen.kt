@@ -25,6 +25,7 @@ import com.zephyr.boreal.ui.components.BorealTopAppBar
 import com.zephyr.boreal.ui.components.ButtonVariant
 import com.zephyr.boreal.ui.components.InfoCard
 import com.zephyr.boreal.ui.components.LoadingIndicator
+import com.zephyr.boreal.ui.components.PrintSection
 import com.zephyr.boreal.ui.components.SuccessCard
 import com.zephyr.boreal.ui.theme.BorealColors
 
@@ -101,11 +102,9 @@ internal fun SummaryScreenContent(
   }
 }
 
-/**
- * Drop-in slot for Task 03's print section. Intentionally empty for now — takes the finalized
- * [receipt] so Task 03 can render printing controls for it without changing this call site.
- */
-@Suppress("UnusedParameter", "EmptyFunctionBlock")
 @Composable
 private fun SummaryPrintSectionSlot(receipt: Receipt?) {
+  if (receipt != null) {
+    PrintSection(isCancel = false, receiptSerialNumber = receipt.serialNumber)
+  }
 }

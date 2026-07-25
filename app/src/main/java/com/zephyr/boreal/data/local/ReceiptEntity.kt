@@ -41,4 +41,5 @@ data class ReceiptEntity(
   val lastDownloadedAt: String?,
   val createdAt: String,
   val updatedAt: String,
+  val isPrinted: Boolean = false,
 )

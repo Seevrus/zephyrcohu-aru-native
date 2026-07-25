@@ -104,3 +104,64 @@ Task 02 (Summary hosts the section). Reused by Task 05.
   `createPrintReceipt.ts`
 - `resources/frontend/containers/printer-connector/PrinterConnector.tsx`
 - native `printer/BorealPrinter.kt`, `printer/BluetoothHelper.kt`, `ui/screens/PrintEndErrandScreen.kt`
+
+## Status: ✅ Done
+
+Implemented as a fully reusable component tree, all under `com.zephyr.boreal`:
+
+- **`domain/utils/PrintReceiptTextBuilder.kt`** — pure Kotlin port of `createPrintReceipt.ts` +
+  `usePrintSection.ts`'s copy-count logic. `copyCount(partner, receipt)`,
+  `receiptFormatLabel(partner)`, and `build(isCancel, user, receipt, partner)` are the public API;
+  everything else (vendor/buyer/delivery/metadata/item-list/VAT-list/totals blocks, `padLeftSide`/
+  `padRightSide`, the 67-char row-width contract, the STORNO/negated-amounts cancel branch, the
+  multi-copy concatenation) is a line-for-line port of the RN source, including its literal
+  Hungarian body text (kept as constants in this file, not `strings.xml`, matching RN's own
+  choice to keep receipt-body text out of its i18n layer).
+- **`ui/components/PrinterConnector.kt` + `PrinterConnectorViewModel.kt`** — the reusable
+  connect-then-print state machine (`IDLE → CONNECTING → CONNECTED → PRINTING`), a faithful port
+  of `PrinterConnector.tsx`'s reducer including the "timeout" → "A nyomtató valószínűleg nincs
+  bekapcsolva." and "Broken pipe" → same-message-plus-disconnect special cases. Reads the selected
+  printer address from the existing `PrintSettingsStore` and drives `BorealPrinter.connect`/
+  `printTaggedText`/`disconnect` directly — this is the **first real caller** of those methods in
+  the native app (previously only `PrintSettingsViewModel` used `BorealPrinter`, and only for
+  device *selection*, not connection).
+- **`ui/components/PrintSection.kt` + `ui/screens/PrintSectionViewModel.kt`** — the top-level
+  reusable slot. Takes `isCancel: Boolean, receiptSerialNumber: Int` (RN's exact prop shape, not a
+  whole `Receipt`), so Task 05 can mount `PrintSection(isCancel = true, receiptSerialNumber = ...)`
+  unchanged for storno reprints. Not nav-scoped (it's an embedded composable, not a route), so it
+  takes those params via an `initialize()` call (guarded to run once) from a `LaunchedEffect`
+  rather than `SavedStateHandle`.
+- **`Receipt.isPrinted: Boolean = false`** added to the domain model, `ReceiptEntity`, and
+  `ReceiptMapper` (client-side-only, like RN's `ContextReceipt.isPrinted` — never sent to/read
+  from the API). `BorealDatabase` bumped `version = 18 → 19` (no explicit `Migration`, per
+  `fallbackToDestructiveMigration(true)`). New `ReceiptDao.updatePrintedState(id, isPrinted)` +
+  `ReceiptsStore.markReceiptPrinted(id)`, called by `PrintSectionViewModel.onPrintSuccess()` only
+  once per receipt (idempotent, mirrors RN's `printSuccessCallback` guard).
+- **Summary wiring**: `SummaryScreen.kt`'s `SummaryPrintSectionSlot(receipt: Receipt?)` now renders
+  `PrintSection(isCancel = false, receiptSerialNumber = receipt.serialNumber)` when a receipt
+  exists, nothing otherwise — matches RN Summary's `{currentReceipt ? <PrintSection .../> : null}`.
+
+**Confirmed during implementation:** `Receipt.items` (`ReceiptItem`) already comes pre-expanded
+per discount by the time a receipt is finalized — each row has its own baked-in `netAmount`/
+`vatAmount`/`grossAmount`/`discountName`, exactly one discount per row. So the item-list builder
+in `PrintReceiptTextBuilder` just formats existing rows (sorted by name, HU collator) — it does
+**not** re-run `DiscountCalculator`, avoiding a second implementation of the same math.
+
+**Deliberate deviations from RN, both intentional:**
+- The UI-facing copy-count description always uses the *correct* count (partner `null` → 3,
+  matching `createPrintReceipt`'s own internal default) rather than reproducing a latent RN bug
+  where `usePrintSection`'s displayed `numberOfPrints` is `undefined` for ad-hoc partners.
+- `PrinterConnector` assumes Bluetooth permissions are already granted (a printer must already be
+  selected in Print Settings — which itself gates on permissions — before this screen is
+  reachable), so it has no permission-request UI of its own, unlike RN's `PrinterConnector.tsx`
+  which handles that inline.
+
+**Testing added:** `PrintReceiptTextBuilderTest` (copy-count branches, format label, cancel vs.
+normal layout, rounding-line presence, discount-comment line, other-items, row-width contract),
+`PrinterConnectorViewModelTest` (full state-machine coverage including both special-cased error
+messages), `PrintSectionViewModelTest` (receipt lookup by serial number, `canPrint` branches
+including the ad-hoc-partner case, idempotent `onPrintSuccess`), a `ReceiptsStoreTest` case for
+`markReceiptPrinted`, and instrumented `PrintSectionContentTest`/`PrinterConnectorContentTest`
+covering the stateless content composables (the real `PrinterConnector` is swapped for a stub
+in `PrintSectionContentTest` via a new `printerConnector` slot param, since it resolves a Hilt
+ViewModel that a plain `composeTestRule` can't provide). All passed on the connected emulator.

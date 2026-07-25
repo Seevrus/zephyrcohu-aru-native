@@ -17,4 +17,10 @@ interface ReceiptDao {
 
   @Query("DELETE FROM receipts")
   suspend fun clearReceipts()
+
+  @Query("UPDATE receipts SET isPrinted = :isPrinted WHERE id = :id")
+  suspend fun updatePrintedState(
+    id: Int,
+    isPrinted: Boolean,
+  )
 }

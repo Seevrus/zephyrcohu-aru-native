@@ -290,6 +290,19 @@ class ReceiptsStoreTest {
     }
 
   @Test
+  fun `markReceiptPrinted flips isPrinted true on the correct receipt only`() =
+    runTest(testDispatcher) {
+      val receiptDao: ReceiptDao = mock()
+      whenever(receiptDao.getAllReceipts()).thenReturn(flowOf(emptyList()))
+      val store = ReceiptsStore(receiptDao, createTestDataStore(), testScope)
+      runCurrent()
+
+      store.markReceiptPrinted(42)
+
+      verify(receiptDao).updatePrintedState(42, true)
+    }
+
+  @Test
   fun `resetReceipts clears receiptDao and the in-memory draft state`() =
     runTest(testDispatcher) {
       val receiptDao: ReceiptDao = mock()

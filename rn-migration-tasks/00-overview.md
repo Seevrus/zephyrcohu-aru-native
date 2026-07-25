@@ -29,12 +29,15 @@ Already built and working in the native app:
   TODO stub (no Datecs call) — don't treat it as a working printer-UI pattern to copy from;
   `PrintSettingsViewModel.kt` is the only screen that actually drives `BorealPrinter.connect`
   today.
-- **Sell flow through finalization and summary**: select partner (stored + tax-number search +
-  add partner), select items (barcode, quantities), select other items, review items (including
-  per-item discounts, Task 01), receipt + order creation to the API (`ReviewItemsViewModel`
-  already builds totals, VAT breakdown, rounding, serial numbers, vendor/buyer, and calls
-  `receiptsRepository.createReceipt` / `createOrders`), and a terminal **Summary screen** (Task
-  02: success confirmation, offline notice, empty print-section slot, reset-on-exit).
+- **Sell flow through finalization, summary, and printing**: select partner (stored + tax-number
+  search + add partner), select items (barcode, quantities), select other items, review items
+  (including per-item discounts, Task 01), receipt + order creation to the API
+  (`ReviewItemsViewModel` already builds totals, VAT breakdown, rounding, serial numbers,
+  vendor/buyer, and calls `receiptsRepository.createReceipt` / `createOrders`), a terminal
+  **Summary screen** (Task 02: success confirmation, offline notice, reset-on-exit), and a
+  reusable **print section** (Task 03: `PrintSection`/`PrinterConnector` composables, Datecs
+  connect-then-print flow, `PrintReceiptTextBuilder` receipt-text formatter, `Receipt.isPrinted`
+  tracking) hosted on Summary and ready for reuse by Task 05's reprint/storno flow.
 - **Data layer**: Retrofit API service + repositories (items, partners, receipts, rounds,
   stores, user), Room persistence (including Room-backed local receipts list, Task 01b),
   DataStore session/app-state (including the persisted sell-flow draft, Task 01c),
@@ -48,7 +51,7 @@ Already built and working in the native app:
 | 01b | Sell · persist local receipts across process death | Sell / Data | 01 | ✅ Done |
 | 01c | Sell · persist in-progress draft state across process death | Sell / Data | 01b | ✅ Done |
 | 02 | Sell · summary screen & flow completion | Sell | 01 | ✅ Done |
-| 03 | Sell · print sales receipt (shared print section) | Sell / Print | 02 | Not started |
+| 03 | Sell · print sales receipt (shared print section) | Sell / Print | 02 | ✅ Done |
 | 04 | Receipts · list of receipts | Receipts | 03 | Not started |
 | 05 | Receipts · details, reprint & storno (cancel) | Receipts | 04 | Not started |
 | 06 | Storage · select store (lock to user) | Storage | frontier | Not started |
@@ -58,9 +61,10 @@ Already built and working in the native app:
 | 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier | Not started |
 | 11 | Cross-cutting · app-update / version gate | Infra | frontier | Not started |
 
-**Next up:** Task 03 (Sell · print sales receipt) is unblocked — Task 02 is done — and not started
-yet. See "Starting point for Task 03" in `03-sell-print-receipt.md` for the exact native state
-(print slot location, printer module reality, DB schema) to build from.
+**Next up:** Task 04 (Receipts · list of receipts) is unblocked — Task 03 is done — and not started
+yet. See `## Status` in `03-sell-print-receipt.md` for what the print section actually looks like
+(component/ViewModel shapes, `Receipt.isPrinted` plumbing) before Task 04/05 build on it — Task 05
+in particular reuses `PrintSection(isCancel, receiptSerialNumber)` as-is for reprints/storno.
 
 Excluded from scope (per decision): the RN debug screens (`BoundStore`, `Queries`).
 

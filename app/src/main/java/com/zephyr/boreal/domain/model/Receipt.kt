@@ -32,6 +32,7 @@ data class Receipt(
   val lastDownloadedAt: String?, // UTC
   val createdAt: String,
   val updatedAt: String,
+  val isPrinted: Boolean = false,
 ) {
   val paymentDays: Int
     get() {
