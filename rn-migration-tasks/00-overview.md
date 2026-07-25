@@ -53,7 +53,11 @@ Already built and working in the native app:
 | 02 | Sell · summary screen & flow completion | Sell | 01 | ✅ Done |
 | 03 | Sell · print sales receipt (shared print section) | Sell / Print | 02 | ✅ Done |
 | 03b | Print · dev-mode printer (save print string for review) | Print | 03 | ✅ Done |
-| 04 | Receipts · list of receipts | Receipts | 03 | Not started |
+| 03c | Receipts store · ordering, scaling & draft-write correctness | Sell / Data | 01b, 01c | Not started |
+| 03d | Print path · state-machine hardening & ViewModel state discipline | Print | 03, 03b | Not started |
+| 03e | Domain logic · de-duplication & Kotlin pattern cleanup | Sell / Infra | 01 | Not started |
+| 03f | Persistence · separate cache from record, survive shape changes | Data | frontier | Not started |
+| 04 | Receipts · list of receipts | Receipts | 03, 03c | Not started |
 | 05 | Receipts · details, reprint & storno (cancel) | Receipts | 04 | Not started |
 | 06 | Storage · select store (lock to user) | Storage | frontier | Not started |
 | 07 | Storage · select items from store (batches, barcode, quantities) | Storage | 06 | Not started |
@@ -62,8 +66,31 @@ Already built and working in the native app:
 | 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier | Not started |
 | 11 | Cross-cutting · app-update / version gate | Infra | frontier | Not started |
 
-**Next up:** Task 04 (Receipts · list of receipts) is unblocked — Task 03 and Task 03b are both
-done. See `## Status` in `03-sell-print-receipt.md` for what the print section actually looks like
+**Next up:** Tasks 03c–03f — a consolidation batch from the post-03b code review, scheduled ahead
+of Task 04. They are independent of each other and none adds user-facing behavior:
+
+- **03c (blocks Task 04)** — `ReceiptDao.getAllReceipts()` has no `ORDER BY` while two call sites
+  depend on order; `ReceiptsStore.receipts` is `Eagerly`-shared and redecodes the whole table on
+  every write; the sell-flow draft is persisted per-keystroke with a lost-update race. Task 04
+  turns that flow into a list screen's backing data, so this is the one to do first.
+- **03d (should precede Task 05)** — the print state machine can strand `PRINTING` permanently,
+  `PrintSectionViewModel.initialize` silently discards a receipt change, and the dev printer is
+  identified by sniffing null fields rather than by address. All latent while Summary is the only
+  caller; all live once Task 05 reuses `PrintSection` for reprint **and** storno. Also carries the
+  ViewModel state-discipline rule below.
+- **03e (any time)** — the discount split-and-total rule is implemented twice (displayed/printed
+  total vs. submitted rows) with nothing enforcing agreement; plus mechanical de-duplication.
+  Fully covered by an equality invariant, lowest risk of the batch.
+- **03f (must precede Task 05 shipping)** — Room stores API DTOs, and unlike RN's persisted query
+  cache (where TypeScript is erased and a stale blob just reads `undefined`) a renamed field makes
+  kotlinx.serialization **throw inside a TypeConverter**, i.e. crash on read. Meanwhile
+  `fallbackToDestructiveMigration(true)` covers the whole database including `receipts` — the one
+  table with no `GET` endpoint to recover from and a client-only `isPrinted`. Fixes the cache half
+  by degrading to a refetch plus a cache buster (keeping the DTOs, which are the right shape for a
+  cache), and separates `receipts` as a durable record. **Do this while there are no installed
+  apps** — that makes the migration a no-op to write, and the window closes at Task 05.
+
+See `## Status` in `03-sell-print-receipt.md` for what the print section actually looks like
 (component/ViewModel shapes, `Receipt.isPrinted` plumbing) and `## Status` in
 `03b-development-print.md` for the dev-print save-to-file flow before Task 04/05 build on it —
 Task 05 in particular reuses `PrintSection(isCancel, receiptSerialNumber)` as-is for
@@ -79,6 +106,16 @@ Kotlin coroutines/Flow. Follow the existing package layout under
 `app/src/main/java/com/zephyr/boreal` (`ui/screens`, `ui/components`, `domain/model`,
 `data/{local,repository,mapper}`, `api/dto`, `store`). New screens register in
 `MainActivity.kt`'s `NavHost` with a string route.
+
+**ViewModel state discipline**: a `var` in a ViewModel is permitted **only** when it is a one-shot
+latch that (a) duplicates no value present in the UiState, (b) is never derivable from UiState, and
+(c) is never read by the render path. Anything else belongs in the UiState data class. Examples of
+the permitted kind: `SummaryViewModel.hasLeft` (double-navigation guard),
+`ReviewItemsViewModel.isOrderSubmitted` (network-step idempotence). Examples of the forbidden kind,
+all being removed in Task 03d: a `hasMarkedPrinted` flag beside a `receipt.isPrinted` value, an
+`initialized` boolean gating UiState population, a cached `currentReceipt` shadowing what produced
+`uiState.receiptToPrint`, and a held callback whose paired request lives in UiState. The failure
+mode this rule exists to prevent is internal ViewModel state disagreeing with rendered UI state.
 
 **Reuse the Boreal design system** — do not invent new visuals. Existing shared components:
 `BorealButton`, `BorealTextInput`, `BorealDropdown`, `BorealSearchField`, `BorealTile`,
@@ -105,6 +142,15 @@ receipts are `yyyy-MM-dd`.
 Requests/responses are wrapped in a `{ "data": ... }` envelope. Ability middleware gates
 endpoints (e.g. `I` = internal/admin, `A`, `NP`). Add DTOs under `api/dto` and map to domain
 models in `data/mapper`; never leak DTOs into the UI.
+
+**Persistence durability classes**: every persisted table is either a **cache** (reconstructible by
+refetching — items, partners, rounds, stores, price lists, user profile) or a **record** (exists
+only on the device — `receipts`, including its client-only `isPrinted`, plus the DataStore-held
+sell-flow draft, printer settings and session token). Caches may store API DTO shapes directly,
+must degrade to a refetch rather than throw on a decode failure, and may be destructively migrated.
+Records must not store DTO shapes, must surface decode failures, and require real migrations —
+never destructive ones. There is no `GET /receipts`, so a wiped receipts table is unrecoverable.
+When adding a table, state which class it is. See Task 03f.
 
 **Offline-first**: most screens read from persisted local state and treat the network as an
 enhancement. Mutations (create receipt, storno, storage load, lock/unlock store) require
