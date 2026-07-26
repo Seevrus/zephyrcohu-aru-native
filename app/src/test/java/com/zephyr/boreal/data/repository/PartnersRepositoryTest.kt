@@ -1,7 +1,9 @@
 package com.zephyr.boreal.data.repository
 
 import com.zephyr.boreal.api.PartnerApiService
+import com.zephyr.boreal.data.local.CacheMetadataEntity
 import com.zephyr.boreal.data.local.PartnerEntity
+import com.zephyr.boreal.data.local.converters.CacheStamp
 import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.PartnerDao
 import com.zephyr.boreal.data.local.dao.PartnerListDao
@@ -64,7 +66,8 @@ class PartnersRepositoryTest {
   @Test
   fun `getPartners should sort partners by delivery location name using Hungarian Locale`() =
     runTest {
-      whenever(cacheMetadataDao.getFetchedAt(any())).thenReturn(System.currentTimeMillis())
+      whenever(cacheMetadataDao.getCacheMetadata(any()))
+        .thenReturn(CacheMetadataEntity("get_partners", System.currentTimeMillis(), CacheStamp.CURRENT))
 
       // Input entities in unsorted order, testing Hungarian specific sorting rules.
       // Á comes after A, É comes after E.

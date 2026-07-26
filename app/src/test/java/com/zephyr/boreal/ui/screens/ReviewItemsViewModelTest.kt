@@ -114,6 +114,7 @@ class ReviewItemsViewModelTest {
   private fun buildUser(
     lastRound: Round? = buildRound(),
     isDev: Boolean = false,
+    company: Company = buildCompany(),
   ) = User(
     id = 1,
     userName = "user",
@@ -127,22 +128,24 @@ class ReviewItemsViewModelTest {
     lastActive = "2026-07-01T08:00:00Z",
     createdAt = "2026-01-01T00:00:00Z",
     updatedAt = "2026-01-01T00:00:00Z",
-    company =
-      Company(
-        id = 1,
-        name = "Boreal Kft.",
-        code = "BOR",
-        country = "HU",
-        postalCode = "1000",
-        city = "Budapest",
-        address = "Fő utca 1.",
-        felir = "FELIR1",
-        vatNumber = "12345678-1-42",
-        iban = "HU00",
-        bankAccount = "11111111",
-      ),
+    company = company,
     lastRound = lastRound,
   )
+
+  private fun buildCompany(id: Int = 1) =
+    Company(
+      id = id,
+      name = "Boreal Kft.",
+      code = "BOR",
+      country = "HU",
+      postalCode = "1000",
+      city = "Budapest",
+      address = "Fő utca 1.",
+      felir = "FELIR1",
+      vatNumber = "12345678-1-42",
+      iban = "HU00",
+      bankAccount = "11111111",
+    )
 
   private fun buildStore() =
     StoreDetails(
@@ -580,6 +583,26 @@ class ReviewItemsViewModelTest {
       runCurrent()
 
       assertEquals("Hiányzó adatok: aktuális kör", viewModel.uiState.value.errorMessage)
+      assertTrue(viewModel.uiState.value.isSentWithErrors)
+      assertFalse(viewModel.uiState.value.isSentSuccessfully)
+      verifyNoInteractions(receiptsRepository)
+    }
+
+  @Test
+  fun `confirmFinalize sets missing-data error when company is a degraded placeholder`() =
+    runTest {
+      // id == 0 is the CacheDecodeGuard placeholder UserConverters.toCompanyDto falls back to on
+      // a decode failure — never a real company id. Must not reach receiptsRepository.
+      currentReceiptFlow.value = buildDraft()
+      userFlow.value = ApiResource.Success(buildUser(company = buildCompany(id = 0)))
+      storeFlow.value = buildStore()
+      val viewModel = createViewModel()
+      runCurrent()
+
+      viewModel.confirmFinalize()
+      runCurrent()
+
+      assertEquals("Hiányzó adatok: cégadatok", viewModel.uiState.value.errorMessage)
       assertTrue(viewModel.uiState.value.isSentWithErrors)
       assertFalse(viewModel.uiState.value.isSentSuccessfully)
       verifyNoInteractions(receiptsRepository)

@@ -8,7 +8,6 @@ import com.zephyr.boreal.api.dto.response.ReceiptResponseDataDto
 import com.zephyr.boreal.api.dto.response.ReceiptUserDto
 import com.zephyr.boreal.api.dto.response.ReceiptVatAmountDto
 import com.zephyr.boreal.api.dto.response.ReceiptVendorDto
-import com.zephyr.boreal.data.local.ReceiptEntity
 import com.zephyr.boreal.domain.model.DraftReceiptItem
 import com.zephyr.boreal.domain.model.Receipt
 import com.zephyr.boreal.domain.model.ReceiptBuyer
@@ -261,72 +260,4 @@ fun ReceiptItem.toDto(): ReceiptItemDto =
     discountName = discountName,
     cnCode = cnCode,
     expiresAt = expiresAt,
-  )
-
-fun Receipt.toEntity(): ReceiptEntity =
-  ReceiptEntity(
-    id = id,
-    companyId = companyId,
-    companyCode = companyCode,
-    partnerId = partnerId,
-    partnerCode = partnerCode,
-    partnerSiteCode = partnerSiteCode,
-    serialNumber = serialNumber,
-    yearCode = yearCode,
-    cancelSerialNumber = cancelSerialNumber,
-    cancelYearCode = cancelYearCode,
-    vendor = vendor.toDto(),
-    buyer = buyer.toDto(),
-    invoiceDate = invoiceDate,
-    fulfillmentDate = fulfillmentDate,
-    invoiceType = invoiceType,
-    paidDate = paidDate,
-    user = user?.toDto(),
-    items = items.map { it.toDto() },
-    otherItems = otherItems.map { it.toDto() },
-    quantity = quantity,
-    netAmount = netAmount,
-    vatAmount = vatAmount,
-    grossAmount = grossAmount,
-    vatAmounts = vatAmounts.map { it.toDto() },
-    roundAmount = roundAmount,
-    roundedAmount = roundedAmount,
-    lastDownloadedAt = lastDownloadedAt,
-    createdAt = createdAt,
-    updatedAt = updatedAt,
-    isPrinted = isPrinted,
-  )
-
-fun ReceiptEntity.toDomain(): Receipt =
-  Receipt(
-    id = id,
-    companyId = companyId,
-    companyCode = companyCode,
-    partnerId = partnerId,
-    partnerCode = partnerCode,
-    partnerSiteCode = partnerSiteCode,
-    serialNumber = serialNumber,
-    yearCode = yearCode,
-    cancelSerialNumber = cancelSerialNumber,
-    cancelYearCode = cancelYearCode,
-    vendor = vendor.toDomain(),
-    buyer = buyer.toDomain(),
-    invoiceDate = invoiceDate,
-    fulfillmentDate = fulfillmentDate,
-    invoiceType = invoiceType,
-    paidDate = paidDate,
-    user = user?.toDomain(),
-    items = items.map { it.toDomain() },
-    otherItems = otherItems.map { it.toDomain() },
-    quantity = quantity,
-    netAmount = netAmount,
-    vatAmount = vatAmount,
-    grossAmount = grossAmount,
-    vatAmounts = vatAmounts.map { it.toDomain() },
-    roundAmount = roundAmount,
-    roundedAmount = roundedAmount,
-    lastDownloadedAt = lastDownloadedAt,
-    createdAt = createdAt,
-    updatedAt = updatedAt,
-    isPrinted = isPrinted,
   )

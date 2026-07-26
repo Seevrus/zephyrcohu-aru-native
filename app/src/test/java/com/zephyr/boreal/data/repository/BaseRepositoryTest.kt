@@ -1,5 +1,8 @@
 package com.zephyr.boreal.data.repository
 
+import com.zephyr.boreal.data.local.CacheMetadataEntity
+import com.zephyr.boreal.data.local.converters.CacheDecodeGuard
+import com.zephyr.boreal.data.local.converters.CacheStamp
 import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.user.StoredToken
@@ -9,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -38,7 +42,8 @@ class BaseRepositoryTest {
       saveFetchResult: suspend (RequestType) -> Unit,
       shouldFetch: (ResultType?) -> Boolean = { true },
       queryKey: String? = null,
-    ) = networkBoundResource(query, fetch, saveFetchResult, shouldFetch, queryKey)
+      degradeGroup: String? = queryKey,
+    ) = networkBoundResource(query, fetch, saveFetchResult, shouldFetch, queryKey, degradeGroup = degradeGroup)
   }
 
   @BeforeEach
@@ -58,6 +63,13 @@ class BaseRepositoryTest {
     repository = TestRepository(connectivityObserver, userSessionStore, cacheMetadataDao)
   }
 
+  @AfterEach
+  fun tearDown() {
+    // Guards against a mark leaking into another test sharing this JVM if a future assertion
+    // change stops consuming it.
+    CacheDecodeGuard.consumeDegraded("test_group")
+  }
+
   @Test
   fun `should fetch from network when stale and save to DB`() =
     runTest {
@@ -65,7 +77,7 @@ class BaseRepositoryTest {
       val networkData = "NetworkData"
       var savedData: String? = null
 
-      whenever(cacheMetadataDao.getFetchedAt("test_key")).thenReturn(null)
+      whenever(cacheMetadataDao.getCacheMetadata("test_key")).thenReturn(null)
 
       val flow =
         repository.testNetworkBoundResource(
@@ -94,7 +106,8 @@ class BaseRepositoryTest {
       val queryData = "LocalData"
       val currentTime = System.currentTimeMillis()
 
-      whenever(cacheMetadataDao.getFetchedAt("test_key")).thenReturn(currentTime)
+      whenever(cacheMetadataDao.getCacheMetadata("test_key"))
+        .thenReturn(CacheMetadataEntity("test_key", currentTime, CacheStamp.CURRENT))
 
       val flow =
         repository.testNetworkBoundResource(
@@ -109,6 +122,52 @@ class BaseRepositoryTest {
       assertEquals(1, results.size)
       assertTrue(results[0] is ApiResource.Success)
       assertEquals(queryData, results[0].getOrNull())
+    }
+
+  @Test
+  fun `should fetch from network when cache stamp does not match even if fetchedAt is fresh`() =
+    runTest {
+      val queryData = "LocalData"
+      val currentTime = System.currentTimeMillis()
+
+      whenever(cacheMetadataDao.getCacheMetadata("test_key"))
+        .thenReturn(CacheMetadataEntity("test_key", currentTime, CacheStamp.CURRENT - 1))
+
+      val flow =
+        repository.testNetworkBoundResource(
+          query = { flowOf(queryData) },
+          fetch = { "NetworkData" },
+          saveFetchResult = { },
+          queryKey = "test_key",
+        )
+
+      val results = flow.toList()
+
+      assertTrue(results[0] is ApiResource.Loading)
+    }
+
+  @Test
+  fun `should fetch from network when the query's group was marked degraded even if not stale`() =
+    runTest {
+      val queryData = "LocalData"
+      val currentTime = System.currentTimeMillis()
+
+      whenever(cacheMetadataDao.getCacheMetadata("test_key"))
+        .thenReturn(CacheMetadataEntity("test_key", currentTime, CacheStamp.CURRENT))
+      CacheDecodeGuard.markDegraded("test_group")
+
+      val flow =
+        repository.testNetworkBoundResource(
+          query = { flowOf(queryData) },
+          fetch = { "NetworkData" },
+          saveFetchResult = { },
+          queryKey = "test_key",
+          degradeGroup = "test_group",
+        )
+
+      val results = flow.toList()
+
+      assertTrue(results[0] is ApiResource.Loading)
     }
 
   @Test
@@ -133,7 +192,7 @@ class BaseRepositoryTest {
   fun `should return existing data when offline`() =
     runTest {
       whenever(connectivityObserver.isInternetReachable).thenReturn(MutableStateFlow(false))
-      whenever(cacheMetadataDao.getFetchedAt("test_key")).thenReturn(null)
+      whenever(cacheMetadataDao.getCacheMetadata("test_key")).thenReturn(null)
 
       val flow =
         repository.testNetworkBoundResource(
@@ -151,7 +210,7 @@ class BaseRepositoryTest {
   @Test
   fun `should retry on network error`() =
     runTest {
-      whenever(cacheMetadataDao.getFetchedAt("test_key")).thenReturn(null)
+      whenever(cacheMetadataDao.getCacheMetadata("test_key")).thenReturn(null)
 
       var attempts = 0
       val flow =

@@ -11,6 +11,7 @@
       "Bash(./gradlew :app:compileDebugAndroidTestKotlin*)",
       "Bash(./gradlew :app:compileDebugJavaWithJavac*)",
       "Bash(./gradlew assembleDebug*)",
+      "Bash(git diff*)",
       "Bash(git show*)",
       "Bash(git log*)",
       "Bash(xargs grep*)"

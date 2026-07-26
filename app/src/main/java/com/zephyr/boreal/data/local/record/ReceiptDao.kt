@@ -1,10 +1,9 @@
-package com.zephyr.boreal.data.local.dao
+package com.zephyr.boreal.data.local.record
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.zephyr.boreal.data.local.ReceiptEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

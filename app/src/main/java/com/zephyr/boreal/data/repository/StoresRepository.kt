@@ -3,6 +3,7 @@ package com.zephyr.boreal.data.repository
 import com.zephyr.boreal.api.StoreApiService
 import com.zephyr.boreal.api.dto.request.SelectStoreDataDto
 import com.zephyr.boreal.api.dto.request.SelectStoreRequestDto
+import com.zephyr.boreal.data.local.converters.CacheGroups
 import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.StoreDao
 import com.zephyr.boreal.data.local.dao.StoreDetailsDao
@@ -85,6 +86,7 @@ class StoresRepository
           },
           queryKey = "get_store_details_$storeId",
           cacheTimeoutMillis = if (forceRefresh) 0L else DEFAULT_CACHE_TIMEOUT_MS,
+          degradeGroup = CacheGroups.STORE_DETAILS,
         )
 
       return when (val result = flow.first { it !is ApiResource.Loading }) {

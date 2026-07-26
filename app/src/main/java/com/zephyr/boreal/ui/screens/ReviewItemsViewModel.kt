@@ -194,6 +194,9 @@ class ReviewItemsViewModel
           if (draft == null) add("aktuális számla")
           if (user?.lastRound == null) add("aktuális kör")
           if (store == null) add("kör raktár")
+          // company.id == 0 is the CacheDecodeGuard placeholder UserConverters.toCompanyDto
+          // falls back to on a decode failure — never a real company id.
+          if (user != null && user.company.id == 0) add("cégadatok")
         }
 
       if (missingComponents.isNotEmpty()) {

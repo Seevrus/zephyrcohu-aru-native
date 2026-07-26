@@ -6,11 +6,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.zephyr.boreal.api.dto.response.ReceiptBuyerDto
-import com.zephyr.boreal.api.dto.response.ReceiptItemDto
-import com.zephyr.boreal.api.dto.response.ReceiptVendorDto
-import com.zephyr.boreal.data.local.ReceiptEntity
-import com.zephyr.boreal.data.local.dao.ReceiptDao
+import com.zephyr.boreal.data.local.record.ReceiptDao
+import com.zephyr.boreal.data.local.record.ReceiptEntity
 import com.zephyr.boreal.data.mapper.toDomain
 import com.zephyr.boreal.data.mapper.toEntity
 import com.zephyr.boreal.domain.model.DraftOrder
@@ -121,24 +118,6 @@ class ReceiptsStoreTest {
       vatNumber = "87654321-1-13",
     )
 
-  private val buyerDto =
-    ReceiptBuyerDto(
-      id = 7,
-      name = "Partner Ltd.",
-      country = "HU",
-      postalCode = "2000",
-      city = "Szentendre",
-      address = "Kossuth utca 2.",
-      deliveryName = "Partner Ltd.",
-      deliveryCountry = "HU",
-      deliveryPostalCode = "2000",
-      deliveryCity = "Szentendre",
-      deliveryAddress = "Kossuth utca 2.",
-      iban = null,
-      bankAccount = null,
-      vatNumber = "87654321-1-13",
-    )
-
   private val vendor =
     ReceiptVendor(
       name = "Boreal Kft.",
@@ -152,38 +131,8 @@ class ReceiptsStoreTest {
       vatNumber = "12345678-1-42",
     )
 
-  private val vendorDto =
-    ReceiptVendorDto(
-      name = "Boreal Kft.",
-      country = "HU",
-      postalCode = "1000",
-      city = "Budapest",
-      address = "Fő utca 1.",
-      felir = "FELIR1",
-      iban = "HU00",
-      bankAccount = "11111111",
-      vatNumber = "12345678-1-42",
-    )
-
   private fun buildReceiptItem(id: Int) =
     ReceiptItem(
-      id = id,
-      articleNumber = "ART-$id",
-      name = "Item $id",
-      quantity = 2.0,
-      unitName = "db",
-      netPrice = 500.0,
-      netAmount = 1000.0,
-      vatRate = "27%",
-      vatAmount = 270.0,
-      grossAmount = 1270.0,
-      discountName = null,
-      cnCode = "CN001",
-      expiresAt = "2026-12-31",
-    )
-
-  private fun buildReceiptItemDto(id: Int) =
-    ReceiptItemDto(
       id = id,
       articleNumber = "ART-$id",
       name = "Item $id",
@@ -232,38 +181,7 @@ class ReceiptsStoreTest {
       updatedAt = "2026-07-01T00:00:00Z",
     )
 
-  private fun buildReceiptEntity(id: Int) =
-    ReceiptEntity(
-      id = id,
-      companyId = 1,
-      companyCode = "BOR",
-      partnerId = 7,
-      partnerCode = "P007",
-      partnerSiteCode = "S001",
-      serialNumber = 100 + id,
-      yearCode = 2026,
-      cancelSerialNumber = null,
-      cancelYearCode = null,
-      vendor = vendorDto,
-      buyer = buyerDto,
-      invoiceDate = "2026-07-01",
-      fulfillmentDate = "2026-07-09",
-      invoiceType = InvoiceType.PAPER,
-      paidDate = "2026-07-09",
-      user = null,
-      items = listOf(buildReceiptItemDto(id)),
-      otherItems = emptyList(),
-      quantity = 2.0,
-      netAmount = 1000.0,
-      vatAmount = 270.0,
-      grossAmount = 1270.0,
-      vatAmounts = emptyList(),
-      roundAmount = 0.0,
-      roundedAmount = 1270.0,
-      lastDownloadedAt = null,
-      createdAt = "2026-07-01T00:00:00Z",
-      updatedAt = "2026-07-01T00:00:00Z",
-    )
+  private fun buildReceiptEntity(id: Int): ReceiptEntity = buildReceipt(id).toEntity()
 
   @Test
   fun `receipts reflects receiptDao entities mapped to domain`() =

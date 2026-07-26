@@ -73,10 +73,19 @@ android {
       it.useJUnitPlatform()
     }
   }
+
+  // Exposes the room.schemaLocation output to MigrationTestHelper in androidTest.
+  sourceSets {
+    getByName("androidTest") {
+      assets.srcDirs("$projectDir/schemas")
+    }
+  }
 }
 
 ksp {
   arg("room.generateKotlin", "true")
+  // Only ReceiptDatabase has exportSchema = true; BorealDatabase stays silent as before.
+  arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 ktlint {

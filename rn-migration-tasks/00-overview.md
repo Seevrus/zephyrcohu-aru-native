@@ -56,7 +56,7 @@ Already built and working in the native app:
 | 03c | Receipts store · ordering, scaling & draft-write correctness | Sell / Data | 01b, 01c | ✅ Done |
 | 03d | Print path · state-machine hardening & ViewModel state discipline | Print | 03, 03b | ✅ Done |
 | 03e | Domain logic · de-duplication & Kotlin pattern cleanup | Sell / Infra | 01 | ✅ Done |
-| 03f | Persistence · separate cache from record, survive shape changes | Data | frontier | Not started |
+| 03f | Persistence · separate cache from record, survive shape changes | Data | frontier | ✅ Done |
 | 04 | Receipts · list of receipts | Receipts | 03, 03c | Not started |
 | 05 | Receipts · details, reprint & storno (cancel) | Receipts | 04 | Not started |
 | 06 | Storage · select store (lock to user) | Storage | frontier | Not started |

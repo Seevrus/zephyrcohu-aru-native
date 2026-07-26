@@ -1,6 +1,8 @@
 package com.zephyr.boreal.data.repository
 
 import com.zephyr.boreal.data.local.CacheMetadataEntity
+import com.zephyr.boreal.data.local.converters.CacheDecodeGuard
+import com.zephyr.boreal.data.local.converters.CacheStamp
 import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.user.UserSessionStore
@@ -33,6 +35,9 @@ abstract class BaseRepository(
    * @param shouldFetch: Logic to determine if we should hit the network.
    * @param queryKey: Key for cache metadata tracking.
    * @param cacheTimeoutMillis: Time after which cache is considered stale (default 5 mins).
+   * @param degradeGroup: [CacheDecodeGuard] group this query's converters mark on a decode
+   *   failure. Defaults to [queryKey]; pass a coarser literal when a converter is shared across
+   *   several dynamic query keys (e.g. `get_store_details_$storeId`) and can't know which one.
    */
   protected fun <ResultType, RequestType> networkBoundResource(
     query: () -> Flow<ResultType>,
@@ -41,6 +46,7 @@ abstract class BaseRepository(
     shouldFetch: (ResultType?) -> Boolean = { true },
     queryKey: String? = null,
     cacheTimeoutMillis: Long = DEFAULT_CACHE_TIMEOUT_MS,
+    degradeGroup: String? = queryKey,
   ): Flow<ApiResource<ResultType>> =
     flow {
       val data = query().first()
@@ -53,8 +59,7 @@ abstract class BaseRepository(
       val currentTime = System.currentTimeMillis()
       val isStale =
         if (queryKey != null) {
-          val fetchedAt = cacheMetadataDao.getFetchedAt(queryKey)
-          fetchedAt == null || (currentTime - fetchedAt) >= cacheTimeoutMillis
+          isCacheStale(queryKey, degradeGroup, currentTime, cacheTimeoutMillis)
         } else {
           shouldFetch(data)
         }
@@ -77,7 +82,7 @@ abstract class BaseRepository(
           saveFetchResult(result)
 
           if (queryKey != null) {
-            cacheMetadataDao.insertCacheMetadata(CacheMetadataEntity(queryKey, currentTime))
+            cacheMetadataDao.insertCacheMetadata(CacheMetadataEntity(queryKey, currentTime, CacheStamp.CURRENT))
           }
         } catch (throwable: Exception) {
           // Emit error, then we will continue to emit the DB flow with Error state
@@ -97,6 +102,20 @@ abstract class BaseRepository(
         },
       )
     }
+
+  private suspend fun isCacheStale(
+    queryKey: String,
+    degradeGroup: String?,
+    currentTime: Long,
+    cacheTimeoutMillis: Long,
+  ): Boolean {
+    val degraded = degradeGroup != null && CacheDecodeGuard.consumeDegraded(degradeGroup)
+    val metadata = cacheMetadataDao.getCacheMetadata(queryKey)
+    return degraded ||
+      metadata == null ||
+      metadata.cacheStamp != CacheStamp.CURRENT ||
+      (currentTime - metadata.fetchedAt) >= cacheTimeoutMillis
+  }
 
   /**
    * Helper for retrying network operations.

@@ -5,7 +5,6 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.zephyr.boreal.data.local.converters.ItemConverters
 import com.zephyr.boreal.data.local.converters.PartnerConverters
-import com.zephyr.boreal.data.local.converters.ReceiptConverters
 import com.zephyr.boreal.data.local.converters.RoundConverters
 import com.zephyr.boreal.data.local.converters.StoreConverters
 import com.zephyr.boreal.data.local.converters.UserConverters
@@ -15,7 +14,6 @@ import com.zephyr.boreal.data.local.dao.OtherItemDao
 import com.zephyr.boreal.data.local.dao.PartnerDao
 import com.zephyr.boreal.data.local.dao.PartnerListDao
 import com.zephyr.boreal.data.local.dao.PriceListDao
-import com.zephyr.boreal.data.local.dao.ReceiptDao
 import com.zephyr.boreal.data.local.dao.RoundDao
 import com.zephyr.boreal.data.local.dao.StoreDao
 import com.zephyr.boreal.data.local.dao.StoreDetailsDao
@@ -35,9 +33,8 @@ import com.zephyr.boreal.data.local.dao.UserDao
     PriceListEntity::class,
     StoreDetailsEntity::class,
     TaxPayerEntity::class,
-    ReceiptEntity::class,
   ],
-  version = 19,
+  version = 20,
   exportSchema = false,
 )
 @TypeConverters(
@@ -46,7 +43,6 @@ import com.zephyr.boreal.data.local.dao.UserDao
   RoundConverters::class,
   StoreConverters::class,
   UserConverters::class,
-  ReceiptConverters::class,
 )
 abstract class BorealDatabase : RoomDatabase() {
   abstract fun userDao(): UserDao
@@ -70,6 +66,4 @@ abstract class BorealDatabase : RoomDatabase() {
   abstract fun roundDao(): RoundDao
 
   abstract fun cacheMetadataDao(): CacheMetadataDao
-
-  abstract fun receiptDao(): ReceiptDao
 }

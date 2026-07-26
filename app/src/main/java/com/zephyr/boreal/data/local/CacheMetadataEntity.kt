@@ -7,4 +7,5 @@ import androidx.room.PrimaryKey
 data class CacheMetadataEntity(
   @PrimaryKey val queryKey: String,
   val fetchedAt: Long,
+  val cacheStamp: Int,
 )

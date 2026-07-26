@@ -3,6 +3,7 @@ package com.zephyr.boreal.data.local.converters
 import com.zephyr.boreal.api.dto.response.RoundResponseDataDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class UserConvertersTest {
@@ -75,5 +76,32 @@ class UserConvertersTest {
   fun `toRoundResponseDataDto handles null`() {
     val dto = converters.toRoundResponseDataDto(null)
     assertNull(dto)
+  }
+
+  @Test
+  fun `toUserRoleList degrades to an empty list when malformed, and marks the current user guard`() {
+    val result = converters.toUserRoleList("not valid json")
+
+    assertEquals(emptyList<Any>(), result)
+    assertTrue(CacheDecodeGuard.consumeDegraded(CacheGroups.CURRENT_USER))
+  }
+
+  @Test
+  fun `toCompanyDto degrades to a placeholder when a required field is missing`() {
+    // Missing several required fields (e.g. "country", "postalCode", ...).
+    val malformedJson = """{"id":1,"code":"C","name":"Company"}"""
+
+    val result = converters.toCompanyDto(malformedJson)
+
+    assertEquals("", result.country)
+    assertTrue(CacheDecodeGuard.consumeDegraded(CacheGroups.CURRENT_USER))
+  }
+
+  @Test
+  fun `toRoundResponseDataDto degrades to null when malformed, and marks the current user guard`() {
+    val result = converters.toRoundResponseDataDto("not valid json")
+
+    assertNull(result)
+    assertTrue(CacheDecodeGuard.consumeDegraded(CacheGroups.CURRENT_USER))
   }
 }

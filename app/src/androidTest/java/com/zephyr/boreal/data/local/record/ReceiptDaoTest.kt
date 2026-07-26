@@ -1,12 +1,8 @@
-package com.zephyr.boreal.data.local.dao
+package com.zephyr.boreal.data.local.record
 
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.zephyr.boreal.api.dto.response.ReceiptBuyerDto
-import com.zephyr.boreal.api.dto.response.ReceiptVendorDto
-import com.zephyr.boreal.data.local.BorealDatabase
-import com.zephyr.boreal.data.local.ReceiptEntity
 import com.zephyr.boreal.domain.model.InvoiceType
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -19,14 +15,14 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ReceiptDaoTest {
-  private lateinit var database: BorealDatabase
+  private lateinit var database: ReceiptDatabase
   private lateinit var dao: ReceiptDao
 
   @Before
   fun setUp() {
     database =
       Room
-        .inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), BorealDatabase::class.java)
+        .inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), ReceiptDatabase::class.java)
         .build()
     dao = database.receiptDao()
   }
@@ -37,7 +33,7 @@ class ReceiptDaoTest {
   }
 
   private val vendor =
-    ReceiptVendorDto(
+    PersistedReceiptVendor(
       name = "Boreal Kft.",
       country = "HU",
       postalCode = "1000",
@@ -50,7 +46,7 @@ class ReceiptDaoTest {
     )
 
   private val buyer =
-    ReceiptBuyerDto(
+    PersistedReceiptBuyer(
       id = 7,
       name = "Partner Ltd.",
       country = "HU",

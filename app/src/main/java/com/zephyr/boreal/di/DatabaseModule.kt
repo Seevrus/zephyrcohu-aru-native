@@ -9,12 +9,13 @@ import com.zephyr.boreal.data.local.dao.OtherItemDao
 import com.zephyr.boreal.data.local.dao.PartnerDao
 import com.zephyr.boreal.data.local.dao.PartnerListDao
 import com.zephyr.boreal.data.local.dao.PriceListDao
-import com.zephyr.boreal.data.local.dao.ReceiptDao
 import com.zephyr.boreal.data.local.dao.RoundDao
 import com.zephyr.boreal.data.local.dao.StoreDao
 import com.zephyr.boreal.data.local.dao.StoreDetailsDao
 import com.zephyr.boreal.data.local.dao.TaxPayerDao
 import com.zephyr.boreal.data.local.dao.UserDao
+import com.zephyr.boreal.data.local.record.ReceiptDao
+import com.zephyr.boreal.data.local.record.ReceiptDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,6 +38,23 @@ object DatabaseModule {
         "boreal_database",
       ).fallbackToDestructiveMigration(true)
       .build()
+
+  /**
+   * `receipts` is a durable record, not a cache — no `.fallbackToDestructiveMigration(...)` here.
+   * A version bump with no matching [androidx.room.migration.Migration] throws instead of wiping
+   * data, per `rn-migration-tasks/03f-persistence-durability-classes.md`.
+   */
+  @Provides
+  @Singleton
+  fun provideReceiptDatabase(
+    @ApplicationContext context: Context,
+  ): ReceiptDatabase =
+    Room
+      .databaseBuilder(
+        context,
+        ReceiptDatabase::class.java,
+        "receipts_database",
+      ).build()
 
   @Provides
   fun provideUserDao(database: BorealDatabase): UserDao = database.userDao()
@@ -72,5 +90,5 @@ object DatabaseModule {
   fun provideCacheMetadataDao(database: BorealDatabase): CacheMetadataDao = database.cacheMetadataDao()
 
   @Provides
-  fun provideReceiptDao(database: BorealDatabase): ReceiptDao = database.receiptDao()
+  fun provideReceiptDao(database: ReceiptDatabase): ReceiptDao = database.receiptDao()
 }

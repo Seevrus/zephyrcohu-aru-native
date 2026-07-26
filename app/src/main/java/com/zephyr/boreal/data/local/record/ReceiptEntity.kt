@@ -1,13 +1,7 @@
-package com.zephyr.boreal.data.local
+package com.zephyr.boreal.data.local.record
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.zephyr.boreal.api.dto.response.ReceiptBuyerDto
-import com.zephyr.boreal.api.dto.response.ReceiptItemDto
-import com.zephyr.boreal.api.dto.response.ReceiptOtherItemDto
-import com.zephyr.boreal.api.dto.response.ReceiptUserDto
-import com.zephyr.boreal.api.dto.response.ReceiptVatAmountDto
-import com.zephyr.boreal.api.dto.response.ReceiptVendorDto
 import com.zephyr.boreal.domain.model.InvoiceType
 
 @Entity(tableName = "receipts")
@@ -22,20 +16,20 @@ data class ReceiptEntity(
   val yearCode: Int,
   val cancelSerialNumber: Int?,
   val cancelYearCode: Int?,
-  val vendor: ReceiptVendorDto,
-  val buyer: ReceiptBuyerDto,
+  val vendor: PersistedReceiptVendor,
+  val buyer: PersistedReceiptBuyer,
   val invoiceDate: String,
   val fulfillmentDate: String,
   val invoiceType: InvoiceType,
   val paidDate: String,
-  val user: ReceiptUserDto?,
-  val items: List<ReceiptItemDto>,
-  val otherItems: List<ReceiptOtherItemDto>,
+  val user: PersistedReceiptUser?,
+  val items: List<PersistedReceiptItem>,
+  val otherItems: List<PersistedReceiptOtherItem>,
   val quantity: Double,
   val netAmount: Double,
   val vatAmount: Double,
   val grossAmount: Double,
-  val vatAmounts: List<ReceiptVatAmountDto>,
+  val vatAmounts: List<PersistedReceiptVatAmount>,
   val roundAmount: Double,
   val roundedAmount: Double,
   val lastDownloadedAt: String?,

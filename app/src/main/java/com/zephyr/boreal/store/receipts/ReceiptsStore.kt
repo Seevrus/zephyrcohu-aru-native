@@ -6,7 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.zephyr.boreal.data.local.converters.PersistenceJson
-import com.zephyr.boreal.data.local.dao.ReceiptDao
+import com.zephyr.boreal.data.local.record.ReceiptDao
 import com.zephyr.boreal.data.mapper.toDomain
 import com.zephyr.boreal.data.mapper.toEntity
 import com.zephyr.boreal.domain.model.DraftOrder

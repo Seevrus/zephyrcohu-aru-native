@@ -3,6 +3,7 @@ package com.zephyr.boreal.data.repository
 import com.zephyr.boreal.api.PartnerApiService
 import com.zephyr.boreal.api.dto.request.SearchTaxNumberDataDto
 import com.zephyr.boreal.api.dto.request.SearchTaxNumberRequestDto
+import com.zephyr.boreal.data.local.converters.CacheGroups
 import com.zephyr.boreal.data.local.dao.CacheMetadataDao
 import com.zephyr.boreal.data.local.dao.PartnerDao
 import com.zephyr.boreal.data.local.dao.PartnerListDao
@@ -100,6 +101,7 @@ class PartnersRepository
         },
         queryKey = "search_tax_number_$taxNumber",
         cacheTimeoutMillis = if (forceRefresh) 0L else TAX_NUMBER_CACHE_TIMEOUT_MS,
+        degradeGroup = CacheGroups.TAX_NUMBER_SEARCH,
       )
 
     companion object {
