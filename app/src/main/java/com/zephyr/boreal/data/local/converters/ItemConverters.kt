@@ -5,10 +5,9 @@ import com.zephyr.boreal.api.dto.response.DiscountDto
 import com.zephyr.boreal.api.dto.response.ExpirationDto
 import com.zephyr.boreal.domain.model.PriceListItem
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 class ItemConverters {
-  private val json = Json { ignoreUnknownKeys = true }
+  private val json = PersistenceJson.instance
 
   @TypeConverter
   fun fromExpirationList(value: List<ExpirationDto>): String = json.encodeToString(value)

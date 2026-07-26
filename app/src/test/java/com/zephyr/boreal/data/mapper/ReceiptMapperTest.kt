@@ -11,6 +11,7 @@ import com.zephyr.boreal.domain.model.ReceiptUser
 import com.zephyr.boreal.domain.model.ReceiptVatAmount
 import com.zephyr.boreal.domain.model.ReceiptVendor
 import com.zephyr.boreal.domain.model.SelectedDiscount
+import com.zephyr.boreal.domain.utils.DiscountCalculator
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -97,6 +98,83 @@ class ReceiptMapperTest {
     assertEquals(4, rows.size)
     assertEquals(listOf("Fix", "Százalékos", "Egyedi", null), rows.map { it.discountName })
     assertEquals(listOf(1.0, 1.0, 1.0, 2.0), rows.map { it.quantity })
+  }
+
+  /**
+   * The invariant this task exists to establish: the displayed total (calculateDiscountedLineAmounts)
+   * must equal the sum of the submitted rows (toDtos), for every discount combination. Must pass
+   * against both the pre- and post-refactor implementations.
+   */
+  private fun assertDisplayedTotalMatchesSubmittedRows(
+    quantity: Double,
+    netPrice: Double,
+    selectedDiscounts: List<SelectedDiscount>,
+  ) {
+    val item = buildItem(quantity = quantity, netPrice = netPrice, selectedDiscounts = selectedDiscounts)
+    val displayed =
+      DiscountCalculator.calculateDiscountedLineAmounts(
+        netPrice,
+        quantity,
+        item.vatRate,
+        selectedDiscounts,
+      )
+    val rows = item.toDtos()
+
+    assertEquals(displayed.netAmount, rows.sumOf { it.netAmount })
+    assertEquals(displayed.vatAmount, rows.sumOf { it.vatAmount })
+    assertEquals(displayed.grossAmount, rows.sumOf { it.grossAmount })
+  }
+
+  @Test
+  fun `displayed total matches submitted rows for a single absolute discount with a remainder`() {
+    val discount = SelectedDiscount(id = 1, name = "Fix", type = DiscountType.ABSOLUTE, quantity = 2.0, amount = 20.0)
+    assertDisplayedTotalMatchesSubmittedRows(quantity = 5.0, netPrice = 100.0, selectedDiscounts = listOf(discount))
+  }
+
+  @Test
+  fun `displayed total matches submitted rows for a single percentage discount with no remainder`() {
+    val discount =
+      SelectedDiscount(id = 1, name = "Százalékos", type = DiscountType.PERCENTAGE, quantity = 2.0, amount = 10.0)
+    assertDisplayedTotalMatchesSubmittedRows(quantity = 2.0, netPrice = 100.0, selectedDiscounts = listOf(discount))
+  }
+
+  @Test
+  fun `displayed total matches submitted rows for a single freeForm discount with a remainder`() {
+    val discount =
+      SelectedDiscount(id = 1, name = "Egyedi", type = DiscountType.FREE_FORM, quantity = 1.0, price = 50.0)
+    assertDisplayedTotalMatchesSubmittedRows(quantity = 3.0, netPrice = 100.0, selectedDiscounts = listOf(discount))
+  }
+
+  @Test
+  fun `displayed total matches submitted rows for all three discount types combined with a remainder`() {
+    val absolute = SelectedDiscount(id = 1, name = "Fix", type = DiscountType.ABSOLUTE, quantity = 1.0, amount = 10.0)
+    val percentage =
+      SelectedDiscount(id = 2, name = "Százalékos", type = DiscountType.PERCENTAGE, quantity = 1.0, amount = 20.0)
+    val freeForm =
+      SelectedDiscount(id = 3, name = "Egyedi", type = DiscountType.FREE_FORM, quantity = 1.0, price = 30.0)
+    assertDisplayedTotalMatchesSubmittedRows(
+      quantity = 5.0,
+      netPrice = 100.0,
+      selectedDiscounts = listOf(absolute, percentage, freeForm),
+    )
+  }
+
+  @Test
+  fun `displayed total matches submitted rows when discount quantities sum to exactly the line quantity`() {
+    val discount = SelectedDiscount(id = 1, name = "Fix", type = DiscountType.ABSOLUTE, quantity = 5.0, amount = 20.0)
+    assertDisplayedTotalMatchesSubmittedRows(quantity = 5.0, netPrice = 100.0, selectedDiscounts = listOf(discount))
+  }
+
+  @Test
+  fun `displayed total matches submitted rows when discount quantities sum to more than the line quantity`() {
+    val first = SelectedDiscount(id = 1, name = "Fix", type = DiscountType.ABSOLUTE, quantity = 3.0, amount = 20.0)
+    val second =
+      SelectedDiscount(id = 2, name = "Százalékos", type = DiscountType.PERCENTAGE, quantity = 3.0, amount = 10.0)
+    assertDisplayedTotalMatchesSubmittedRows(
+      quantity = 5.0,
+      netPrice = 100.0,
+      selectedDiscounts = listOf(first, second),
+    )
   }
 
   @Suppress("LongMethod")

@@ -69,15 +69,15 @@ class PrintSectionViewModel
             .orEmpty()
         val partner = partners.find { it.id == receipt?.buyer?.id }
 
-        val canPrint = user != null && receipt != null && (partner != null || receipt.partnerCode.isEmpty())
-
         val receiptToPrint =
-          if (canPrint) {
-            withContext(defaultDispatcher) {
-              PrintReceiptTextBuilder.build(isCancel, requireNotNull(user), requireNotNull(receipt), partner)
-            }
-          } else {
+          if (user == null || receipt == null) {
             null
+          } else if (partner == null && receipt.partnerCode.isNotEmpty()) {
+            null
+          } else {
+            withContext(defaultDispatcher) {
+              PrintReceiptTextBuilder.build(isCancel, user, receipt, partner)
+            }
           }
 
         _uiState.update {

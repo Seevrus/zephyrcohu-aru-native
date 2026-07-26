@@ -5,10 +5,9 @@ import com.zephyr.boreal.api.dto.response.CompanyDto
 import com.zephyr.boreal.domain.model.UserRole
 import com.zephyr.boreal.domain.model.UserState
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 class UserConverters {
-  private val json = Json { ignoreUnknownKeys = true }
+  private val json = PersistenceJson.instance
 
   @TypeConverter
   fun fromUserRoleList(value: List<UserRole>): String = json.encodeToString(value)

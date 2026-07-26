@@ -8,10 +8,9 @@ import com.zephyr.boreal.api.dto.response.ReceiptUserDto
 import com.zephyr.boreal.api.dto.response.ReceiptVatAmountDto
 import com.zephyr.boreal.api.dto.response.ReceiptVendorDto
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 class ReceiptConverters {
-  private val json = Json { ignoreUnknownKeys = true }
+  private val json = PersistenceJson.instance
 
   @TypeConverter
   fun fromReceiptVendorDto(value: ReceiptVendorDto): String = json.encodeToString(value)

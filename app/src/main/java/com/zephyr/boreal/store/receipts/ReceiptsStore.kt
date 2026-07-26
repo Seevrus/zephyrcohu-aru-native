@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.zephyr.boreal.data.local.converters.PersistenceJson
 import com.zephyr.boreal.data.local.dao.ReceiptDao
 import com.zephyr.boreal.data.mapper.toDomain
 import com.zephyr.boreal.data.mapper.toEntity
@@ -28,7 +29,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -52,7 +52,7 @@ class ReceiptsStore
       private const val DRAFT_PERSIST_DEBOUNCE_MS = 300L
     }
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = PersistenceJson.instance
 
     /**
      * Backed by Room, so [addReceipt] only writes to the database — this flow updates

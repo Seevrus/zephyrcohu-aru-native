@@ -6,10 +6,9 @@ import com.zephyr.boreal.api.dto.response.RoundReceiptDto
 import com.zephyr.boreal.api.dto.response.RoundStoreDto
 import com.zephyr.boreal.api.dto.response.RoundUserDto
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 class RoundConverters {
-  private val json = Json { ignoreUnknownKeys = true }
+  private val json = PersistenceJson.instance
 
   @TypeConverter
   fun fromRoundReceiptList(value: List<RoundReceiptDto>): String = json.encodeToString(value)

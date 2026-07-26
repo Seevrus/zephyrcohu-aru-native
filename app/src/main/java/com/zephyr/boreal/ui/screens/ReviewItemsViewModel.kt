@@ -15,6 +15,7 @@ import com.zephyr.boreal.domain.utils.AmountRounding
 import com.zephyr.boreal.domain.utils.ReceiptDates
 import com.zephyr.boreal.domain.utils.buildCreateReceiptRequest
 import com.zephyr.boreal.domain.utils.calculateReceiptTotals
+import com.zephyr.boreal.domain.utils.toggle
 import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.receipts.ReceiptsStore
 import com.zephyr.boreal.store.store.StoreSessionStore
@@ -104,27 +105,11 @@ class ReviewItemsViewModel
     }
 
     fun onToggleExpanded(key: String) {
-      _uiState.update { state ->
-        val newKeys =
-          if (state.expandedItemKeys.contains(key)) {
-            state.expandedItemKeys - key
-          } else {
-            state.expandedItemKeys + key
-          }
-        state.copy(expandedItemKeys = newKeys)
-      }
+      _uiState.update { state -> state.copy(expandedItemKeys = state.expandedItemKeys.toggle(key)) }
     }
 
     fun onToggleOtherItemExpanded(id: Int) {
-      _uiState.update { state ->
-        val newIds =
-          if (state.expandedOtherItemIds.contains(id)) {
-            state.expandedOtherItemIds - id
-          } else {
-            state.expandedOtherItemIds + id
-          }
-        state.copy(expandedOtherItemIds = newIds)
-      }
+      _uiState.update { state -> state.copy(expandedOtherItemIds = state.expandedOtherItemIds.toggle(id)) }
     }
 
     fun removeItem(

@@ -3,7 +3,7 @@ package com.zephyr.boreal.domain.utils
 import kotlin.math.round
 
 object AmountCalculator {
-  private const val PERCENTAGE_DIVISOR = 100.0
+  const val PERCENTAGE_DIVISOR = 100.0
 
   /**
    * Calculates the exact VAT amount based on the net amount and VAT rate.

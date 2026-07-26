@@ -4,10 +4,9 @@ import androidx.room.TypeConverter
 import com.zephyr.boreal.api.dto.response.StoreUserDto
 import com.zephyr.boreal.domain.model.StoreDetailsExpiration
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 class StoreConverters {
-  private val json = Json { ignoreUnknownKeys = true }
+  private val json = PersistenceJson.instance
 
   @TypeConverter
   fun fromUser(value: StoreUserDto?): String? = value?.let { json.encodeToString(it) }

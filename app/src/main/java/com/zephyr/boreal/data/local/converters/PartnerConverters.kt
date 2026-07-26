@@ -6,10 +6,9 @@ import com.zephyr.boreal.api.dto.response.PartnerLocationDto
 import com.zephyr.boreal.domain.model.InvoiceType
 import com.zephyr.boreal.domain.model.PartnerLocation
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 class PartnerConverters {
-  private val json = Json { ignoreUnknownKeys = true }
+  private val json = PersistenceJson.instance
 
   @TypeConverter
   fun fromPartnerLocationList(value: List<PartnerLocationDto>): String = json.encodeToString(value)

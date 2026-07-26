@@ -72,13 +72,16 @@ class BorealPrinter
           val printerDevice = bluetoothAdapter.getRemoteDevice(address)
           val uuid = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb")
 
-          printerSocket = printerDevice.createRfcommSocketToServiceRecord(uuid)
-          printerSocket!!.connect()
+          val socket = printerDevice.createRfcommSocketToServiceRecord(uuid)
+          socket.connect()
+          printerSocket = socket
 
-          printerSocketInputStream = printerSocket!!.inputStream
-          printerSocketOutputStream = printerSocket!!.outputStream
+          val inputStream = socket.inputStream
+          val outputStream = socket.outputStream
+          printerSocketInputStream = inputStream
+          printerSocketOutputStream = outputStream
 
-          initializePrinter(printerSocketInputStream!!, printerSocketOutputStream!!)
+          initializePrinter(inputStream, outputStream)
           printer?.beep()
           printer?.flush()
 
@@ -163,12 +166,13 @@ class BorealPrinter
       inputStream: InputStream,
       outputStream: OutputStream,
     ) {
-      protocolAdapter = ProtocolAdapter(inputStream, outputStream)
+      val adapter = ProtocolAdapter(inputStream, outputStream)
+      protocolAdapter = adapter
 
-      if (protocolAdapter!!.isProtocolEnabled) {
-        protocolAdapter!!.setPrinterListener(printerListener)
+      if (adapter.isProtocolEnabled) {
+        adapter.setPrinterListener(printerListener)
 
-        val channel = protocolAdapter!!.getChannel(ProtocolAdapter.CHANNEL_PRINTER)
+        val channel = adapter.getChannel(ProtocolAdapter.CHANNEL_PRINTER)
         printer =
           Printer(
             channel.inputStream,
@@ -177,8 +181,8 @@ class BorealPrinter
       } else {
         printer =
           Printer(
-            protocolAdapter!!.rawInputStream,
-            protocolAdapter!!.rawOutputStream,
+            adapter.rawInputStream,
+            adapter.rawOutputStream,
           )
       }
     }
