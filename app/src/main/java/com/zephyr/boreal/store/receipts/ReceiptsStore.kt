@@ -14,10 +14,13 @@ import com.zephyr.boreal.domain.model.Receipt
 import com.zephyr.boreal.domain.model.TempSelection
 import com.zephyr.boreal.store.core.ApplicationScope
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -40,6 +43,13 @@ class ReceiptsStore
     companion object {
       private const val TAG = "ReceiptsStore"
       val DRAFT_SELL_FLOW_STATE = stringPreferencesKey("draft_sell_flow_state")
+
+      /**
+       * Max window in which a process death loses draft edits made after the last debounced
+       * write landed. 300ms is the write-amplification/data-loss-window trade-off for a
+       * per-keystroke draft (Select Items quantity changes).
+       */
+      private const val DRAFT_PERSIST_DEBOUNCE_MS = 300L
     }
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -54,7 +64,16 @@ class ReceiptsStore
       receiptDao
         .getAllReceipts()
         .map { entities -> entities.map { it.toDomain() } }
-        .stateIn(scope = scope, started = SharingStarted.Eagerly, initialValue = emptyList())
+        .stateIn(scope = scope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
+
+    /** Looks the receipt up directly rather than scanning [receipts], so callers don't pay for
+     * the full list and aren't affected by [receipts]' `WhileSubscribed` staleness window. */
+    fun receiptBySerialNumber(serialNumber: Int): Flow<Receipt?> =
+      receiptDao.findBySerialNumber(serialNumber).map { it?.toDomain() }
+
+    /** Reads the database directly rather than [receipts], which can lag behind [addReceipt]. */
+    suspend fun nextAvailableSerialNumber(firstAvailableSerialNumber: Int): Int =
+      (receiptDao.getMaxSerialNumber() ?: (firstAvailableSerialNumber - 1)) + 1
 
     private val _currentReceipt = MutableStateFlow<DraftReceipt?>(null)
     val currentReceipt: StateFlow<DraftReceipt?> = _currentReceipt.asStateFlow()
@@ -71,6 +90,13 @@ class ReceiptsStore
     private val _otherItemSelections = MutableStateFlow<Map<Int, TempSelection>>(emptyMap())
     val otherItemSelections: StateFlow<Map<Int, TempSelection>> = _otherItemSelections.asStateFlow()
 
+    /**
+     * Single source of pending draft writes. Mutators update this (via [scheduleDraftPersist])
+     * instead of launching their own [dataStore] write, so a burst of edits collapses into one
+     * debounced write instead of racing independent coroutines — see [DRAFT_PERSIST_DEBOUNCE_MS].
+     */
+    private val draftSnapshot = MutableStateFlow<DraftSellFlowState?>(null)
+
     init {
       scope.launch {
         val decoded = decodeDraftState(dataStore.data.first())
@@ -79,6 +105,15 @@ class ReceiptsStore
         _selectedItems.value = decoded.selectedItems
         _selectedOrderItems.value = decoded.selectedOrderItems
         _otherItemSelections.value = decoded.otherItemSelections
+      }
+      scope.launch {
+        draftSnapshot
+          .debounce(DRAFT_PERSIST_DEBOUNCE_MS)
+          .collectLatest { snapshot ->
+            if (snapshot != null) {
+              dataStore.edit { it[DRAFT_SELL_FLOW_STATE] = json.encodeToString(snapshot) }
+            }
+          }
       }
     }
 
@@ -92,8 +127,8 @@ class ReceiptsStore
       }
     }
 
-    private fun persistDraftState() {
-      val snapshot =
+    private fun scheduleDraftPersist() {
+      draftSnapshot.value =
         DraftSellFlowState(
           currentReceipt = _currentReceipt.value,
           currentOrder = _currentOrder.value,
@@ -101,9 +136,6 @@ class ReceiptsStore
           selectedOrderItems = _selectedOrderItems.value,
           otherItemSelections = _otherItemSelections.value,
         )
-      scope.launch {
-        dataStore.edit { it[DRAFT_SELL_FLOW_STATE] = json.encodeToString(snapshot) }
-      }
     }
 
     /** [receipts] does not reflect this receipt until Room re-queries — see its KDoc. */
@@ -122,6 +154,7 @@ class ReceiptsStore
       _selectedOrderItems.value = emptyMap()
       _currentOrder.value = null
       _otherItemSelections.value = emptyMap()
+      draftSnapshot.value = null
       dataStore.edit { it.remove(DRAFT_SELL_FLOW_STATE) }
     }
 
@@ -137,17 +170,18 @@ class ReceiptsStore
       _selectedOrderItems.value = emptyMap()
       _currentOrder.value = null
       _otherItemSelections.value = emptyMap()
+      draftSnapshot.value = null
       dataStore.edit { it.remove(DRAFT_SELL_FLOW_STATE) }
     }
 
     fun setCurrentReceipt(receipt: DraftReceipt?) {
       _currentReceipt.value = receipt
-      persistDraftState()
+      scheduleDraftPersist()
     }
 
     fun setCurrentOrder(order: DraftOrder?) {
       _currentOrder.value = order
-      persistDraftState()
+      scheduleDraftPersist()
     }
 
     fun upsertSelectedItem(
@@ -169,7 +203,7 @@ class ReceiptsStore
           current + (itemId to itemMap)
         }
       }
-      persistDraftState()
+      scheduleDraftPersist()
     }
 
     fun upsertOrderItem(
@@ -183,7 +217,7 @@ class ReceiptsStore
           current + (itemId to quantity)
         }
       }
-      persistDraftState()
+      scheduleDraftPersist()
     }
 
     fun updateCurrentReceipt(updateFn: (DraftReceipt) -> DraftReceipt) {
@@ -191,11 +225,11 @@ class ReceiptsStore
         val active = current ?: DraftReceipt()
         updateFn(active)
       }
-      persistDraftState()
+      scheduleDraftPersist()
     }
 
     fun setOtherItemSelections(selections: Map<Int, TempSelection>) {
       _otherItemSelections.value = selections
-      persistDraftState()
+      scheduleDraftPersist()
     }
   }

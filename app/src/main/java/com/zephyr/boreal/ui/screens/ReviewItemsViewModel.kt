@@ -9,7 +9,6 @@ import com.zephyr.boreal.data.repository.UserRepository
 import com.zephyr.boreal.domain.model.DraftReceipt
 import com.zephyr.boreal.domain.model.DraftReceiptItem
 import com.zephyr.boreal.domain.model.InvoiceType
-import com.zephyr.boreal.domain.model.Receipt
 import com.zephyr.boreal.domain.model.ReceiptOtherItem
 import com.zephyr.boreal.domain.model.User
 import com.zephyr.boreal.domain.utils.AmountRounding
@@ -55,6 +54,7 @@ data class ReviewItemsUiState(
   val isSentWithErrors: Boolean = false,
   val errorMessage: String? = null,
   val successMessage: String? = null,
+  val createdReceiptSerialNumber: Int? = null,
 )
 
 @HiltViewModel
@@ -253,7 +253,7 @@ class ReviewItemsViewModel
         }
       val roundAmount = roundedAmount - totals.grossAmount
 
-      val serialNumber = nextAvailableSerialNumber(receiptsStore.receipts.value, store.firstAvailableSerialNumber ?: 0)
+      val serialNumber = receiptsStore.nextAvailableSerialNumber(store.firstAvailableSerialNumber ?: 0)
 
       val request =
         buildCreateReceiptRequest(
@@ -286,6 +286,7 @@ class ReviewItemsViewModel
               successMessage = "Számla sikeresen beküldve.",
               isSentSuccessfully = true,
               isSent = true,
+              createdReceiptSerialNumber = result.data.serialNumber,
             )
           }
         }
@@ -336,16 +337,6 @@ class ReviewItemsViewModel
           isSent = true,
         )
       }
-    }
-
-    private fun nextAvailableSerialNumber(
-      receipts: List<Receipt>,
-      firstAvailableSerialNumber: Int,
-    ): Int {
-      if (receipts.isEmpty()) {
-        return firstAvailableSerialNumber
-      }
-      return receipts.maxOf { maxOf(it.serialNumber, it.cancelSerialNumber ?: 0) } + 1
     }
 
     /**

@@ -55,7 +55,7 @@ class PrintSectionViewModel
       initialized = true
 
       viewModelScope.launch {
-        val receipt = receiptsStore.receipts.value.find { it.serialNumber == receiptSerialNumber }
+        val receipt = receiptsStore.receiptBySerialNumber(receiptSerialNumber).first()
         val user = userRepository.getCurrentUser().first().getOrNull()
         val partners =
           partnersRepository

@@ -29,6 +29,7 @@ import com.zephyr.boreal.store.store.StoreSessionStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -62,7 +63,6 @@ class ReviewItemsViewModelTest {
 
   private val currentReceiptFlow = MutableStateFlow<DraftReceipt?>(null)
   private val currentOrderFlow = MutableStateFlow<DraftOrder?>(null)
-  private val receiptsFlow = MutableStateFlow<List<Receipt>>(emptyList())
   private val userFlow = MutableStateFlow<ApiResource<User?>>(ApiResource.Success(null))
   private val storeFlow = MutableStateFlow<StoreDetails?>(null)
   private val isInternetReachableFlow = MutableStateFlow(true)
@@ -214,13 +214,15 @@ class ReviewItemsViewModelTest {
 
   @BeforeEach
   fun setUp() {
-    Dispatchers.setMain(testDispatcher)
-    whenever(receiptsStore.currentReceipt).thenReturn(currentReceiptFlow)
-    whenever(receiptsStore.currentOrder).thenReturn(currentOrderFlow)
-    whenever(receiptsStore.receipts).thenReturn(receiptsFlow)
-    whenever(userRepository.getCurrentUser()).thenReturn(userFlow)
-    whenever(storeSessionStore.selectedStoreCurrentState).thenReturn(storeFlow)
-    whenever(connectivityObserver.isInternetReachable).thenReturn(isInternetReachableFlow)
+    runBlocking {
+      Dispatchers.setMain(testDispatcher)
+      whenever(receiptsStore.currentReceipt).thenReturn(currentReceiptFlow)
+      whenever(receiptsStore.currentOrder).thenReturn(currentOrderFlow)
+      whenever(receiptsStore.nextAvailableSerialNumber(any())).thenReturn(100)
+      whenever(userRepository.getCurrentUser()).thenReturn(userFlow)
+      whenever(storeSessionStore.selectedStoreCurrentState).thenReturn(storeFlow)
+      whenever(connectivityObserver.isInternetReachable).thenReturn(isInternetReachableFlow)
+    }
   }
 
   @AfterEach
@@ -664,6 +666,26 @@ class ReviewItemsViewModelTest {
       assertTrue(viewModel.uiState.value.isSentSuccessfully)
       assertFalse(viewModel.uiState.value.showFinalizeConfirmation)
       assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+  @Test
+  fun `confirmFinalize allocates the serial number from receiptsStore and records it on success`() =
+    runTest {
+      currentReceiptFlow.value = buildDraft()
+      userFlow.value = ApiResource.Success(buildUser())
+      storeFlow.value = buildStore()
+      whenever(receiptsStore.nextAvailableSerialNumber(100)).thenReturn(150)
+      whenever(receiptsRepository.createReceipt(any())).thenReturn(ApiResource.Success(buildReceipt()))
+      val viewModel = createViewModel()
+      runCurrent()
+
+      viewModel.confirmFinalize()
+      runCurrent()
+
+      val captor = argumentCaptor<com.zephyr.boreal.api.dto.request.CreateReceiptRequestDataDto>()
+      verify(receiptsRepository).createReceipt(captor.capture())
+      assertEquals(150, captor.firstValue.serialNumber)
+      assertEquals(buildReceipt().serialNumber, viewModel.uiState.value.createdReceiptSerialNumber)
     }
 
   @Test

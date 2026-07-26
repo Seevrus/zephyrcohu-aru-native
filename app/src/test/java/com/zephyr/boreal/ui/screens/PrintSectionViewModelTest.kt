@@ -14,7 +14,6 @@ import com.zephyr.boreal.domain.model.UserState
 import com.zephyr.boreal.store.receipts.ReceiptsStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -26,6 +25,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -38,7 +38,6 @@ class PrintSectionViewModelTest {
   private val partnersRepository: PartnersRepository = mock()
   private val userRepository: UserRepository = mock()
 
-  private val receiptsFlow = MutableStateFlow<List<Receipt>>(emptyList())
   private val testDispatcher = StandardTestDispatcher()
 
   private val company =
@@ -158,7 +157,6 @@ class PrintSectionViewModelTest {
   @BeforeEach
   fun setUp() {
     Dispatchers.setMain(testDispatcher)
-    whenever(receiptsStore.receipts).thenReturn(receiptsFlow)
   }
 
   @AfterEach
@@ -166,12 +164,19 @@ class PrintSectionViewModelTest {
     Dispatchers.resetMain()
   }
 
+  private fun stubReceipt(
+    serialNumber: Int,
+    receipt: Receipt?,
+  ) {
+    whenever(receiptsStore.receiptBySerialNumber(serialNumber)).thenReturn(flowOf(receipt))
+  }
+
   private fun createViewModel() = PrintSectionViewModel(receiptsStore, partnersRepository, userRepository)
 
   @Test
   fun `initialize resolves the receipt by serial number and builds printable text`() =
     runTest(testDispatcher) {
-      receiptsFlow.value = listOf(buildReceipt(serialNumber = 101), buildReceipt(serialNumber = 102))
+      stubReceipt(102, buildReceipt(serialNumber = 102))
       whenever(userRepository.getCurrentUser()).thenReturn(flowOf(ApiResource.Success(user)))
       whenever(partnersRepository.getPartners()).thenReturn(flowOf(ApiResource.Success(listOf(partner))))
 
@@ -192,7 +197,7 @@ class PrintSectionViewModelTest {
   @Test
   fun `canPrint is false when no user is available`() =
     runTest(testDispatcher) {
-      receiptsFlow.value = listOf(buildReceipt())
+      stubReceipt(101, buildReceipt())
       whenever(userRepository.getCurrentUser()).thenReturn(flowOf(ApiResource.Success(null)))
       whenever(partnersRepository.getPartners()).thenReturn(flowOf(ApiResource.Success(listOf(partner))))
 
@@ -206,7 +211,7 @@ class PrintSectionViewModelTest {
   @Test
   fun `canPrint is false when the receipt is not found`() =
     runTest(testDispatcher) {
-      receiptsFlow.value = emptyList()
+      stubReceipt(999, null)
       whenever(userRepository.getCurrentUser()).thenReturn(flowOf(ApiResource.Success(user)))
       whenever(partnersRepository.getPartners()).thenReturn(flowOf(ApiResource.Success(listOf(partner))))
 
@@ -221,7 +226,7 @@ class PrintSectionViewModelTest {
   @Test
   fun `canPrint is false when the partner is missing and the receipt is not ad-hoc`() =
     runTest(testDispatcher) {
-      receiptsFlow.value = listOf(buildReceipt(partnerCode = "P007"))
+      stubReceipt(101, buildReceipt(partnerCode = "P007"))
       whenever(userRepository.getCurrentUser()).thenReturn(flowOf(ApiResource.Success(user)))
       whenever(partnersRepository.getPartners()).thenReturn(flowOf(ApiResource.Success(emptyList())))
 
@@ -235,7 +240,7 @@ class PrintSectionViewModelTest {
   @Test
   fun `canPrint is true for an ad-hoc receipt even when no matching partner exists`() =
     runTest(testDispatcher) {
-      receiptsFlow.value = listOf(buildReceipt(partnerCode = ""))
+      stubReceipt(101, buildReceipt(partnerCode = ""))
       whenever(userRepository.getCurrentUser()).thenReturn(flowOf(ApiResource.Success(user)))
       whenever(partnersRepository.getPartners()).thenReturn(flowOf(ApiResource.Success(emptyList())))
 
@@ -250,7 +255,7 @@ class PrintSectionViewModelTest {
   @Test
   fun `onPrintSuccess marks the receipt printed exactly once`() =
     runTest(testDispatcher) {
-      receiptsFlow.value = listOf(buildReceipt(isPrinted = false))
+      stubReceipt(101, buildReceipt(isPrinted = false))
       whenever(userRepository.getCurrentUser()).thenReturn(flowOf(ApiResource.Success(user)))
       whenever(partnersRepository.getPartners()).thenReturn(flowOf(ApiResource.Success(listOf(partner))))
 
@@ -269,7 +274,7 @@ class PrintSectionViewModelTest {
   @Test
   fun `onPrintSuccess is a no-op when the receipt is already printed`() =
     runTest(testDispatcher) {
-      receiptsFlow.value = listOf(buildReceipt(isPrinted = true))
+      stubReceipt(101, buildReceipt(isPrinted = true))
       whenever(userRepository.getCurrentUser()).thenReturn(flowOf(ApiResource.Success(user)))
       whenever(partnersRepository.getPartners()).thenReturn(flowOf(ApiResource.Success(listOf(partner))))
 
@@ -280,6 +285,6 @@ class PrintSectionViewModelTest {
       viewModel.onPrintSuccess()
       advanceUntilIdle()
 
-      verify(receiptsStore, never()).markReceiptPrinted(org.mockito.kotlin.any())
+      verify(receiptsStore, never()).markReceiptPrinted(any())
     }
 }

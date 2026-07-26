@@ -143,7 +143,10 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
     composable("review_items") {
       ReviewItemsRoute(navController)
     }
-    composable("summary") {
+    composable(
+      "summary/{serialNumber}",
+      arguments = listOf(navArgument("serialNumber") { type = NavType.IntType }),
+    ) {
       SummaryRoute(navController)
     }
     composable("select_other_items") {
@@ -363,8 +366,8 @@ private fun ReviewItemsRoute(navController: androidx.navigation.NavHostControlle
     onNavigateToDiscounts = { itemId, expirationId ->
       navController.navigate("discounts/$itemId/$expirationId")
     },
-    onNavigateToSummary = {
-      navController.navigate("summary") {
+    onNavigateToSummary = { serialNumber ->
+      navController.navigate("summary/$serialNumber") {
         popUpTo(0) { inclusive = true }
       }
     },

@@ -27,10 +27,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
@@ -89,8 +92,11 @@ class ReceiptsStoreTest {
   ) : DataStore<Preferences> {
     private val state = MutableStateFlow(initial)
     override val data: Flow<Preferences> = state
+    var writeCount = 0
+      private set
 
     override suspend fun updateData(transform: suspend (Preferences) -> Preferences): Preferences {
+      writeCount++
       val updated = transform(state.value)
       state.value = updated
       return updated
@@ -268,6 +274,8 @@ class ReceiptsStoreTest {
       whenever(receiptDao.getAllReceipts()).thenReturn(flowOf(listOf(entity1, entity2)))
 
       val store = ReceiptsStore(receiptDao, createTestDataStore(), testScope)
+      // receipts uses WhileSubscribed, so a subscriber is required before .value reflects the DAO.
+      testScope.launch { store.receipts.collect() }
       runCurrent()
 
       assertEquals(listOf(entity1.toDomain(), entity2.toDomain()), store.receipts.value)
@@ -395,7 +403,7 @@ class ReceiptsStoreTest {
       firstStore.upsertOrderItem(itemId = 2, quantity = 5.0)
       firstStore.setCurrentOrder(DraftOrder(partnerId = 9, orderedAt = "2026-07-01 08:00:00", items = emptyList()))
       firstStore.setOtherItemSelections(mapOf(3 to TempSelection(netPrice = 800.0, quantity = 1, comment = "note")))
-      runCurrent()
+      advanceUntilIdle()
 
       val secondStore = ReceiptsStore(receiptDao, sharedDataStore, testScope)
       runCurrent()
@@ -444,5 +452,44 @@ class ReceiptsStoreTest {
 
       assertNull(store.currentReceipt.value)
       assertTrue(store.selectedItems.value.isEmpty())
+    }
+
+  @Test
+  fun `a burst of draft mutations persists once, with the last snapshot`() =
+    runTest(testDispatcher) {
+      val receiptDao: ReceiptDao = mock()
+      whenever(receiptDao.getAllReceipts()).thenReturn(flowOf(emptyList()))
+      val dataStore = FakeDataStore()
+      val store = ReceiptsStore(receiptDao, dataStore, testScope)
+      runCurrent()
+
+      repeat(5) { i -> store.upsertSelectedItem(itemId = 1, expirationId = 1, quantity = (i + 1).toDouble()) }
+      // Nothing has been written yet: the debounce window hasn't elapsed.
+      assertEquals(0, dataStore.writeCount)
+
+      advanceUntilIdle()
+
+      assertEquals(1, dataStore.writeCount)
+      assertEquals(mapOf(1 to mapOf(1 to 5.0)), store.selectedItems.value)
+    }
+
+  @Test
+  fun `resetSellFlowDraft is not overtaken by a stale in-flight debounced write`() =
+    runTest(testDispatcher) {
+      val receiptDao: ReceiptDao = mock()
+      whenever(receiptDao.getAllReceipts()).thenReturn(flowOf(emptyList()))
+      val dataStore = FakeDataStore()
+      val store = ReceiptsStore(receiptDao, dataStore, testScope)
+      runCurrent()
+
+      store.setCurrentReceipt(DraftReceipt(partnerId = 9))
+      // The debounced write for the mutation above is still pending when the reset happens.
+      store.resetSellFlowDraft()
+      advanceUntilIdle()
+
+      val secondStore = ReceiptsStore(receiptDao, dataStore, testScope)
+      runCurrent()
+
+      assertNull(secondStore.currentReceipt.value)
     }
 }

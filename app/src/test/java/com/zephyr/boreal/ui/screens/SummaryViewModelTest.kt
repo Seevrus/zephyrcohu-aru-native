@@ -1,5 +1,6 @@
 package com.zephyr.boreal.ui.screens
 
+import androidx.lifecycle.SavedStateHandle
 import com.zephyr.boreal.domain.model.InvoiceType
 import com.zephyr.boreal.domain.model.Receipt
 import com.zephyr.boreal.domain.model.ReceiptBuyer
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -33,7 +35,7 @@ class SummaryViewModelTest {
   private val receiptsStore: ReceiptsStore = mock()
   private val connectivityObserver: ConnectivityObserver = mock()
 
-  private val receiptsFlow = MutableStateFlow<List<Receipt>>(emptyList())
+  private val receiptFlow = MutableStateFlow<Receipt?>(null)
   private val isInternetReachableFlow = MutableStateFlow(true)
 
   private val testDispatcher = StandardTestDispatcher()
@@ -107,7 +109,7 @@ class SummaryViewModelTest {
   @BeforeEach
   fun setUp() {
     Dispatchers.setMain(testDispatcher)
-    whenever(receiptsStore.receipts).thenReturn(receiptsFlow)
+    whenever(receiptsStore.receiptBySerialNumber(any())).thenReturn(receiptFlow)
     whenever(connectivityObserver.isInternetReachable).thenReturn(isInternetReachableFlow)
   }
 
@@ -116,13 +118,16 @@ class SummaryViewModelTest {
     Dispatchers.resetMain()
   }
 
-  private fun createViewModel() = SummaryViewModel(receiptsStore, connectivityObserver)
+  private fun createViewModel(serialNumber: Int = 102) =
+    SummaryViewModel(SavedStateHandle(mapOf("serialNumber" to serialNumber)), receiptsStore, connectivityObserver)
 
   @Test
-  fun `uiState reads the last finalized receipt`() =
+  fun `uiState resolves the receipt by serial number regardless of other receipts`() =
     runTest(testDispatcher) {
-      receiptsFlow.value = listOf(buildReceipt(id = 1, serialNumber = 101), buildReceipt(id = 2, serialNumber = 102))
-      val viewModel = createViewModel()
+      whenever(receiptsStore.receiptBySerialNumber(102)).thenReturn(receiptFlow)
+      // Another receipt ordered ahead of the target one must not affect resolution.
+      receiptFlow.value = buildReceipt(id = 2, serialNumber = 102)
+      val viewModel = createViewModel(serialNumber = 102)
       runCurrent()
 
       assertEquals(
@@ -176,7 +181,7 @@ class SummaryViewModelTest {
     }
 
   @Test
-  fun `receipt is null when no receipts exist yet`() =
+  fun `receipt is null when no matching receipt exists yet`() =
     runTest(testDispatcher) {
       val viewModel = createViewModel()
       runCurrent()

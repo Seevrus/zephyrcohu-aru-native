@@ -1,5 +1,6 @@
 package com.zephyr.boreal.ui.screens
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zephyr.boreal.domain.model.Receipt
@@ -14,6 +15,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private const val NO_ARG = -1
+
 data class SummaryUiState(
   val receipt: Receipt? = null,
   val isInternetReachable: Boolean = true,
@@ -24,9 +27,12 @@ data class SummaryUiState(
 class SummaryViewModel
   @Inject
   constructor(
+    savedStateHandle: SavedStateHandle,
     private val receiptsStore: ReceiptsStore,
     connectivityObserver: ConnectivityObserver,
   ) : ViewModel() {
+    private val serialNumber: Int = savedStateHandle.get<Int>("serialNumber") ?: NO_ARG
+
     private val _uiState = MutableStateFlow(SummaryUiState())
     val uiState: StateFlow<SummaryUiState> = _uiState.asStateFlow()
 
@@ -35,9 +41,9 @@ class SummaryViewModel
     init {
       viewModelScope.launch {
         combine(
-          receiptsStore.receipts,
+          receiptsStore.receiptBySerialNumber(serialNumber),
           connectivityObserver.isInternetReachable,
-        ) { receipts, isOnline -> receipts.lastOrNull() to isOnline }
+        ) { receipt, isOnline -> receipt to isOnline }
           .collect { (receipt, isOnline) ->
             _uiState.update { it.copy(receipt = receipt, isInternetReachable = isOnline) }
           }
