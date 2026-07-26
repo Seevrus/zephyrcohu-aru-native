@@ -90,6 +90,6 @@ open class BluetoothHelper(
   private fun getDevTestDevice(): BluetoothDeviceData =
     BluetoothDeviceData(
       name = context.getString(R.string.bluetooth_dev_test_device),
-      address = "00:00:00:00:00:00",
+      address = BorealPrinter.DEV_PRINTER_ADDRESS,
     )
 }

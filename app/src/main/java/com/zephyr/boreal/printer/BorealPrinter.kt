@@ -37,6 +37,7 @@ class BorealPrinter
     companion object {
       private const val TAG = "BorealPrinter"
       private const val PAPER_FEED_AMOUNT = 110
+      const val DEV_PRINTER_ADDRESS = "00:00:00:00:00:00"
     }
 
     private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -47,6 +48,7 @@ class BorealPrinter
     private var printerSocketInputStream: InputStream? = null
     private var printerSocketOutputStream: OutputStream? = null
     private var protocolAdapter: ProtocolAdapter? = null
+    private var isDevPrinter = false
 
     private val printerListener = BorealPrinterListener()
 
@@ -61,8 +63,9 @@ class BorealPrinter
             )
           }
 
-          if (address == "00:00:00:00:00:00") {
+          if (address == DEV_PRINTER_ADDRESS) {
             // Dev Test mock
+            isDevPrinter = true
             return@withContext Result.success(Unit)
           }
 
@@ -98,6 +101,7 @@ class BorealPrinter
           protocolAdapter = null
           printerSocketInputStream = null
           printerSocketOutputStream = null
+          isDevPrinter = false
 
           Result.success(Unit)
         } catch (e: Exception) {
@@ -109,11 +113,11 @@ class BorealPrinter
     suspend fun printTaggedText(taggedText: String): Result<PrintOutcome> =
       withContext(Dispatchers.IO) {
         try {
+          if (isDevPrinter) {
+            return@withContext Result.success(PrintOutcome.SaveToFile(taggedText))
+          }
+
           if (printer == null) {
-            // Check if mock dev test
-            if (printerSocket == null) {
-              return@withContext Result.success(PrintOutcome.SaveToFile(taggedText))
-            }
             return@withContext Result.failure(
               Exception(context.getString(R.string.printer_error_not_connected)),
             )

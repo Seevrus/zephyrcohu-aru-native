@@ -32,7 +32,7 @@ class BorealPrinterTest {
   @Test
   fun `connect to dev test address should return success`() =
     runTest {
-      val result = borealPrinter.connect("00:00:00:00:00:00")
+      val result = borealPrinter.connect(BorealPrinter.DEV_PRINTER_ADDRESS)
 
       assertTrue(result.isSuccess)
     }
@@ -41,7 +41,7 @@ class BorealPrinterTest {
   fun `printTaggedText in dev test mode should return a SaveToFile outcome carrying the text`() =
     runTest {
       // connect to dev test first
-      borealPrinter.connect("00:00:00:00:00:00")
+      borealPrinter.connect(BorealPrinter.DEV_PRINTER_ADDRESS)
 
       val result = borealPrinter.printTaggedText("Test Text")
 
@@ -55,5 +55,18 @@ class BorealPrinterTest {
       val result = borealPrinter.disconnect()
 
       assertTrue(result.isSuccess)
+    }
+
+  @Test
+  fun `printTaggedText on a real address with no live connection returns a not-connected failure, not SaveToFile`() =
+    runTest {
+      // A real (non-dev) address whose connect attempt fails against the mocked adapter, leaving
+      // no live `printer` and `isDevPrinter` false — this must report "not connected", never
+      // silently fall back to the dev save-to-file outcome.
+      borealPrinter.connect("11:22:33:44:55:66")
+
+      val result = borealPrinter.printTaggedText("Test Text")
+
+      assertTrue(result.isFailure)
     }
 }

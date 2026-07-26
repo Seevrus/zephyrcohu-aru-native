@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.zephyr.boreal.printer.BorealPrinter
 import com.zephyr.boreal.ui.theme.BorealTheme
 import org.junit.Rule
 import org.junit.Test
@@ -52,7 +53,7 @@ class PrinterConnectorContentTest {
       uiState =
         PrinterConnectorUiState(
           isBluetoothEnabled = true,
-          selectedPrinterAddress = "00:00:00:00:00:00",
+          selectedPrinterAddress = BorealPrinter.DEV_PRINTER_ADDRESS,
           phase = PrinterConnectorPhase.IDLE,
         ),
       onConnectClick = onConnectClick,
@@ -69,7 +70,7 @@ class PrinterConnectorContentTest {
       uiState =
         PrinterConnectorUiState(
           isBluetoothEnabled = true,
-          selectedPrinterAddress = "00:00:00:00:00:00",
+          selectedPrinterAddress = BorealPrinter.DEV_PRINTER_ADDRESS,
           phase = PrinterConnectorPhase.CONNECTING,
         ),
     )
@@ -84,7 +85,7 @@ class PrinterConnectorContentTest {
       uiState =
         PrinterConnectorUiState(
           isBluetoothEnabled = true,
-          selectedPrinterAddress = "00:00:00:00:00:00",
+          selectedPrinterAddress = BorealPrinter.DEV_PRINTER_ADDRESS,
           phase = PrinterConnectorPhase.CONNECTED,
         ),
       onPrintClick = onPrintClick,
@@ -101,7 +102,7 @@ class PrinterConnectorContentTest {
       uiState =
         PrinterConnectorUiState(
           isBluetoothEnabled = true,
-          selectedPrinterAddress = "00:00:00:00:00:00",
+          selectedPrinterAddress = BorealPrinter.DEV_PRINTER_ADDRESS,
           phase = PrinterConnectorPhase.PRINTING,
         ),
     )

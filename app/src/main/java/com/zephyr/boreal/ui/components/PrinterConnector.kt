@@ -13,6 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -48,10 +51,18 @@ fun PrinterConnector(
     }
   }
 
+  var lastHandledPrintSuccessToken by remember { mutableIntStateOf(uiState.printSuccessToken) }
+  LaunchedEffect(uiState.printSuccessToken) {
+    if (uiState.printSuccessToken != lastHandledPrintSuccessToken) {
+      lastHandledPrintSuccessToken = uiState.printSuccessToken
+      onPrintSuccess()
+    }
+  }
+
   PrinterConnectorContent(
     uiState = uiState,
     onConnectClick = viewModel::connect,
-    onPrintClick = { viewModel.print(textToPrint, suggestedFileName, onPrintSuccess) },
+    onPrintClick = { viewModel.print(textToPrint, suggestedFileName) },
     modifier = modifier,
   )
 }

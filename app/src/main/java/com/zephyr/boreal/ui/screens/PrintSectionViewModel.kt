@@ -4,17 +4,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zephyr.boreal.data.repository.PartnersRepository
 import com.zephyr.boreal.data.repository.UserRepository
-import com.zephyr.boreal.domain.model.Receipt
+import com.zephyr.boreal.di.DefaultDispatcher
 import com.zephyr.boreal.domain.utils.DevPrintFileNameBuilder
 import com.zephyr.boreal.domain.utils.PrintReceiptTextBuilder
 import com.zephyr.boreal.store.receipts.ReceiptsStore
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 data class PrintSectionUiState(
@@ -23,6 +25,8 @@ data class PrintSectionUiState(
   val copyCount: Int = 0,
   val receiptToPrint: String? = null,
   val suggestedFileName: String = "",
+  val receiptId: Int? = null,
+  val isPrinted: Boolean = false,
 )
 
 /**
@@ -37,22 +41,22 @@ class PrintSectionViewModel
     private val receiptsStore: ReceiptsStore,
     private val partnersRepository: PartnersRepository,
     private val userRepository: UserRepository,
+    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
   ) : ViewModel() {
     private val _uiState = MutableStateFlow(PrintSectionUiState())
     val uiState: StateFlow<PrintSectionUiState> = _uiState.asStateFlow()
 
-    private var initialized = false
-    private var currentReceipt: Receipt? = null
-    private var hasMarkedPrinted = false
+    private var initializedFor: Pair<Boolean, Int>? = null
 
     fun initialize(
       isCancel: Boolean,
       receiptSerialNumber: Int,
     ) {
-      if (initialized) {
+      val params = isCancel to receiptSerialNumber
+      if (initializedFor == params) {
         return
       }
-      initialized = true
+      initializedFor = params
 
       viewModelScope.launch {
         val receipt = receiptsStore.receiptBySerialNumber(receiptSerialNumber).first()
@@ -65,35 +69,40 @@ class PrintSectionViewModel
             .orEmpty()
         val partner = partners.find { it.id == receipt?.buyer?.id }
 
-        currentReceipt = receipt
-
         val canPrint = user != null && receipt != null && (partner != null || receipt.partnerCode.isEmpty())
+
+        val receiptToPrint =
+          if (canPrint) {
+            withContext(defaultDispatcher) {
+              PrintReceiptTextBuilder.build(isCancel, requireNotNull(user), requireNotNull(receipt), partner)
+            }
+          } else {
+            null
+          }
 
         _uiState.update {
           it.copy(
             isLoading = false,
             receiptFormat = PrintReceiptTextBuilder.receiptFormatLabel(partner),
             copyCount = receipt?.let { r -> PrintReceiptTextBuilder.copyCount(partner, r) } ?: 0,
-            receiptToPrint =
-              if (canPrint) {
-                PrintReceiptTextBuilder.build(isCancel, requireNotNull(user), requireNotNull(receipt), partner)
-              } else {
-                null
-              },
+            receiptToPrint = receiptToPrint,
             suggestedFileName = receipt?.let { r -> DevPrintFileNameBuilder.build(r) } ?: "",
+            receiptId = receipt?.id,
+            isPrinted = receipt?.isPrinted ?: false,
           )
         }
       }
     }
 
     fun onPrintSuccess() {
-      val receipt = currentReceipt ?: return
-      if (receipt.isPrinted || hasMarkedPrinted) {
+      val state = _uiState.value
+      val receiptId = state.receiptId ?: return
+      if (state.isPrinted) {
         return
       }
-      hasMarkedPrinted = true
+      _uiState.update { it.copy(isPrinted = true) }
       viewModelScope.launch {
-        receiptsStore.markReceiptPrinted(receipt.id)
+        receiptsStore.markReceiptPrinted(receiptId)
       }
     }
   }

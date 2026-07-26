@@ -54,7 +54,7 @@ Already built and working in the native app:
 | 03 | Sell · print sales receipt (shared print section) | Sell / Print | 02 | ✅ Done |
 | 03b | Print · dev-mode printer (save print string for review) | Print | 03 | ✅ Done |
 | 03c | Receipts store · ordering, scaling & draft-write correctness | Sell / Data | 01b, 01c | ✅ Done |
-| 03d | Print path · state-machine hardening & ViewModel state discipline | Print | 03, 03b | Not started |
+| 03d | Print path · state-machine hardening & ViewModel state discipline | Print | 03, 03b | ✅ Done |
 | 03e | Domain logic · de-duplication & Kotlin pattern cleanup | Sell / Infra | 01 | Not started |
 | 03f | Persistence · separate cache from record, survive shape changes | Data | frontier | Not started |
 | 04 | Receipts · list of receipts | Receipts | 03, 03c | Not started |

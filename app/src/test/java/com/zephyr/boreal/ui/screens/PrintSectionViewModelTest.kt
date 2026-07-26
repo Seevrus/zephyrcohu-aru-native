@@ -171,7 +171,8 @@ class PrintSectionViewModelTest {
     whenever(receiptsStore.receiptBySerialNumber(serialNumber)).thenReturn(flowOf(receipt))
   }
 
-  private fun createViewModel() = PrintSectionViewModel(receiptsStore, partnersRepository, userRepository)
+  private fun createViewModel() =
+    PrintSectionViewModel(receiptsStore, partnersRepository, userRepository, testDispatcher)
 
   @Test
   fun `initialize resolves the receipt by serial number and builds printable text`() =
@@ -286,5 +287,50 @@ class PrintSectionViewModelTest {
       advanceUntilIdle()
 
       verify(receiptsStore, never()).markReceiptPrinted(any())
+    }
+
+  @Test
+  fun `initialize re-resolves when called again with a different receiptSerialNumber`() =
+    runTest(testDispatcher) {
+      stubReceipt(101, buildReceipt(serialNumber = 101))
+      stubReceipt(102, buildReceipt(serialNumber = 102))
+      whenever(userRepository.getCurrentUser()).thenReturn(flowOf(ApiResource.Success(user)))
+      whenever(partnersRepository.getPartners()).thenReturn(flowOf(ApiResource.Success(listOf(partner))))
+
+      val viewModel = createViewModel()
+      viewModel.initialize(isCancel = false, receiptSerialNumber = 101)
+      advanceUntilIdle()
+      assert(
+        viewModel.uiState.value.receiptToPrint
+          ?.contains("101/26") == true,
+      )
+
+      viewModel.initialize(isCancel = false, receiptSerialNumber = 102)
+      advanceUntilIdle()
+
+      assert(
+        viewModel.uiState.value.receiptToPrint
+          ?.contains("102/26") == true,
+      )
+      verify(receiptsStore).receiptBySerialNumber(101)
+      verify(receiptsStore).receiptBySerialNumber(102)
+    }
+
+  @Test
+  fun `initialize does not re-resolve when called again with the same isCancel and receiptSerialNumber`() =
+    runTest(testDispatcher) {
+      stubReceipt(101, buildReceipt(serialNumber = 101))
+      whenever(userRepository.getCurrentUser()).thenReturn(flowOf(ApiResource.Success(user)))
+      whenever(partnersRepository.getPartners()).thenReturn(flowOf(ApiResource.Success(listOf(partner))))
+
+      val viewModel = createViewModel()
+      viewModel.initialize(isCancel = false, receiptSerialNumber = 101)
+      advanceUntilIdle()
+
+      viewModel.initialize(isCancel = false, receiptSerialNumber = 101)
+      advanceUntilIdle()
+
+      verify(receiptsStore, times(1)).receiptBySerialNumber(101)
+      verify(userRepository, times(1)).getCurrentUser()
     }
 }

@@ -39,7 +39,7 @@ object PrintReceiptTextBuilder {
   private const val SALES_AGENT_NAME_WIDTH = 40
   private const val PHONE_NUMBER_WIDTH = 15
 
-  private val huCollator: Collator =
+  private val newHuCollator: () -> Collator = {
     Collator.getInstance(
       Locale
         .Builder()
@@ -47,6 +47,7 @@ object PrintReceiptTextBuilder {
         .setRegion("HU")
         .build(),
     )
+  }
 
   private const val PACKING_INFO =
     "A számlán  szereplő  csomagolóanyagok  mentesek  a termékdíjfizetés\n" +
@@ -267,10 +268,11 @@ object PrintReceiptTextBuilder {
     otherItems: List<ReceiptOtherItem>,
   ): String {
     val amountMultiplier = if (isCancel) -1 else 1
+    val collator = newHuCollator()
 
-    val sortedItems = items.map { it.toPrintLineItem() }.sortedWith { a, b -> huCollator.compare(a.name, b.name) }
+    val sortedItems = items.map { it.toPrintLineItem() }.sortedWith { a, b -> collator.compare(a.name, b.name) }
     val sortedOtherItems =
-      otherItems.map { it.toPrintLineItem() }.sortedWith { a, b -> huCollator.compare(a.name, b.name) }
+      otherItems.map { it.toPrintLineItem() }.sortedWith { a, b -> collator.compare(a.name, b.name) }
     val allItems = sortedItems + sortedOtherItems
 
     val itemRows =

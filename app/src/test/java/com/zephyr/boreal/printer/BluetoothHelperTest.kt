@@ -100,7 +100,7 @@ class BluetoothHelperTest {
 
     val devices = spyHelper.getPairedDevices(isDev = false)
 
-    assertTrue(devices.none { it.address == "00:00:00:00:00:00" })
+    assertTrue(devices.none { it.address == BorealPrinter.DEV_PRINTER_ADDRESS })
   }
 
   @Test
@@ -112,7 +112,7 @@ class BluetoothHelperTest {
 
     val devices = spyHelper.getPairedDevices(isDev = true)
 
-    assertTrue(devices.any { it.address == "00:00:00:00:00:00" && it.name == "Dev Test" })
+    assertTrue(devices.any { it.address == BorealPrinter.DEV_PRINTER_ADDRESS && it.name == "Dev Test" })
   }
 
   @Test
@@ -124,6 +124,6 @@ class BluetoothHelperTest {
 
     val devices = spyHelper.getPairedDevices(isDev = false)
 
-    assertTrue(devices.any { it.address == "00:00:00:00:00:00" && it.name == "Dev Test" })
+    assertTrue(devices.any { it.address == BorealPrinter.DEV_PRINTER_ADDRESS && it.name == "Dev Test" })
   }
 }

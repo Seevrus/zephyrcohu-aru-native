@@ -42,6 +42,7 @@ data class PrinterConnectorUiState(
   val selectedPrinterAddress: String? = null,
   val error: PrinterConnectorError? = null,
   val saveFileRequest: SaveFileRequest? = null,
+  val printSuccessToken: Int = 0,
 )
 
 private const val TIMEOUT_MARKER = "timeout"
@@ -63,8 +64,6 @@ class PrinterConnectorViewModel
   ) : ViewModel() {
     private val _uiState = MutableStateFlow(PrinterConnectorUiState())
     val uiState: StateFlow<PrinterConnectorUiState> = _uiState.asStateFlow()
-
-    private var pendingOnPrintSuccess: (() -> Unit)? = null
 
     init {
       viewModelScope.launch {
@@ -105,7 +104,6 @@ class PrinterConnectorViewModel
     fun print(
       textToPrint: String,
       suggestedFileName: String,
-      onPrintSuccess: () -> Unit,
     ) {
       if (_uiState.value.phase != PrinterConnectorPhase.CONNECTED) {
         return
@@ -117,13 +115,20 @@ class PrinterConnectorViewModel
           onSuccess = { outcome ->
             when (outcome) {
               PrintOutcome.Printed -> {
-                _uiState.update { it.copy(phase = PrinterConnectorPhase.CONNECTED, error = null) }
-                onPrintSuccess()
+                _uiState.update {
+                  it.copy(
+                    phase = PrinterConnectorPhase.CONNECTED,
+                    error = null,
+                    printSuccessToken = it.printSuccessToken + 1,
+                  )
+                }
               }
               is PrintOutcome.SaveToFile -> {
-                pendingOnPrintSuccess = onPrintSuccess
                 _uiState.update {
-                  it.copy(saveFileRequest = SaveFileRequest(suggestedFileName, outcome.text))
+                  it.copy(
+                    phase = PrinterConnectorPhase.CONNECTED,
+                    saveFileRequest = SaveFileRequest(suggestedFileName, outcome.text),
+                  )
                 }
               }
             }
@@ -152,8 +157,6 @@ class PrinterConnectorViewModel
      */
     fun onSaveFileResult(uri: Uri?) {
       val request = _uiState.value.saveFileRequest
-      val onPrintSuccess = pendingOnPrintSuccess
-      pendingOnPrintSuccess = null
       _uiState.update { it.copy(phase = PrinterConnectorPhase.CONNECTED, saveFileRequest = null) }
 
       if (uri == null || request == null) {
@@ -162,7 +165,7 @@ class PrinterConnectorViewModel
 
       viewModelScope.launch {
         borealPrinter.writeToUri(uri, request.content).onSuccess {
-          onPrintSuccess?.invoke()
+          _uiState.update { it.copy(printSuccessToken = it.printSuccessToken + 1) }
         }
       }
     }
