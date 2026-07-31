@@ -32,6 +32,7 @@ import com.zephyr.boreal.ui.screens.LoginScreen
 import com.zephyr.boreal.ui.screens.MainScreen
 import com.zephyr.boreal.ui.screens.PrintEndErrandScreen
 import com.zephyr.boreal.ui.screens.PrintSettingsScreen
+import com.zephyr.boreal.ui.screens.ReceiptsListScreen
 import com.zephyr.boreal.ui.screens.ReviewItemsScreen
 import com.zephyr.boreal.ui.screens.ReviewItemsViewModel
 import com.zephyr.boreal.ui.screens.SearchPartnerNavScreen
@@ -104,6 +105,13 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
     }
     composable("errands") {
       ErrandsRoute(navController)
+    }
+    composable("receipts") {
+      ReceiptsListScreen(
+        onReceiptClick = {
+          // Task 05 will navigate to receipt details by serialNumber here.
+        },
+      )
     }
     composable("start_errand") {
       StartErrandRoute(navController)
@@ -187,6 +195,9 @@ private fun MainRoute(navController: androidx.navigation.NavHostController) {
     },
     onNavigateToSelectPartner = {
       navController.navigate("select_partner")
+    },
+    onNavigateToReceiptsList = {
+      navController.navigate("receipts")
     },
   )
 }

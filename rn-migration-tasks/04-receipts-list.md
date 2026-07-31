@@ -1,16 +1,19 @@
 # Task 04 · Receipts: list of receipts
 
 ## Goal
+
 Show the salesperson a list of the receipts created during the current session/round, each
 tappable to open its details, with canceled (storno) receipts visually distinguished.
 
 ## Business context
+
 Receipts created in the sell flow are persisted locally. The "Számlák" (receipts) main-screen
 tile opens a list of them. Each row shows the buyer (delivery name), the receipt number
 `serialNumber/yearCode`, and the gross total; a storno'd receipt is highlighted and additionally
 shows its cancel number `cancelSerialNumber/cancelYearCode` with a "Sztornózva" label.
 
 ## Starting / resulting state
+
 - **Start**: receipts are persisted (`ReceiptsStore`/`ReceiptsRepository` exist and are written
   during finalization) and the receipts main-screen tile already computes an enabled/disabled
   state, but there is **no list screen** to navigate to.
@@ -18,12 +21,14 @@ shows its cancel number `cancelSerialNumber/cancelYearCode` with a "Sztornózva"
   total; canceled rows are highlighted; tapping a row navigates to receipt details (Task 05).
 
 ## Data requirements
+
 - Read all persisted receipts from the receipts store. No network fetch is required to view the
   list (it reflects locally-held receipts for the active session).
 - Row fields: `buyer.deliveryName`, `serialNumber`, `yearCode`, `grossAmount`,
   `cancelSerialNumber`, `cancelYearCode`.
 
 ## Behavioral requirements
+
 - Register the list screen and wire the receipts tile to open it (the tile's enabled/disabled
   logic already exists — just complete the navigation target).
 - Order/keying: list keyed by serial number; preserve insertion/creation order as in RN
@@ -34,25 +39,50 @@ shows its cancel number `cancelSerialNumber/cancelYearCode` with a "Sztornózva"
 - Tapping a row opens details for that `serialNumber`.
 
 ## API requirements
+
 - None for this screen. (Startup sync that populates receipts from `GET /receipts` is covered by
   Task 10; this screen only reads local state.)
 
 ## UI/UX notes
+
 - Reuse list/card styling consistent with other Boreal lists; `formatPrice` equivalent for the
   total; neutral card background, storno highlight per palette. Header "Számlák".
+- Main screen receipts tile reference: `./screenshots/04-01-main-screen-receipts-tile.png`
+- Receipts list example: `./screenshots/04-02-receipts-list-example.png`. Canceled receipt has
+  a different coloed tile.
 
 ## Testing requirements
+
 - ViewModel/state unit test: exposes receipts from the store; canceled-vs-active derivation.
 - Instrumented tests: list renders rows with correct fields; canceled row shows highlight +
   cancel number; tapping a row navigates with the right serial number; empty state renders.
 
 ## Non-goals
+
 - No server-side date/type filtering (that exists only in the admin web UI). No details/cancel/
   print here (Task 05).
 
+## Deviation from RN reference
+
+RN keeps a finished round's receipts visible (tile count + list) until an explicit
+`resetReceipts()` call, which only fires after the round-end print/summary screen is left,
+immediately followed by a forced logout (see `EndErrand.tsx` → `PrintEndErrand` →
+`resetHopefullyAfterPrint`). The native app has no equivalent forced-logout-and-reset flow yet
+(`PrintEndErrandScreen` is still a TODO stub), so without a deviation, receipts from a finished
+round would persist on the tile/list indefinitely with nothing to clear them.
+
+Deliberate decision: the Receipts tile and `ReceiptsListViewModel` treat the list as empty
+whenever no round is in progress (`user.state != ON_ROUND`), regardless of what's actually
+persisted in `ReceiptsStore`. This is a **display-time filter only** — no data is deleted, so
+Task 05's reprint/storno flow (whenever it's built to work mid-round or otherwise) still has the
+underlying records to work with. Revisit this once Task 05 defines how a round's receipts should
+be reachable after the round ends.
+
 ## Depends on
+
 Task 03 (details screen it links to needs the shared print section). Receipts data layer exists.
 
 ## RN reference paths
+
 - `resources/frontend/screens/receipts/ReceiptList.tsx`, `ReceiptListItem.tsx`
 - `resources/frontend/store/receiptsSlice.ts`, `store/hooks/receipts.ts`

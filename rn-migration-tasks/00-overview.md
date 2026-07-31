@@ -34,10 +34,15 @@ Already built and working in the native app:
   (including per-item discounts, Task 01), receipt + order creation to the API
   (`ReviewItemsViewModel` already builds totals, VAT breakdown, rounding, serial numbers,
   vendor/buyer, and calls `receiptsRepository.createReceipt` / `createOrders`), a terminal
-  **Summary screen** (Task 02: success confirmation, offline notice, reset-on-exit), and a
+  **Summary screen** (Task 02: success confirmation, offline notice, reset-on-exit), a
   reusable **print section** (Task 03: `PrintSection`/`PrinterConnector` composables, Datecs
   connect-then-print flow, `PrintReceiptTextBuilder` receipt-text formatter, `Receipt.isPrinted`
-  tracking) hosted on Summary and ready for reuse by Task 05's reprint/storno flow.
+  tracking) hosted on Summary and ready for reuse by Task 05's reprint/storno flow, and a
+  **receipts list screen** (Task 04: `ReceiptsListScreen`/`ReceiptsListViewModel`, reads
+  `ReceiptsStore.receipts` directly, storno rows highlighted via `BorealColors.Magenta700`,
+  tapping a row is wired to a no-op stub in `MainActivity.kt` pending Task 05's details route).
+  The main-screen "Bizonylatok" tile's count/enabled-state and navigation are now wired to
+  `ReceiptsStore` (previously stubs).
 - **Data layer**: Retrofit API service + repositories (items, partners, receipts, rounds,
   stores, user), Room persistence (including Room-backed local receipts list, Task 01b),
   DataStore session/app-state (including the persisted sell-flow draft, Task 01c),
@@ -57,7 +62,7 @@ Already built and working in the native app:
 | 03d | Print path · state-machine hardening & ViewModel state discipline | Print | 03, 03b | ✅ Done |
 | 03e | Domain logic · de-duplication & Kotlin pattern cleanup | Sell / Infra | 01 | ✅ Done |
 | 03f | Persistence · separate cache from record, survive shape changes | Data | frontier | ✅ Done |
-| 04 | Receipts · list of receipts | Receipts | 03, 03c | Not started |
+| 04 | Receipts · list of receipts | Receipts | 03, 03c | ✅ Done |
 | 05 | Receipts · details, reprint & storno (cancel) | Receipts | 04 | Not started |
 | 06 | Storage · select store (lock to user) | Storage | frontier | Not started |
 | 07 | Storage · select items from store (batches, barcode, quantities) | Storage | 06 | Not started |
@@ -66,8 +71,11 @@ Already built and working in the native app:
 | 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier | Not started |
 | 11 | Cross-cutting · app-update / version gate | Infra | frontier | Not started |
 
-**Next up:** Tasks 03c–03f — a consolidation batch from the post-03b code review, scheduled ahead
-of Task 04. They are independent of each other and none adds user-facing behavior:
+**Next up:** Task 05 (receipts details, reprint & storno), which builds on Task 04's list screen
+and reuses the shared print section from Task 03.
+
+Tasks 03c–03f were a consolidation batch from the post-03b code review, completed ahead of
+Task 04. They were independent of each other and none added user-facing behavior:
 
 - **03c (blocks Task 04)** — `ReceiptDao.getAllReceipts()` has no `ORDER BY` while two call sites
   depend on order; `ReceiptsStore.receipts` is `Eagerly`-shared and redecodes the whole table on

@@ -5,6 +5,8 @@
     <string name="tile_unloading">Árulevétel</string>
     <string name="tile_rounds">Körök</string>
     <string name="tile_receipts">Bizonylatok (%1$d)</string>
+    <string name="screen_receipts_list_title">Bizonylatok</string>
+    <string name="receipt_list_item_canceled_label">Sztornózva</string>
     <string name="app_locked_message">A(z) %1$s felhasználó nem rendelkezik az alkalmazás használatához szükséges jogosultságokkal. További információért kérem keresse az adminisztrátort.</string>
     <string name="screen_settings_title">Beállítások</string>
     <string name="screen_end_errand_title">Kör zárása</string>

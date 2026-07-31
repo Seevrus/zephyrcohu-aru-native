@@ -13,6 +13,7 @@ import com.zephyr.boreal.domain.model.canLoadStore
 import com.zephyr.boreal.domain.model.canUseApp
 import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.print.PrintSettingsStore
+import com.zephyr.boreal.store.receipts.ReceiptsStore
 import com.zephyr.boreal.store.user.UserSessionStore
 import com.zephyr.boreal.ui.components.TileVariant
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,6 +33,8 @@ sealed interface MainScreenEvent {
   data object NavigateToErrands : MainScreenEvent
 
   data object NavigateToSelectPartner : MainScreenEvent
+
+  data object NavigateToReceiptsList : MainScreenEvent
 }
 
 data class AlertUiState(
@@ -78,6 +81,7 @@ class MainViewModel
     private val userRepository: UserRepository,
     private val connectivityObserver: ConnectivityObserver,
     private val printSettingsStore: PrintSettingsStore,
+    private val receiptsStore: ReceiptsStore,
   ) : ViewModel() {
     companion object {
       const val FONT_WARMUP_DELAY_MS = 1000L
@@ -86,7 +90,6 @@ class MainViewModel
 
     private val isReadyFlow = MutableStateFlow(false)
     private val alertStateFlow = MutableStateFlow<AlertUiState?>(null)
-    private val receiptsFlow = MutableStateFlow<List<Any>>(emptyList())
     private val eventChannel = Channel<MainScreenEvent>()
     val events = eventChannel.receiveAsFlow()
 
@@ -128,15 +131,16 @@ class MainViewModel
       combine(
         userContextFlow,
         deviceStateFlow,
-        receiptsFlow,
+        receiptsStore.receipts,
       ) { userCtx, deviceCtx, receipts ->
+        val isRoundInProgress = userCtx.user?.state == UserState.ON_ROUND
         buildTiles(
           isLoggedIn = userCtx.isLoggedIn,
           isPasswordExpired = userCtx.isPasswordExpired,
           isOnline = deviceCtx.isOnline,
           hasPrinter = deviceCtx.hasPrinter,
           user = userCtx.user,
-          receiptsCount = receipts.size,
+          receiptsCount = if (isRoundInProgress) receipts.size else 0,
         )
       }.distinctUntilChanged()
 
@@ -348,7 +352,7 @@ class MainViewModel
             eventChannel.send(MainScreenEvent.NavigateToErrands)
           }
           MainTileId.RECEIPTS -> {
-            // Handle Receipts navigation
+            eventChannel.send(MainScreenEvent.NavigateToReceiptsList)
           }
         }
       }

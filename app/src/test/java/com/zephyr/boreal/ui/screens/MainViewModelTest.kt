@@ -3,11 +3,13 @@ package com.zephyr.boreal.ui.screens
 import com.zephyr.boreal.R
 import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.UserRepository
+import com.zephyr.boreal.domain.model.Receipt
 import com.zephyr.boreal.domain.model.User
 import com.zephyr.boreal.domain.model.UserRole
 import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.print.PrintSettingsState
 import com.zephyr.boreal.store.print.PrintSettingsStore
+import com.zephyr.boreal.store.receipts.ReceiptsStore
 import com.zephyr.boreal.store.user.StoredToken
 import com.zephyr.boreal.store.user.UserSessionStore
 import com.zephyr.boreal.ui.components.TileVariant
@@ -44,12 +46,14 @@ class MainViewModelTest {
   private val userRepository: UserRepository = mock()
   private val connectivityObserver: ConnectivityObserver = mock()
   private val printSettingsStore: PrintSettingsStore = mock()
+  private val receiptsStore: ReceiptsStore = mock()
   private val testDispatcher = StandardTestDispatcher()
 
   private val isInternetReachableFlow = MutableStateFlow(true)
   private val userStoreStateFlow = MutableStateFlow(StoreUserState())
   private val printSettingsFlow = MutableStateFlow(PrintSettingsState())
   private val currentUserFlow = MutableStateFlow<ApiResource<User>>(ApiResource.Loading())
+  private val receiptsFlow = MutableStateFlow<List<Receipt>>(emptyList())
 
   private val mockUser =
     User(
@@ -76,6 +80,7 @@ class MainViewModelTest {
     whenever(connectivityObserver.isInternetReachable).thenReturn(isInternetReachableFlow)
     whenever(userSessionStore.userState).thenReturn(userStoreStateFlow)
     whenever(printSettingsStore.printSettingsState).thenReturn(printSettingsFlow)
+    whenever(receiptsStore.receipts).thenReturn(receiptsFlow)
   }
 
   @AfterEach
@@ -90,6 +95,40 @@ class MainViewModelTest {
       userRepository,
       connectivityObserver,
       printSettingsStore,
+      receiptsStore,
+    )
+
+  private fun buildReceipt(id: Int) =
+    Receipt(
+      id = id,
+      companyId = 1,
+      companyCode = "BOR",
+      partnerId = 7,
+      partnerCode = "P007",
+      partnerSiteCode = "S001",
+      serialNumber = id,
+      yearCode = 2026,
+      cancelSerialNumber = null,
+      cancelYearCode = null,
+      vendor = mock(),
+      buyer = mock(),
+      invoiceDate = "2026-07-01",
+      fulfillmentDate = "2026-07-09",
+      invoiceType = com.zephyr.boreal.domain.model.InvoiceType.PAPER,
+      paidDate = "2026-07-09",
+      user = null,
+      items = emptyList(),
+      otherItems = emptyList(),
+      quantity = 2.0,
+      netAmount = 1000.0,
+      vatAmount = 270.0,
+      grossAmount = 1270.0,
+      vatAmounts = emptyList(),
+      roundAmount = 0.0,
+      roundedAmount = 1270.0,
+      lastDownloadedAt = null,
+      createdAt = "2026-07-01T00:00:00Z",
+      updatedAt = "2026-07-01T00:00:00Z",
     )
 
   @Test
@@ -280,6 +319,97 @@ class MainViewModelTest {
           .find { it.id == MainTileId.RECEIPTS }
       assertEquals(TileVariant.DISABLED, receiptsTile?.variant)
       assertEquals(R.string.disabled_tile_logged_out, receiptsTile?.disabledMessageResId)
+      uiStateJob.cancel()
+    }
+
+  @Test
+  fun `Receipts tile should be NEUTRAL when logged in, has printer, round in progress, and receipts exist`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser.copy(state = DomainUserState.ON_ROUND))
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+      receiptsFlow.value = listOf(buildReceipt(1))
+
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val receiptsTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == MainTileId.RECEIPTS }
+      assertEquals(TileVariant.NEUTRAL, receiptsTile?.variant)
+      assertEquals(1, receiptsTile?.titleArg)
+      uiStateJob.cancel()
+    }
+
+  @Test
+  fun `Receipts tile should be DISABLED with no-receipts message when receipts list is empty`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser.copy(state = DomainUserState.ON_ROUND))
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+      receiptsFlow.value = emptyList()
+
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val receiptsTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == MainTileId.RECEIPTS }
+      assertEquals(TileVariant.DISABLED, receiptsTile?.variant)
+      assertEquals(R.string.disabled_tile_no_receipts, receiptsTile?.disabledMessageResId)
+      uiStateJob.cancel()
+    }
+
+  @Test
+  fun `Receipts tile should be DISABLED with no-receipts message when round not in progress`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser.copy(state = DomainUserState.IDLE))
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+      receiptsFlow.value = listOf(buildReceipt(1))
+
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val receiptsTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == MainTileId.RECEIPTS }
+      assertEquals(TileVariant.DISABLED, receiptsTile?.variant)
+      assertEquals(R.string.disabled_tile_no_receipts, receiptsTile?.disabledMessageResId)
+      assertEquals(0, receiptsTile?.titleArg)
+      uiStateJob.cancel()
+    }
+
+  @Test
+  fun `Clicking Receipts tile should navigate to Receipts List screen`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser.copy(state = DomainUserState.ON_ROUND))
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+      receiptsFlow.value = listOf(buildReceipt(1))
+
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      val events = mutableListOf<MainScreenEvent>()
+      val job = launch { viewModel.events.collect { events.add(it) } }
+
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val receiptsTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == MainTileId.RECEIPTS }!!
+      viewModel.onTileClick(receiptsTile)
+      runCurrent()
+
+      assertTrue(events.contains(MainScreenEvent.NavigateToReceiptsList))
+      job.cancel()
       uiStateJob.cancel()
     }
 
