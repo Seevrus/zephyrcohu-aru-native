@@ -30,7 +30,17 @@ audits and closes the gaps so the behavior is at parity.
 - **State-driven refresh** (only when online, token present, password not expired):
   - Loading state (store lock in progress) → ensure items and stores are present/refreshed.
   - On-round state → ensure items, other items, partner lists, partners, price lists, and the
-    in-use store's details are present/refreshed.
+    in-use store's details are present/refreshed. **Concretely**: `StoreSessionStore` (which
+    every sell/storage screen reads via `selectedStoreCurrentState`) is in-memory-only and does
+    not survive process death — after a relaunch mid-round it comes back `null` until this
+    refresh populates it via `StoreSessionStore.setStore(...)`, hiding functionality that gates on
+    a live store (e.g. the Receipt Details storno button, Task 05). Confirmed the backend keeps
+    stock in sync symmetrically — `ReceiptController` decrements `ExpirationStore.quantity` on
+    receipt creation and increments it back on cancel — so a plain `GET stores/{id}` refetch after
+    relaunch is sufficient to restore correct quantities for any already-synced receipt; no local
+    reconstruction from `ReceiptsStore` is needed. The one residual gap is receipts created while
+    offline and not yet synced to the server, which this refresh alone cannot reflect — treat as a
+    pre-existing offline-sync limitation, not new scope for this task.
   - Re-validate the current user (`check-token`) when the user object is missing but a token
     exists.
 - **Staleness**: refetch cached data whose last update exceeds a max age (RN uses ~10 min

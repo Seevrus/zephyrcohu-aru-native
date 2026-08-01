@@ -1,24 +1,32 @@
 package com.zephyr.boreal.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.zephyr.boreal.ComposeContentTestActivity
 import com.zephyr.boreal.domain.model.InvoiceType
 import com.zephyr.boreal.domain.model.Receipt
 import com.zephyr.boreal.domain.model.ReceiptBuyer
 import com.zephyr.boreal.domain.model.ReceiptVendor
 import com.zephyr.boreal.ui.theme.BorealTheme
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 
+@HiltAndroidTest
 class SummaryScreenContentTest {
+  private val hiltRule = HiltAndroidRule(this)
+  private val composeTestRule = createAndroidComposeRule<ComposeContentTestActivity>()
+
   @get:Rule
-  val composeTestRule = createComposeRule()
+  val ruleChain: RuleChain = RuleChain.outerRule(hiltRule).around(composeTestRule)
 
   private val buyer =
     ReceiptBuyer(

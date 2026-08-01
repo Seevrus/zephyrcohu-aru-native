@@ -7,6 +7,17 @@
     <string name="tile_receipts">Bizonylatok (%1$d)</string>
     <string name="screen_receipts_list_title">Bizonylatok</string>
     <string name="receipt_list_item_canceled_label">Sztornózva</string>
+    <string name="receipt_details_subtitle_normal">Számla nyomtatása</string>
+    <string name="receipt_details_subtitle_canceled">Stornó számla nyomtatása</string>
+    <string name="receipt_details_canceled_previously">Ezt a számlát korábban stornózták.</string>
+    <string name="receipt_details_canceled_now">Sikeres stornózás!</string>
+    <string name="receipt_details_offline_notice">Internetkapcsolat hiányában a számla nem stornózható.</string>
+    <string name="receipt_details_cancel_body">Amennyiben sztornózni szeretné a számlát, koppintson az alábbi gombra. A művelet nem visszavonható.</string>
+    <string name="receipt_details_cancel_button">Számla stornózása</string>
+    <string name="receipt_details_cancel_confirm_title">Számla sztornózása</string>
+    <string name="receipt_details_cancel_confirm_message">Ez a művelet számlakészítéssel jár és nem visszavonható. Biztosan folytatni szeretné?</string>
+    <string name="receipt_details_cancel_confirm_confirm">Folytatás</string>
+    <string name="receipt_details_cancel_confirm_dismiss">Mégsem</string>
     <string name="app_locked_message">A(z) %1$s felhasználó nem rendelkezik az alkalmazás használatához szükséges jogosultságokkal. További információért kérem keresse az adminisztrátort.</string>
     <string name="screen_settings_title">Beállítások</string>
     <string name="screen_end_errand_title">Kör zárása</string>

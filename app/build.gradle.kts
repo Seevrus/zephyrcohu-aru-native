@@ -27,7 +27,7 @@ android {
     versionCode = 64
     versionName = "0.50.0"
 
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    testInstrumentationRunner = "com.zephyr.boreal.HiltTestRunner"
 
     val baseUrlDev =
       localProperties.getProperty("BASE_URL_DEV")
@@ -138,6 +138,8 @@ dependencies {
   // Hilt
   implementation(libs.hilt.android)
   ksp(libs.hilt.compiler)
+  androidTestImplementation(libs.hilt.android.testing)
+  kspAndroidTest(libs.hilt.compiler)
 
   // Retrofit & Networking
   implementation(libs.retrofit)

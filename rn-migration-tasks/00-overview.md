@@ -40,9 +40,14 @@ Already built and working in the native app:
   tracking) hosted on Summary and ready for reuse by Task 05's reprint/storno flow, and a
   **receipts list screen** (Task 04: `ReceiptsListScreen`/`ReceiptsListViewModel`, reads
   `ReceiptsStore.receipts` directly, storno rows highlighted via `BorealColors.Magenta700`,
-  tapping a row is wired to a no-op stub in `MainActivity.kt` pending Task 05's details route).
-  The main-screen "Bizonylatok" tile's count/enabled-state and navigation are now wired to
-  `ReceiptsStore` (previously stubs).
+  Task 05 wires row taps to a `receipt_details/{serialNumber}` route). The main-screen
+  "Bizonylatok" tile's count/enabled-state and navigation are now wired to `ReceiptsStore`
+  (previously stubs). **Task 05** adds `ReceiptDetailsScreen`/`ReceiptDetailsViewModel`: reprint
+  via the reused `PrintSection`, and — when online, not already canceled, and synced — storno
+  (cancel) via `ReceiptsRepository.cancelReceipt` (already-existing plumbing this task first put
+  to use), restoring sold quantities into `StoreSessionStore` by matching `ReceiptItem`s to
+  `StoreDetailsExpiration`s on `(articleNumber, expiresAt)` (the only key both models share,
+  since `ReceiptItem` carries no `expirationId`).
 - **Data layer**: Retrofit API service + repositories (items, partners, receipts, rounds,
   stores, user), Room persistence (including Room-backed local receipts list, Task 01b),
   DataStore session/app-state (including the persisted sell-flow draft, Task 01c),
@@ -63,7 +68,7 @@ Already built and working in the native app:
 | 03e | Domain logic · de-duplication & Kotlin pattern cleanup | Sell / Infra | 01 | ✅ Done |
 | 03f | Persistence · separate cache from record, survive shape changes | Data | frontier | ✅ Done |
 | 04 | Receipts · list of receipts | Receipts | 03, 03c | ✅ Done |
-| 05 | Receipts · details, reprint & storno (cancel) | Receipts | 04 | Not started |
+| 05 | Receipts · details, reprint & storno (cancel) | Receipts | 04 | ✅ Done |
 | 06 | Storage · select store (lock to user) | Storage | frontier | Not started |
 | 07 | Storage · select items from store (batches, barcode, quantities) | Storage | 06 | Not started |
 | 08 | Storage · review, save & summary (load + unlock + print) | Storage / Print | 07, 03 | Not started |
@@ -71,8 +76,8 @@ Already built and working in the native app:
 | 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier | Not started |
 | 11 | Cross-cutting · app-update / version gate | Infra | frontier | Not started |
 
-**Next up:** Task 05 (receipts details, reprint & storno), which builds on Task 04's list screen
-and reuses the shared print section from Task 03.
+**Next up:** Task 06 (select store / lock to user), which starts the Storage area from the
+frontier and has no dependency on the receipts/print work above.
 
 Tasks 03c–03f were a consolidation batch from the post-03b code review, completed ahead of
 Task 04. They were independent of each other and none added user-facing behavior:

@@ -34,6 +34,9 @@ data class Receipt(
   val updatedAt: String,
   val isPrinted: Boolean = false,
 ) {
+  val isCanceled: Boolean
+    get() = cancelSerialNumber != null && cancelYearCode != null
+
   val paymentDays: Int
     get() {
       if (invoiceDate.isEmpty() || fulfillmentDate.isEmpty()) {

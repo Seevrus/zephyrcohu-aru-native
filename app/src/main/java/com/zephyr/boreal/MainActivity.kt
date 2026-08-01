@@ -108,10 +108,16 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
     }
     composable("receipts") {
       ReceiptsListScreen(
-        onReceiptClick = {
-          // Task 05 will navigate to receipt details by serialNumber here.
+        onReceiptClick = { serialNumber ->
+          navController.navigate("receipt_details/$serialNumber")
         },
       )
+    }
+    composable(
+      "receipt_details/{serialNumber}",
+      arguments = listOf(navArgument("serialNumber") { type = NavType.IntType }),
+    ) {
+      ReceiptDetailsRoute()
     }
     composable("start_errand") {
       StartErrandRoute(navController)
