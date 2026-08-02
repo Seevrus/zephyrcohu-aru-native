@@ -31,6 +31,7 @@ import com.zephyr.boreal.ui.screens.ErrandsScreen
 import com.zephyr.boreal.ui.screens.LoginScreen
 import com.zephyr.boreal.ui.screens.MainScreen
 import com.zephyr.boreal.ui.screens.PrintEndErrandScreen
+import com.zephyr.boreal.ui.screens.PrintEndErrandViewModel
 import com.zephyr.boreal.ui.screens.PrintSettingsScreen
 import com.zephyr.boreal.ui.screens.ReceiptsListScreen
 import com.zephyr.boreal.ui.screens.ReviewItemsScreen
@@ -375,7 +376,9 @@ private fun EndErrandRoute(navController: androidx.navigation.NavHostController)
 
 @Composable
 private fun PrintEndErrandRoute(navController: androidx.navigation.NavHostController) {
+  val viewModel: PrintEndErrandViewModel = hiltViewModel()
   PrintEndErrandScreen(
+    viewModel = viewModel,
     onNavigateHome = {
       navController.navigate("main") {
         popUpTo(0) { inclusive = true }

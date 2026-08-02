@@ -28,7 +28,14 @@
     <string name="end_errand_error_no_store">A felhasználónak nincs aktív boltja.</string>
     <string name="end_errand_error_store_not_found">Az aktív bolt adatai nem találhatók.</string>
     <string name="screen_print_end_errand_title">Nyomtatás</string>
-    <string name="print_end_errand_home_button">Vissza a főképernyőre</string>
+    <string name="print_end_errand_success_header">Kör mentése sikeres!</string>
+    <string name="print_end_errand_missing_data">Az alkalmazás nem találja a nyomtatáshoz szükséges valamelyik adatobjektumot (partnerlista, raktár vagy felhasználó). Ezt az üzenetet egyértelműen nem szabadna látnia, kérem azonnal lépjen kapcsolatba az alkalmazás fejlesztőjével!</string>
+    <string name="print_end_errand_no_print_needed">Mivel nem készült számla, ezért nincs szükség nyomtatásra.</string>
+    <string name="print_end_errand_print_intro">A a kör során készült számlák adatainak összegzése - a nyomtatóhoz történő kapcsolódás után - a „Nyomtatás indítása” gombra koppintva nyomtatható ki.</string>
+    <string name="print_end_errand_no_more_printing">Az alábbi gombra kattintva befejeződik a körzárás. A későbbiekben nyomtatásra már nem lesz lehetőség!</string>
+    <string name="print_end_errand_return_button">Visszatérés a kezdőképernyőre</string>
+    <string name="print_end_errand_exit_confirm_title">Megerősítés szükséges</string>
+    <string name="print_end_errand_exit_confirm_message">Biztosan ki szeretne lépni? A későbbiekben a Lezárt körök menüpontból lesz lehetőség nyomtatásra.</string>
     <string name="screen_print_title">Nyomtatás</string>
     <string name="tile_login">Bejelentkezés</string>
     <string name="tile_change_password">Jelszó megváltoztatása</string>

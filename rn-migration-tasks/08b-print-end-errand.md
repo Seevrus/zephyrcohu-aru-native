@@ -45,13 +45,13 @@ and the session is never logged out.
 
 Everything needed is already on the device after `rounds/finish` + `refreshCurrentUser()`:
 
-| Printed field | Source |
-|---|---|
-| Üzletkötő | `User.userName`, `User.name` |
-| Raktár | `Round.store.code` / `.name` (fall back to `Store` looked up by `User.storeInUseId`) |
-| Kör | `User.lastRound.id`, `User.lastRound.partnerList.name` |
-| Kördátum | `User.lastRound.roundStarted` .. `roundFinished` (or today if null) |
-| Invoice rows | `ReceiptsStore.receipts` |
+| Printed field | Source                                                                               |
+| ------------- | ------------------------------------------------------------------------------------ |
+| Üzletkötő     | `User.userName`, `User.name`                                                         |
+| Raktár        | `Round.store.code` / `.name` (fall back to `Store` looked up by `User.storeInUseId`) |
+| Kör           | `User.lastRound.id`, `User.lastRound.partnerList.name`                               |
+| Kördátum      | `User.lastRound.roundStarted` .. `roundFinished` (or today if null)                  |
+| Invoice rows  | `ReceiptsStore.receipts`                                                             |
 
 `Round.store` is preferred over the `stores` lookup RN uses: it is the store the round was
 actually run with, is always present on a finished round, and needs no second query.
@@ -132,7 +132,7 @@ the startup consumer, so the write and the read land together instead of leaving
 reads. Do not add a half of it here.
 
 The consequence of the gap in the meantime is bounded but silent: a crash in that window leaves
-the user logged in with a finished round and a stale local receipts table, which the *next*
+the user logged in with a finished round and a stale local receipts table, which the _next_
 round's end-errand printout would then include. Recoverable only by an explicit manual logout.
 
 ## API requirements
@@ -148,6 +148,11 @@ Reuse `BorealTopAppBar`, `SuccessCard`-style header text, `ErrorCard`, `LoadingI
 
 The dev-mode print flow needs a suggested filename with an identifier and a date, like the sell
 and storage flows: extend `DevPrintFileNameBuilder` with a round variant.
+
+- end errand landing (probably already implemented, but as a reference):
+  `./screenshots/08b-01-end-errand-landing.png`
+- print end errand: `./screenshots/08b-02-print-end-errand.png`
+- leave without print alert: `./screenshots/08b-03-leave-without-print-alert.png`
 
 ## Testing requirements
 

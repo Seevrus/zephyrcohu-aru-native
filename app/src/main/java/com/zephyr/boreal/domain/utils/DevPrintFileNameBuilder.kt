@@ -1,6 +1,7 @@
 package com.zephyr.boreal.domain.utils
 
 import com.zephyr.boreal.domain.model.Receipt
+import com.zephyr.boreal.domain.model.Round
 import com.zephyr.boreal.domain.model.StoreDetails
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -34,5 +35,18 @@ object DevPrintFileNameBuilder {
         .trim()
     val date = LocalDate.now().format(FILE_NAME_DATE_FORMAT)
     return "${safeStoreName}_${storeDetails.code}_$date.txt"
+  }
+
+  /**
+   * Same identifier+date shape as [build]/[buildForStorage], keyed on the round's store and id
+   * since a round summary has no single receipt to key off of.
+   */
+  fun buildForRound(round: Round): String {
+    val safeStoreName =
+      round.store.name
+        .replace(ILLEGAL_FILENAME_CHARS, "_")
+        .trim()
+    val date = LocalDate.now().format(FILE_NAME_DATE_FORMAT)
+    return "korelszamolas_${safeStoreName}_${round.id}_$date.txt"
   }
 }

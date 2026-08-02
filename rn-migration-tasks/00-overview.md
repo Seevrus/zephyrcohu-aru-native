@@ -84,6 +84,18 @@ Already built and working in the native app:
   can resume directly at Summary if the app dies after a successful save but before the unlock
   call runs; `MainViewModel`'s storage tile handler now branches on that flag and on whether a
   storage session is already in progress, rather than always navigating to Select Store.
+- **Errand admin, end-of-round printout & cleanup**: **Task 08b** replaces the `PrintEndErrandScreen`
+  TODO stub with `PrintEndErrandViewModel`/`PrintEndErrandScreen`: a `PrintEndErrandTextBuilder`
+  ported field-for-field from RN's `createPrintEndErrand.ts` live-round branch (KÖRELSZÁMOLÁS
+  header, numerically — not RN's lexicographically — sorted invoice rows, canceled-receipt double
+  rows, totals excluding canceled pairs, "átvettem"/"átadtam" handover footer), reusing
+  `TextPadding` and the `PrintReceiptTextBuilder`-style number formatter, plus a `PrinterConnector`
+  reused directly (Task 08's pattern, no `PrintSection` wrapper). Exiting — return button or
+  back-press, gated behind a `BorealAlert` confirmation unless the round produced no receipts or
+  printing already succeeded — runs a one-shot `ReceiptsStore.resetReceipts()` →
+  `StoreSessionStore.resetSelectedStoreCurrentState()` → `UserRepository.logout()` sequence and
+  clears the back stack to `main`. Deliberately does **not** add the `isPendingResetAfterPrint`
+  crash-recovery flag; that lands whole with Task 10's startup consumer.
 
 ## What is still missing (this backlog)
 
@@ -104,15 +116,15 @@ Already built and working in the native app:
 | 06 | Storage · select store (lock to user) | Storage | frontier | ✅ Done |
 | 07 | Storage · select items from store (batches, barcode, quantities) | Storage | 06 | ✅ Done |
 | 08 | Storage · review, save & summary (load + unlock + print) | Storage / Print | 07, 03 | ✅ Done |
-| 08b | Errand · print end-errand summary & close the round | Errand / Print | 03, 03b, 08 | Not started |
+| 08b | Errand · print end-errand summary & close the round | Errand / Print | 03, 03b, 08 | ✅ Done |
 | 09 | Errand history · list rounds & round details | Errand history | frontier | Not started |
 | 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier, 08b | Not started |
 | 11 | Cross-cutting · app-update / version gate | Infra | frontier | Not started |
 
-**Next up:** Task 08b (print end-errand summary & close the round). It was added after Task 08,
-when the `PrintEndErrandScreen` TODO stub noted below turned out to be a business gap rather than
-cosmetic debt: the round closes on the server with no handover printout and no local cleanup or
-logout. It also blocks Task 09, which reuses its printout builder for historical rounds.
+**Next up:** Task 09 (errand history: list rounds & round details). It reuses Task 08b's
+`PrintEndErrandTextBuilder` for the historical-round branch (`createPrintEndErrand.ts`'s other
+input variant, keyed on an explicit `round`/`partnerList`/receipts payload instead of
+`user.lastRound` + the live `ReceiptsStore`) rather than porting the printout logic a second time.
 
 Tasks 03c–03f were a consolidation batch from the post-03b code review, completed ahead of
 Task 04. They were independent of each other and none added user-facing behavior:
