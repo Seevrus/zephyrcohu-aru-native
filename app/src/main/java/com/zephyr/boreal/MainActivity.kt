@@ -37,12 +37,15 @@ import com.zephyr.boreal.ui.screens.ReviewItemsScreen
 import com.zephyr.boreal.ui.screens.ReviewItemsViewModel
 import com.zephyr.boreal.ui.screens.SearchPartnerNavScreen
 import com.zephyr.boreal.ui.screens.SearchPartnerNavViewModel
+import com.zephyr.boreal.ui.screens.SelectItemsFromStoreScreen
 import com.zephyr.boreal.ui.screens.SelectItemsScreen
 import com.zephyr.boreal.ui.screens.SelectItemsViewModel
 import com.zephyr.boreal.ui.screens.SelectOtherItemsScreen
 import com.zephyr.boreal.ui.screens.SelectOtherItemsViewModel
 import com.zephyr.boreal.ui.screens.SelectPartnerScreen
 import com.zephyr.boreal.ui.screens.SelectPartnerViewModel
+import com.zephyr.boreal.ui.screens.SelectStoreScreen
+import com.zephyr.boreal.ui.screens.SelectStoreViewModel
 import com.zephyr.boreal.ui.screens.SettingsScreen
 import com.zephyr.boreal.ui.screens.StartErrandScreen
 import com.zephyr.boreal.ui.screens.StartErrandViewModel
@@ -131,6 +134,29 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
     composable("select_partner") {
       SelectPartnerRoute(navController)
     }
+    composable("select_store") {
+      val viewModel: SelectStoreViewModel = hiltViewModel()
+      SelectStoreScreen(
+        viewModel = viewModel,
+        onNavigateBack = {
+          navController.popBackStack()
+        },
+        onSuccess = {
+          navController.navigate("select_items_from_store") {
+            popUpTo("select_store") { inclusive = true }
+          }
+        },
+      )
+    }
+    composable("select_items_from_store") {
+      SelectItemsFromStoreScreen(
+        onNavigateHome = {
+          navController.navigate("main") {
+            popUpTo(0) { inclusive = true }
+          }
+        },
+      )
+    }
     composable("search_partner_nav") {
       SearchPartnerNavRoute(navController)
     }
@@ -204,6 +230,9 @@ private fun MainRoute(navController: androidx.navigation.NavHostController) {
     },
     onNavigateToReceiptsList = {
       navController.navigate("receipts")
+    },
+    onNavigateToSelectStore = {
+      navController.navigate("select_store")
     },
   )
 }

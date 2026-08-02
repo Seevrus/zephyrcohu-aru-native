@@ -1,5 +1,7 @@
 package com.zephyr.boreal.data.repository
 
+import android.content.Context
+import com.zephyr.boreal.R
 import com.zephyr.boreal.api.StoreApiService
 import com.zephyr.boreal.api.dto.request.SelectStoreDataDto
 import com.zephyr.boreal.api.dto.request.SelectStoreRequestDto
@@ -14,9 +16,12 @@ import com.zephyr.boreal.domain.model.StoreDetails
 import com.zephyr.boreal.domain.model.User
 import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.user.UserSessionStore
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import org.json.JSONObject
+import retrofit2.HttpException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,7 +35,15 @@ class StoresRepository
     connectivityObserver: ConnectivityObserver,
     userSessionStore: UserSessionStore,
     cacheMetadataDao: CacheMetadataDao,
+    @param:ApplicationContext private val context: Context,
   ) : BaseRepository(connectivityObserver, userSessionStore, cacheMetadataDao) {
+    companion object {
+      private const val HTTP_STATUS_FORBIDDEN = 403
+      private const val HTTP_STATUS_NOT_FOUND = 404
+      private const val HTTP_STATUS_UNPROCESSABLE_ENTITY = 422
+      private const val HTTP_STATUS_INSUFFICIENT_STORAGE = 507
+    }
+
     fun getStores(forceRefresh: Boolean = false): Flow<ApiResource<List<Store>>> =
       networkBoundResource(
         query = {
@@ -55,9 +68,44 @@ class StoresRepository
           throw Exception("Invalid Store ID")
         }
         ApiResource.Success(response.toDomain())
+      } catch (e: HttpException) {
+        ApiResource.Error(selectStoreErrorMessage(e))
       } catch (e: Exception) {
-        ApiResource.Error(e.localizedMessage ?: "Failed to select store")
+        ApiResource.Error(e.localizedMessage ?: context.getString(R.string.select_store_error_unexpected))
       }
+
+    private fun selectStoreErrorMessage(e: HttpException): String =
+      when (e.code()) {
+        HTTP_STATUS_FORBIDDEN -> context.getString(R.string.select_store_error_forbidden)
+        HTTP_STATUS_NOT_FOUND -> context.getString(R.string.select_store_error_not_found)
+        HTTP_STATUS_UNPROCESSABLE_ENTITY -> context.getString(R.string.select_store_error_primary_forbidden)
+        HTTP_STATUS_INSUFFICIENT_STORAGE -> selectStore507ErrorMessage(e)
+        else -> context.getString(R.string.select_store_error_unexpected)
+      }
+
+    private fun selectStore507ErrorMessage(e: HttpException): String {
+      val backendMessage =
+        try {
+          JSONObject(
+            e
+              .response()
+              ?.errorBody()
+              ?.string()
+              .orEmpty(),
+          ).optString("message")
+        } catch (
+          @Suppress("SwallowedException") jsonException: Exception,
+        ) {
+          null
+        }
+      return when {
+        backendMessage?.contains("already has a store", ignoreCase = true) == true ->
+          context.getString(R.string.select_store_error_already_has_store)
+        backendMessage?.contains("already locked", ignoreCase = true) == true ->
+          context.getString(R.string.select_store_error_store_taken)
+        else -> context.getString(R.string.select_store_error_unexpected)
+      }
+    }
 
     suspend fun deselectStore(): ApiResource<Unit> =
       try {

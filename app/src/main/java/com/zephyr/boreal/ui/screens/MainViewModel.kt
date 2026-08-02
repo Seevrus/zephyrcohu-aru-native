@@ -35,6 +35,8 @@ sealed interface MainScreenEvent {
   data object NavigateToSelectPartner : MainScreenEvent
 
   data object NavigateToReceiptsList : MainScreenEvent
+
+  data object NavigateToSelectStore : MainScreenEvent
 }
 
 data class AlertUiState(
@@ -343,7 +345,7 @@ class MainViewModel
       viewModelScope.launch {
         when (id) {
           MainTileId.STORAGE -> {
-            // Handle Storage navigation
+            eventChannel.send(MainScreenEvent.NavigateToSelectStore)
           }
           MainTileId.SELL -> {
             eventChannel.send(MainScreenEvent.NavigateToSelectPartner)

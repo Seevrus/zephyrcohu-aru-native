@@ -134,6 +134,22 @@
     <string name="round_info_partner_list">Boltlista:</string>
     <string name="round_info_store">Raktár:</string>
     <string name="round_info_started">Kör kezdete:</string>
+
+    <!-- Select Store (Storage) -->
+    <string name="screen_select_store_title">Raktár kiválasztása</string>
+    <string name="select_store_store_label">Raktár</string>
+    <string name="select_store_loading_message">Betöltés…</string>
+    <string name="select_store_locking_message">Raktár zárolása…</string>
+    <string name="select_store_error_already_has_store">Már van zárolt raktára.</string>
+    <string name="select_store_error_store_taken">A raktár már zárolva van.</string>
+    <string name="select_store_error_forbidden">A raktár másik felhasználóhoz tartozik.</string>
+    <string name="select_store_error_primary_forbidden">A központi raktár nem zárolható.</string>
+    <string name="select_store_error_not_found">A kiválasztott raktár nem található.</string>
+    <string name="select_store_error_unexpected">Váratlan hiba lépett fel a raktár kiválasztása során.</string>
+
+    <!-- Select Items From Store (Storage, placeholder until Task 07) -->
+    <string name="screen_select_items_from_store_title">Tételek kiválasztása</string>
+    <string name="select_items_from_store_home_button">Vissza a főoldalra</string>
     <!-- Select Partner -->
     <string name="select_partner_title">Partner kiválasztása</string>
     <string name="select_partner_search">Keresés</string>

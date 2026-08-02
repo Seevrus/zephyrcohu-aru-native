@@ -52,6 +52,13 @@ Already built and working in the native app:
   stores, user), Room persistence (including Room-backed local receipts list, Task 01b),
   DataStore session/app-state (including the persisted sell-flow draft, Task 01c),
   connectivity observer.
+- **Storage flow, entry point**: **Task 06** adds `SelectStoreScreen`/`SelectStoreViewModel`
+  (eligibility-filtered dropdown, default-to-owned-store selection, lock → fetch primary + selected
+  store details → store into a new `StorageSessionStore` → replace-navigate to
+  `select_items_from_store`), reachable from the main screen's "Rakodás" tile (previously a
+  no-op stub). `StoresRepository.selectStore` now maps the lock endpoint's distinct refusal
+  responses (507 ×2, 403, 422, 404) to readable Hungarian messages. `select_items_from_store` is
+  a placeholder screen (home button only) until Task 07 replaces it.
 
 ## What is still missing (this backlog)
 
@@ -69,15 +76,15 @@ Already built and working in the native app:
 | 03f | Persistence · separate cache from record, survive shape changes | Data | frontier | ✅ Done |
 | 04 | Receipts · list of receipts | Receipts | 03, 03c | ✅ Done |
 | 05 | Receipts · details, reprint & storno (cancel) | Receipts | 04 | ✅ Done |
-| 06 | Storage · select store (lock to user) | Storage | frontier | Not started |
+| 06 | Storage · select store (lock to user) | Storage | frontier | ✅ Done |
 | 07 | Storage · select items from store (batches, barcode, quantities) | Storage | 06 | Not started |
 | 08 | Storage · review, save & summary (load + unlock + print) | Storage / Print | 07, 03 | Not started |
 | 09 | Errand history · list rounds & round details | Errand history | frontier | Not started |
 | 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier | Not started |
 | 11 | Cross-cutting · app-update / version gate | Infra | frontier | Not started |
 
-**Next up:** Task 06 (select store / lock to user), which starts the Storage area from the
-frontier and has no dependency on the receipts/print work above.
+**Next up:** Task 07 (select items from store), which builds on Task 06's `select_store` screen
+and `StorageSessionStore`.
 
 Tasks 03c–03f were a consolidation batch from the post-03b code review, completed ahead of
 Task 04. They were independent of each other and none added user-facing behavior:
