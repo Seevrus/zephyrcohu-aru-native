@@ -1,5 +1,8 @@
 package com.zephyr.boreal.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class StorageListItem(
   val itemId: Int,
   val expirationId: Int,

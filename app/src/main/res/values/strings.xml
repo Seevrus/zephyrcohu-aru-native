@@ -158,8 +158,25 @@
     <string name="select_items_from_store_abandon_title">Megerősítés szükséges</string>
     <string name="select_items_from_store_abandon_message">Ezzel a lépéssel befejeződik a rakodási folyamat a képernyőn elvégzett módosítások mentése nélkül.</string>
 
-    <!-- Review Storage Changes (Storage, placeholder until Task 08) -->
-    <string name="screen_review_storage_changes_title">Rakodási változások áttekintése</string>
+    <!-- Review Storage Changes (Storage) -->
+    <string name="screen_review_storage_changes_title">Áttekintés</string>
+    <string name="review_storage_changes_total">Mindösszesen: %1$d termék / +%2$d / -%3$d</string>
+    <string name="review_storage_changes_offline_notice">Az alkalmazás jelenleg internetkapcsolat nélkül működik.</string>
+    <string name="review_storage_changes_no_primary_store">Az alkalmazás nem találja a főkraktárat. Ezt az üzenetet egyértelműen nem szabadna látnia, kérem azonnal lépjen kapcsolatba az alkalmazás fejlesztőjével!</string>
+    <string name="review_storage_changes_save_error">A rakodás mentése sikertelen.</string>
+    <string name="review_storage_changes_confirm_title">Rakodás véglegesítése</string>
+    <string name="review_storage_changes_confirm_message">A készülék szinkronizálja az adatokat a szerverrel és zárja a rakodási folyamatot.</string>
+    <string name="review_storage_changes_confirm_button">Folytatás</string>
+    <string name="review_storage_changes_barcode_label">Vonalkód:</string>
+    <string name="review_storage_changes_quantity_change_label">Rakodott mennyiség:</string>
+    <string name="review_storage_changes_final_quantity_label">Rakodás utáni készlet:</string>
+
+    <!-- Storage Summary -->
+    <string name="storage_summary_title">Összegzés</string>
+    <string name="storage_summary_success_message">Rakodás mentése sikeres!</string>
+    <string name="storage_summary_print_intro">A rakjegyzék nyomtatása - a nyomtatóhoz történő kapcsolódás után - a „Nyomtatás indítása” gombra koppintva indítható el.</string>
+    <string name="storage_summary_no_more_printing">Az alábbi gombra kattintva befejeződik a rakodási folyamat. A későbbiekben nyomtatásra már nem lesz lehetőség!</string>
+    <string name="storage_summary_return_button">Visszatérés a kezdőképernyőre</string>
 
     <!-- Select Partner -->
     <string name="select_partner_title">Partner kiválasztása</string>

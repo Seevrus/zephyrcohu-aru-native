@@ -21,7 +21,6 @@ object PrintReceiptTextBuilder {
   private const val DEFAULT_COPIES = 3
   private const val AMOUNT_FIELD_WIDTH = 10
   private const val VAT_RATE_FIELD_WIDTH = 3
-  private const val TRUNCATION_SUFFIX_LENGTH = 3
 
   // Lengths of the literal "STORNO SZÁMLA " prefix and " (Stornozott számla száma: )" suffix,
   // used to compute how much filler space remains on the cancel-title row within [ROW_WIDTH].
@@ -390,21 +389,11 @@ object PrintReceiptTextBuilder {
     target: String,
     length: Int,
     fillString: String = " ",
-  ): String =
-    if (target.length > length) {
-      target.take(length - TRUNCATION_SUFFIX_LENGTH) + "..."
-    } else {
-      target.padStart(length, fillString.first())
-    }
+  ): String = TextPadding.padLeftSide(target, length, fillString)
 
   private fun padRightSide(
     target: String,
     length: Int,
     fillString: String = " ",
-  ): String =
-    if (target.length > length) {
-      target.take(length - TRUNCATION_SUFFIX_LENGTH) + "..."
-    } else {
-      target.padEnd(length, fillString.first())
-    }
+  ): String = TextPadding.padRightSide(target, length, fillString)
 }

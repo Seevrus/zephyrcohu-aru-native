@@ -10,6 +10,7 @@ import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.print.PrintSettingsState
 import com.zephyr.boreal.store.print.PrintSettingsStore
 import com.zephyr.boreal.store.receipts.ReceiptsStore
+import com.zephyr.boreal.store.store.StorageSessionStore
 import com.zephyr.boreal.store.user.StoredToken
 import com.zephyr.boreal.store.user.UserSessionStore
 import com.zephyr.boreal.ui.components.TileVariant
@@ -47,6 +48,7 @@ class MainViewModelTest {
   private val connectivityObserver: ConnectivityObserver = mock()
   private val printSettingsStore: PrintSettingsStore = mock()
   private val receiptsStore: ReceiptsStore = mock()
+  private val storageSessionStore: StorageSessionStore = mock()
   private val testDispatcher = StandardTestDispatcher()
 
   private val isInternetReachableFlow = MutableStateFlow(true)
@@ -54,6 +56,8 @@ class MainViewModelTest {
   private val printSettingsFlow = MutableStateFlow(PrintSettingsState())
   private val currentUserFlow = MutableStateFlow<ApiResource<User>>(ApiResource.Loading())
   private val receiptsFlow = MutableStateFlow<List<Receipt>>(emptyList())
+  private val isStorageSavedToApiFlow = MutableStateFlow(false)
+  private val storageListItemsFlow = MutableStateFlow<List<com.zephyr.boreal.domain.model.StorageListItem>?>(null)
 
   private val mockUser =
     User(
@@ -81,6 +85,8 @@ class MainViewModelTest {
     whenever(userSessionStore.userState).thenReturn(userStoreStateFlow)
     whenever(printSettingsStore.printSettingsState).thenReturn(printSettingsFlow)
     whenever(receiptsStore.receipts).thenReturn(receiptsFlow)
+    whenever(storageSessionStore.isStorageSavedToApi).thenReturn(isStorageSavedToApiFlow)
+    whenever(storageSessionStore.storageListItems).thenReturn(storageListItemsFlow)
   }
 
   @AfterEach
@@ -96,6 +102,7 @@ class MainViewModelTest {
       connectivityObserver,
       printSettingsStore,
       receiptsStore,
+      storageSessionStore,
     )
 
   private fun buildReceipt(id: Int) =
@@ -541,6 +548,84 @@ class MainViewModelTest {
       runCurrent()
 
       assertTrue(events.contains(MainScreenEvent.NavigateToSelectPartner))
+      job.cancel()
+      uiStateJob.cancel()
+    }
+
+  @Test
+  fun `Clicking Storage tile navigates to select store when no storage session is in progress`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser)
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      val events = mutableListOf<MainScreenEvent>()
+      val job = launch { viewModel.events.collect { events.add(it) } }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val storageTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == MainTileId.STORAGE }!!
+      viewModel.onTileClick(storageTile)
+      runCurrent()
+
+      assertTrue(events.contains(MainScreenEvent.NavigateToSelectStore))
+      job.cancel()
+      uiStateJob.cancel()
+    }
+
+  @Test
+  fun `Clicking Storage tile resumes at select items when a storage session is in progress but not saved`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser.copy(state = DomainUserState.LOADING))
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+      storageListItemsFlow.value = emptyList()
+
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      val events = mutableListOf<MainScreenEvent>()
+      val job = launch { viewModel.events.collect { events.add(it) } }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val storageTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == MainTileId.STORAGE }!!
+      viewModel.onTileClick(storageTile)
+      runCurrent()
+
+      assertTrue(events.contains(MainScreenEvent.NavigateToSelectItemsFromStore))
+      job.cancel()
+      uiStateJob.cancel()
+    }
+
+  @Test
+  fun `Clicking Storage tile resumes at summary when changes were already saved to the API`() =
+    runTest {
+      userStoreStateFlow.value = StoreUserState(storedToken = StoredToken("token", false, "2099"))
+      currentUserFlow.value = ApiResource.Success(mockUser.copy(state = DomainUserState.LOADING))
+      printSettingsFlow.value = PrintSettingsState(selectedPrinterMacAddress = "00:11:22:33:44:55")
+      storageListItemsFlow.value = emptyList()
+      isStorageSavedToApiFlow.value = true
+
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      val events = mutableListOf<MainScreenEvent>()
+      val job = launch { viewModel.events.collect { events.add(it) } }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      val storageTile =
+        viewModel.uiState.value.tiles
+          .find { it.id == MainTileId.STORAGE }!!
+      viewModel.onTileClick(storageTile)
+      runCurrent()
+
+      assertTrue(events.contains(MainScreenEvent.NavigateToStorageSummary))
       job.cancel()
       uiStateJob.cancel()
     }

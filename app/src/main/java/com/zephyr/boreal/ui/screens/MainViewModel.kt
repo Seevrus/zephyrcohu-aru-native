@@ -14,6 +14,7 @@ import com.zephyr.boreal.domain.model.canUseApp
 import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.print.PrintSettingsStore
 import com.zephyr.boreal.store.receipts.ReceiptsStore
+import com.zephyr.boreal.store.store.StorageSessionStore
 import com.zephyr.boreal.store.user.UserSessionStore
 import com.zephyr.boreal.ui.components.TileVariant
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,6 +38,10 @@ sealed interface MainScreenEvent {
   data object NavigateToReceiptsList : MainScreenEvent
 
   data object NavigateToSelectStore : MainScreenEvent
+
+  data object NavigateToSelectItemsFromStore : MainScreenEvent
+
+  data object NavigateToStorageSummary : MainScreenEvent
 }
 
 data class AlertUiState(
@@ -84,6 +89,7 @@ class MainViewModel
     private val connectivityObserver: ConnectivityObserver,
     private val printSettingsStore: PrintSettingsStore,
     private val receiptsStore: ReceiptsStore,
+    private val storageSessionStore: StorageSessionStore,
   ) : ViewModel() {
     companion object {
       const val FONT_WARMUP_DELAY_MS = 1000L
@@ -345,7 +351,13 @@ class MainViewModel
       viewModelScope.launch {
         when (id) {
           MainTileId.STORAGE -> {
-            eventChannel.send(MainScreenEvent.NavigateToSelectStore)
+            val event =
+              when {
+                storageSessionStore.isStorageSavedToApi.value -> MainScreenEvent.NavigateToStorageSummary
+                storageSessionStore.storageListItems.value != null -> MainScreenEvent.NavigateToSelectItemsFromStore
+                else -> MainScreenEvent.NavigateToSelectStore
+              }
+            eventChannel.send(event)
           }
           MainTileId.SELL -> {
             eventChannel.send(MainScreenEvent.NavigateToSelectPartner)

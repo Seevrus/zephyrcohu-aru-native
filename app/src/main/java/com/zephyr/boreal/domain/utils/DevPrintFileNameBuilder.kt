@@ -1,6 +1,9 @@
 package com.zephyr.boreal.domain.utils
 
 import com.zephyr.boreal.domain.model.Receipt
+import com.zephyr.boreal.domain.model.StoreDetails
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 /**
  * Builds the suggested filename for the dev-mode "save print string" flow (Task 03b):
@@ -10,6 +13,7 @@ import com.zephyr.boreal.domain.model.Receipt
  */
 object DevPrintFileNameBuilder {
   private val ILLEGAL_FILENAME_CHARS = Regex("[\\\\/:*?\"<>|]")
+  private val FILE_NAME_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
   fun build(receipt: Receipt): String {
     val safePartnerName =
@@ -17,5 +21,18 @@ object DevPrintFileNameBuilder {
         .replace(ILLEGAL_FILENAME_CHARS, "_")
         .trim()
     return "${safePartnerName}_${receipt.invoiceDate}_${receipt.serialNumber}.txt"
+  }
+
+  /**
+   * Same identifier+date shape as [build], but for the storage-changeset print (no
+   * receipt/serial-number to key off of, so the store's code+name plus today's date fill in).
+   */
+  fun buildForStorage(storeDetails: StoreDetails): String {
+    val safeStoreName =
+      storeDetails.name
+        .replace(ILLEGAL_FILENAME_CHARS, "_")
+        .trim()
+    val date = LocalDate.now().format(FILE_NAME_DATE_FORMAT)
+    return "${safeStoreName}_${storeDetails.code}_$date.txt"
   }
 }

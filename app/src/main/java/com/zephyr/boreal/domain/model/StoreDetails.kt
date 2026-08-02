@@ -11,6 +11,7 @@ data class StoreDetailsExpiration(
   val quantity: Double,
 )
 
+@Serializable
 data class StoreDetails(
   val id: Int,
   val name: String,

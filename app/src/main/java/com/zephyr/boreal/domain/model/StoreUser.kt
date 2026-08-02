@@ -1,5 +1,8 @@
 package com.zephyr.boreal.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class StoreUser(
   val id: Int,
   val userName: String,

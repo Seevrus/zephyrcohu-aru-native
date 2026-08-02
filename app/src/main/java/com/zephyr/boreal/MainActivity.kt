@@ -36,6 +36,7 @@ import com.zephyr.boreal.ui.screens.ReceiptsListScreen
 import com.zephyr.boreal.ui.screens.ReviewItemsScreen
 import com.zephyr.boreal.ui.screens.ReviewItemsViewModel
 import com.zephyr.boreal.ui.screens.ReviewStorageChangesScreen
+import com.zephyr.boreal.ui.screens.ReviewStorageChangesViewModel
 import com.zephyr.boreal.ui.screens.SearchPartnerNavScreen
 import com.zephyr.boreal.ui.screens.SearchPartnerNavViewModel
 import com.zephyr.boreal.ui.screens.SelectItemsFromStoreScreen
@@ -51,6 +52,8 @@ import com.zephyr.boreal.ui.screens.SelectStoreViewModel
 import com.zephyr.boreal.ui.screens.SettingsScreen
 import com.zephyr.boreal.ui.screens.StartErrandScreen
 import com.zephyr.boreal.ui.screens.StartErrandViewModel
+import com.zephyr.boreal.ui.screens.StorageSummaryScreen
+import com.zephyr.boreal.ui.screens.StorageSummaryViewModel
 import com.zephyr.boreal.ui.screens.SummaryScreen
 import com.zephyr.boreal.ui.screens.SummaryViewModel
 import com.zephyr.boreal.ui.theme.BorealColors
@@ -165,7 +168,20 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
       )
     }
     composable("review_storage_changes") {
+      val viewModel: ReviewStorageChangesViewModel = hiltViewModel()
       ReviewStorageChangesScreen(
+        viewModel = viewModel,
+        onSaved = {
+          navController.navigate("storage_summary") {
+            popUpTo("main") { inclusive = false }
+          }
+        },
+      )
+    }
+    composable("storage_summary") {
+      val viewModel: StorageSummaryViewModel = hiltViewModel()
+      StorageSummaryScreen(
+        viewModel = viewModel,
         onNavigateHome = {
           navController.navigate("main") {
             popUpTo(0) { inclusive = true }
@@ -249,6 +265,12 @@ private fun MainRoute(navController: androidx.navigation.NavHostController) {
     },
     onNavigateToSelectStore = {
       navController.navigate("select_store")
+    },
+    onNavigateToSelectItemsFromStore = {
+      navController.navigate("select_items_from_store")
+    },
+    onNavigateToStorageSummary = {
+      navController.navigate("storage_summary")
     },
   )
 }

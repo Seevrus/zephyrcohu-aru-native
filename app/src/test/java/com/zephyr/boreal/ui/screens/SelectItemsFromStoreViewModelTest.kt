@@ -3,6 +3,7 @@ package com.zephyr.boreal.ui.screens
 import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.ItemsRepository
 import com.zephyr.boreal.data.repository.StoresRepository
+import com.zephyr.boreal.data.repository.UserRepository
 import com.zephyr.boreal.domain.model.Expiration
 import com.zephyr.boreal.domain.model.Item
 import com.zephyr.boreal.domain.model.StorageListItem
@@ -93,6 +94,7 @@ class SelectItemsFromStoreViewModelTest {
   private val itemsRepository: ItemsRepository = mock()
   private val storesRepository: StoresRepository = mock()
   private val storageSessionStore: StorageSessionStore = mock()
+  private val userRepository: UserRepository = mock()
 
   private val testDispatcher = StandardTestDispatcher()
 
@@ -116,7 +118,7 @@ class SelectItemsFromStoreViewModelTest {
   }
 
   private fun createViewModel(): SelectItemsFromStoreViewModel =
-    SelectItemsFromStoreViewModel(itemsRepository, storesRepository, storageSessionStore)
+    SelectItemsFromStoreViewModel(itemsRepository, storesRepository, storageSessionStore, userRepository)
 
   @Test
   fun `builds the working list from items, primary and selected-initial stock`() =
@@ -272,6 +274,7 @@ class SelectItemsFromStoreViewModelTest {
       advanceUntilIdle()
 
       verify(storesRepository).deselectStore()
+      verify(userRepository).refreshCurrentUser()
       verify(storageSessionStore).clearStores()
       assertTrue(onAbandonedCalled)
       assertFalse(viewModel.uiState.value.showAbandonConfirm)
@@ -294,6 +297,7 @@ class SelectItemsFromStoreViewModelTest {
       advanceUntilIdle()
 
       verify(storesRepository).deselectStore()
+      verify(userRepository).refreshCurrentUser()
       verify(storageSessionStore).clearStores()
       assertTrue(onAbandonedCalled)
       assertFalse(viewModel.uiState.value.showAbandonConfirm)

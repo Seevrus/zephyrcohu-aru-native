@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.zephyr.boreal.data.repository.ApiResource
 import com.zephyr.boreal.data.repository.ItemsRepository
 import com.zephyr.boreal.data.repository.StoresRepository
+import com.zephyr.boreal.data.repository.UserRepository
 import com.zephyr.boreal.domain.model.StorageListItem
 import com.zephyr.boreal.store.store.StorageSessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -72,6 +73,7 @@ class SelectItemsFromStoreViewModel
     private val itemsRepository: ItemsRepository,
     private val storesRepository: StoresRepository,
     private val storageSessionStore: StorageSessionStore,
+    private val userRepository: UserRepository,
   ) : ViewModel() {
     private val searchQueryFlow = MutableStateFlow("")
     private val expandedExpirationIdsFlow = MutableStateFlow<Set<Int>>(emptySet())
@@ -180,6 +182,7 @@ class SelectItemsFromStoreViewModel
       viewModelScope.launch {
         isAbandoningFlow.value = true
         storesRepository.deselectStore()
+        userRepository.refreshCurrentUser()
         storageSessionStore.clearStores()
         isAbandoningFlow.value = false
         onAbandoned()

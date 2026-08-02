@@ -68,8 +68,22 @@ Already built and working in the native app:
   — confirmed intentional), a `Blue400`/`Warning`/`Neutral` row highlight, and a forward action
   once any row has changed. Abandoning the load (explicit button or back-navigation) always calls
   `StoresRepository.deselectStore` before clearing the session — a deliberate fix over RN, where
-  only the explicit button unlocks. `review_storage_changes` is a new placeholder screen (home
-  button only) until Task 08 replaces it.
+  only the explicit button unlocks.
+- **Storage flow, review/save/summary**: **Task 08** replaces the `review_storage_changes`
+  placeholder with `ReviewStorageChangesScreen`/`ReviewStorageChangesViewModel` (changed-items
+  filter/sort, up/down totals, confirm gated on online + a known primary store, a `BorealAlert`
+  confirmation before calling `POST storage/load` via the already-existing but previously-unused
+  `ItemsRepository.saveSelectedItems`) and adds a new `StorageSummaryScreen`/
+  `StorageSummaryViewModel` (unlock via `StoresRepository.deselectStore`, guarded to run exactly
+  once across both the return button and back-press paths, plus a print slot reusing
+  `PrinterConnector` directly with a new `PrintStorageTextBuilder` — the storage-changeset text
+  builder ported field-for-field from RN's `createPrintStorageChanges.ts`, sharing its
+  truncate/pad column logic with `PrintReceiptTextBuilder` via a new `TextPadding` object).
+  `StorageSessionStore` is now DataStore-backed (a **record**, per the persistence-durability
+  convention) and carries a persisted `isStorageSavedToApi` flag so the main-screen "Rakodás" tile
+  can resume directly at Summary if the app dies after a successful save but before the unlock
+  call runs; `MainViewModel`'s storage tile handler now branches on that flag and on whether a
+  storage session is already in progress, rather than always navigating to Select Store.
 
 ## What is still missing (this backlog)
 
@@ -89,14 +103,12 @@ Already built and working in the native app:
 | 05 | Receipts · details, reprint & storno (cancel) | Receipts | 04 | ✅ Done |
 | 06 | Storage · select store (lock to user) | Storage | frontier | ✅ Done |
 | 07 | Storage · select items from store (batches, barcode, quantities) | Storage | 06 | ✅ Done |
-| 08 | Storage · review, save & summary (load + unlock + print) | Storage / Print | 07, 03 | Not started |
+| 08 | Storage · review, save & summary (load + unlock + print) | Storage / Print | 07, 03 | ✅ Done |
 | 09 | Errand history · list rounds & round details | Errand history | frontier | Not started |
 | 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier | Not started |
 | 11 | Cross-cutting · app-update / version gate | Infra | frontier | Not started |
 
-**Next up:** Task 08 (storage review, save & summary), which builds on Task 07's
-`SelectItemsFromStoreScreen`/`StorageListItem` working list and the `review_storage_changes`
-placeholder.
+**Next up:** Task 09 (errand history: list rounds & round details).
 
 Tasks 03c–03f were a consolidation batch from the post-03b code review, completed ahead of
 Task 04. They were independent of each other and none added user-facing behavior:
