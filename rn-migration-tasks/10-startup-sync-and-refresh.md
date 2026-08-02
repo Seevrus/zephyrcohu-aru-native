@@ -47,10 +47,24 @@ audits and closes the gaps so the behavior is at parity.
   default, and a short 30 s age when re-entering store selection). Native's garbage collection
   should cover this — verify coverage for the sets above and the store list on relevant screen
   entries.
-- **Post-print reset cycle**: after the print-driven reset trigger (RN `pendingResetAfterPrint`),
-  clear sell/receipt/order/selected-store session state and, if the token is still valid, log the
-  user out. Confirm whether an equivalent exists in native; add if missing (no
-  `pendingReset`/`afterPrint` handling currently found).
+- **Post-print reset cycle** (concretized by Task 08b — read its "Deferred" note first): Task 08b
+  runs the reset+logout inline when the user leaves the print-end-errand screen, but deliberately
+  does **not** port RN's crash-recovery half, because native has no startup hook to hang it on
+  until this task exists. That half is:
+  - A **persisted** boolean (RN's `isPendingResetAfterPrint`, a **record** per the durability
+    convention — it exists only on the device and nothing server-side recreates it) that Task 08b's
+    ViewModel sets to `true` on print success and back to `false` once the exit sequence completes.
+    Task 08b does not add it; adding it and having 08b set it is this task's job, so the write and
+    the read land together rather than leaving a flag nobody consumes.
+  - On startup, if the flag is set: `ReceiptsStore.resetReceipts()`,
+    `StoreSessionStore.resetSelectedStoreCurrentState()`, clear the flag, then
+    `UserRepository.logout()` **only if the token is still valid** (RN skips the network logout on
+    an expired token — see `useInitializeApp`).
+
+  The window this closes is narrow but the failure is silent: a crash between "printed" and
+  "exited" otherwise leaves the user logged in with a finished round and a stale local receipts
+  table that the next round's end-errand printout would then include. Recoverable only by an
+  explicit manual logout, which the user has no reason to know to do.
 - Refreshes must not thrash: only refetch when data is absent or stale, guarding against loops
   (mirror RN's "not already loading/pending" guards).
 
@@ -70,8 +84,10 @@ audits and closes the gaps so the behavior is at parity.
   repository level beyond what parity requires.
 
 ## Depends on
-Frontier. Best done alongside or after the feature tasks so the exact "must be fresh" data sets
-(receipts, store details) are all present.
+Frontier, plus **Task 08b** for the post-print reset cycle — 08b builds the screen and the inline
+reset/logout path this task adds crash recovery to. The rest of the task is independent of 08b and
+can proceed without it. Best done alongside or after the feature tasks so the exact "must be
+fresh" data sets (receipts, store details) are all present.
 
 ## RN reference paths
 - `resources/frontend/hooks/useInitializeApp.tsx`
