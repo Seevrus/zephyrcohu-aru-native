@@ -35,9 +35,11 @@ import com.zephyr.boreal.ui.screens.PrintSettingsScreen
 import com.zephyr.boreal.ui.screens.ReceiptsListScreen
 import com.zephyr.boreal.ui.screens.ReviewItemsScreen
 import com.zephyr.boreal.ui.screens.ReviewItemsViewModel
+import com.zephyr.boreal.ui.screens.ReviewStorageChangesScreen
 import com.zephyr.boreal.ui.screens.SearchPartnerNavScreen
 import com.zephyr.boreal.ui.screens.SearchPartnerNavViewModel
 import com.zephyr.boreal.ui.screens.SelectItemsFromStoreScreen
+import com.zephyr.boreal.ui.screens.SelectItemsFromStoreViewModel
 import com.zephyr.boreal.ui.screens.SelectItemsScreen
 import com.zephyr.boreal.ui.screens.SelectItemsViewModel
 import com.zephyr.boreal.ui.screens.SelectOtherItemsScreen
@@ -149,7 +151,21 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
       )
     }
     composable("select_items_from_store") {
+      val viewModel: SelectItemsFromStoreViewModel = hiltViewModel()
       SelectItemsFromStoreScreen(
+        viewModel = viewModel,
+        onNavigateHome = {
+          navController.navigate("main") {
+            popUpTo(0) { inclusive = true }
+          }
+        },
+        onNavigateNext = {
+          navController.navigate("review_storage_changes")
+        },
+      )
+    }
+    composable("review_storage_changes") {
+      ReviewStorageChangesScreen(
         onNavigateHome = {
           navController.navigate("main") {
             popUpTo(0) { inclusive = true }

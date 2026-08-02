@@ -1,9 +1,11 @@
 package com.zephyr.boreal.store.store
 
+import com.zephyr.boreal.domain.model.StorageListItem
 import com.zephyr.boreal.domain.model.StoreDetails
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -22,6 +24,10 @@ class StorageSessionStore
     private val _selectedStoreCurrentState = MutableStateFlow<StoreDetails?>(null)
     val selectedStoreCurrentState: StateFlow<StoreDetails?> = _selectedStoreCurrentState.asStateFlow()
 
+    // The working item x expiration-batch list being edited on the select-items-from-store screen
+    private val _storageListItems = MutableStateFlow<List<StorageListItem>?>(null)
+    val storageListItems: StateFlow<List<StorageListItem>?> = _storageListItems.asStateFlow()
+
     /**
      * Initializes the storage session with newly loaded primary and selected store details.
      * The selected store's initial and current active state will both be set to this base.
@@ -36,11 +42,38 @@ class StorageSessionStore
     }
 
     /**
+     * Sets the working item x expiration-batch list for the select-items-from-store screen.
+     */
+    fun setStorageListItems(items: List<StorageListItem>) {
+      _storageListItems.value = items
+    }
+
+    /**
+     * Updates the quantity change of a single working-list row, matched by item and expiration id.
+     */
+    fun updateQuantityChange(
+      itemId: Int,
+      expirationId: Int,
+      quantityChange: Int?,
+    ) {
+      _storageListItems.update { items ->
+        items?.map { item ->
+          if (item.itemId == itemId && item.expirationId == expirationId) {
+            item.copy(quantityChange = quantityChange)
+          } else {
+            item
+          }
+        }
+      }
+    }
+
+    /**
      * Clears the storage session state entirely.
      */
     fun clearStores() {
       _primaryStoreDetails.value = null
       _selectedStoreInitialState.value = null
       _selectedStoreCurrentState.value = null
+      _storageListItems.value = null
     }
   }

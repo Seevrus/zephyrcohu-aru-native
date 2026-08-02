@@ -147,9 +147,20 @@
     <string name="select_store_error_not_found">A kiválasztott raktár nem található.</string>
     <string name="select_store_error_unexpected">Váratlan hiba lépett fel a raktár kiválasztása során.</string>
 
-    <!-- Select Items From Store (Storage, placeholder until Task 07) -->
+    <!-- Select Items From Store (Storage) -->
     <string name="screen_select_items_from_store_title">Tételek kiválasztása</string>
     <string name="select_items_from_store_home_button">Vissza a főoldalra</string>
+    <string name="select_items_from_store_loading_message">Betöltés…</string>
+    <string name="select_items_from_store_own_stock_label">Saját raktár készlete: </string>
+    <string name="select_items_from_store_primary_stock_label">Főraktárkészlet: </string>
+    <string name="select_items_from_store_load_label">Rakodás:</string>
+    <string name="select_items_from_store_abandon_button">Rakodás elvetése</string>
+    <string name="select_items_from_store_abandon_title">Megerősítés szükséges</string>
+    <string name="select_items_from_store_abandon_message">Ezzel a lépéssel befejeződik a rakodási folyamat a képernyőn elvégzett módosítások mentése nélkül.</string>
+
+    <!-- Review Storage Changes (Storage, placeholder until Task 08) -->
+    <string name="screen_review_storage_changes_title">Rakodási változások áttekintése</string>
+
     <!-- Select Partner -->
     <string name="select_partner_title">Partner kiválasztása</string>
     <string name="select_partner_search">Keresés</string>

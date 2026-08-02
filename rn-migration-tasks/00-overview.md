@@ -57,8 +57,19 @@ Already built and working in the native app:
   store details → store into a new `StorageSessionStore` → replace-navigate to
   `select_items_from_store`), reachable from the main screen's "Rakodás" tile (previously a
   no-op stub). `StoresRepository.selectStore` now maps the lock endpoint's distinct refusal
-  responses (507 ×2, 403, 422, 404) to readable Hungarian messages. `select_items_from_store` is
-  a placeholder screen (home button only) until Task 07 replaces it.
+  responses (507 ×2, 403, 422, 404) to readable Hungarian messages.
+- **Storage flow, item selection**: **Task 07** replaces the `select_items_from_store` placeholder
+  with `SelectItemsFromStoreScreen`/`SelectItemsFromStoreViewModel`: a flat, searchable,
+  barcode-scannable list of item × expiration-batch rows (new `StorageListItem` domain model,
+  built once from item master data + Task 06's primary/selected-store snapshots and persisted in
+  `StorageSessionStore` so it survives navigating to review and back), each row an expand/collapse
+  accordion with a quantity-change stepper matching RN's exact bounds (lower-bound-only clamp
+  against the batch's current selected-store quantity, no upper bound against primary-store stock
+  — confirmed intentional), a `Blue400`/`Warning`/`Neutral` row highlight, and a forward action
+  once any row has changed. Abandoning the load (explicit button or back-navigation) always calls
+  `StoresRepository.deselectStore` before clearing the session — a deliberate fix over RN, where
+  only the explicit button unlocks. `review_storage_changes` is a new placeholder screen (home
+  button only) until Task 08 replaces it.
 
 ## What is still missing (this backlog)
 
@@ -77,14 +88,15 @@ Already built and working in the native app:
 | 04 | Receipts · list of receipts | Receipts | 03, 03c | ✅ Done |
 | 05 | Receipts · details, reprint & storno (cancel) | Receipts | 04 | ✅ Done |
 | 06 | Storage · select store (lock to user) | Storage | frontier | ✅ Done |
-| 07 | Storage · select items from store (batches, barcode, quantities) | Storage | 06 | Not started |
+| 07 | Storage · select items from store (batches, barcode, quantities) | Storage | 06 | ✅ Done |
 | 08 | Storage · review, save & summary (load + unlock + print) | Storage / Print | 07, 03 | Not started |
 | 09 | Errand history · list rounds & round details | Errand history | frontier | Not started |
 | 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier | Not started |
 | 11 | Cross-cutting · app-update / version gate | Infra | frontier | Not started |
 
-**Next up:** Task 07 (select items from store), which builds on Task 06's `select_store` screen
-and `StorageSessionStore`.
+**Next up:** Task 08 (storage review, save & summary), which builds on Task 07's
+`SelectItemsFromStoreScreen`/`StorageListItem` working list and the `review_storage_changes`
+placeholder.
 
 Tasks 03c–03f were a consolidation batch from the post-03b code review, completed ahead of
 Task 04. They were independent of each other and none added user-facing behavior:
