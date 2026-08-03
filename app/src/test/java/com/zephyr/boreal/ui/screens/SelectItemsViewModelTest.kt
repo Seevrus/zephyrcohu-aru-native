@@ -170,6 +170,38 @@ class SelectItemsViewModelTest {
     }
 
   @Test
+  fun `isAdhocPartner is true when current receipt has no partnerId`() =
+    runTest {
+      itemsFlow.value = ApiResource.Success(emptyList())
+      currentReceiptFlow.value =
+        com.zephyr.boreal.domain.model
+          .DraftReceipt(partnerId = null)
+
+      val viewModel = createViewModel()
+      val job = backgroundScope.launch { viewModel.uiState.collect {} }
+      advanceUntilIdle()
+
+      assertTrue(viewModel.uiState.value.isAdhocPartner)
+      job.cancel()
+    }
+
+  @Test
+  fun `isAdhocPartner is false when current receipt has a partnerId`() =
+    runTest {
+      itemsFlow.value = ApiResource.Success(emptyList())
+      currentReceiptFlow.value =
+        com.zephyr.boreal.domain.model
+          .DraftReceipt(partnerId = 99)
+
+      val viewModel = createViewModel()
+      val job = backgroundScope.launch { viewModel.uiState.collect {} }
+      advanceUntilIdle()
+
+      assertEquals(false, viewModel.uiState.value.isAdhocPartner)
+      job.cancel()
+    }
+
+  @Test
   fun `search query should filter items correctly`() =
     runTest {
       val item1 = mock<Item>()

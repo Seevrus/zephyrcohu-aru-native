@@ -64,6 +64,7 @@ data class SelectItemsUiState(
   val totalOrderQuantity: Int = 0,
   val canConfirmItems: Boolean = false,
   val expandedItemIds: Set<Int> = emptySet(),
+  val isAdhocPartner: Boolean = false,
 )
 
 @HiltViewModel
@@ -254,6 +255,7 @@ class SelectItemsViewModel
           totalOrderQuantity = totalOrderQuantity,
           canConfirmItems = canConfirmItems,
           expandedItemIds = expandedIds,
+          isAdhocPartner = currentReceipt?.partnerId == null,
         )
       }.stateIn(
         scope = viewModelScope,

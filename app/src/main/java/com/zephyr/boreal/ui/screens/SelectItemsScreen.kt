@@ -266,6 +266,7 @@ fun SelectItemsScreenContent(
             headerColor = headerColor,
             selectedQuantities = uiState.selectedItems[item.id] ?: emptyMap(),
             orderQuantity = uiState.selectedOrderItems[item.id],
+            showOrderRow = !uiState.isAdhocPartner,
             onToggleExpanded = { onToggleItemExpanded(item.id) },
             onUpsertSelectedItem = { expId, qty -> onUpsertSelectedItem(item.id, expId, qty) },
             onUpsertOrderItem = { qty -> onUpsertOrderItem(item.id, qty) },
@@ -329,6 +330,7 @@ private fun ItemAccordion(
   headerColor: Color,
   selectedQuantities: Map<Int, Double>,
   orderQuantity: Double?,
+  showOrderRow: Boolean,
   onToggleExpanded: () -> Unit,
   onUpsertSelectedItem: (Int, Double?) -> Unit,
   onUpsertOrderItem: (Double?) -> Unit,
@@ -388,12 +390,14 @@ private fun ItemAccordion(
           )
         }
 
-        QuantityStepper(
-          label = stringResource(R.string.select_items_order_row),
-          quantity = orderQuantity,
-          maxQuantity = null,
-          onQuantityChange = { onUpsertOrderItem(it) },
-        )
+        if (showOrderRow) {
+          QuantityStepper(
+            label = stringResource(R.string.select_items_order_row),
+            quantity = orderQuantity,
+            maxQuantity = null,
+            onQuantityChange = { onUpsertOrderItem(it) },
+          )
+        }
       }
     }
   }
