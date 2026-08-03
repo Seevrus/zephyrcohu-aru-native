@@ -147,9 +147,18 @@ Already built and working in the native app:
 | 08b | Errand · print end-errand summary & close the round | Errand / Print | 03, 03b, 08 | ✅ Done |
 | 09 | Errand history · list rounds & round details | Errand history | frontier | ✅ Done |
 | 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier, 08b | ✅ Done |
-| 11 | Cross-cutting · app-update / version gate | Infra | frontier | Not started |
+| 11 | Cross-cutting · app-update / version gate | Infra | frontier | ✅ Done |
 
-**Next up:** Task 11 (cross-cutting app-update / version gate).
+**Backlog complete.** Task 11 closes the last gap: a new `AppUpdateGate` (store/update's
+`AppUpdateStore` DataStore-backed "record" + `network`'s `AppUpdateChecker`/`PlayAppUpdateChecker`
+wrapping Play Core's `app-update-ktx`) gates a once-per-24h, prod-only, online-only check from
+`MainViewModel.init`, surfaced via a new `isUpdateAvailable` `MainScreenUiState` field and rendered
+in `MainScreen.kt` with strict precedence over the existing tile-disabled `BorealAlert` (mirroring
+RN's `StartPage.tsx` mutual-exclusion). Deliberately stricter than RN in two ways: the 24h
+throttle is DataStore-persisted (RN's was in-memory and reset every app launch), and "last checked"
+is stamped after every check attempt regardless of outcome (RN only stamped it when an update was
+actually found, so it re-hit the Play Store check on every connectivity change once none was
+found).
 
 Tasks 03c–03f were a consolidation batch from the post-03b code review, completed ahead of
 Task 04. They were independent of each other and none added user-facing behavior:

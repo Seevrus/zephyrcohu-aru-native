@@ -93,6 +93,7 @@ class NavigationTest {
                 onNavigateToChangePassword = {},
                 onTileClick = {},
                 onDismissAlert = {},
+                onDismissUpdateAlert = {},
               )
             }
             composable("app_locked") {
@@ -140,6 +141,7 @@ class NavigationTest {
                 onNavigateToChangePassword = {},
                 onTileClick = {},
                 onDismissAlert = {},
+                onDismissUpdateAlert = {},
               )
             }
             composable("login") {
@@ -224,6 +226,7 @@ class NavigationTest {
                 onNavigateToChangePassword = {},
                 onTileClick = {},
                 onDismissAlert = {},
+                onDismissUpdateAlert = {},
               )
             }
             composable("settings") {

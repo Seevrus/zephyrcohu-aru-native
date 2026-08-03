@@ -25,11 +25,13 @@ import com.zephyr.boreal.store.store.StoreSessionStore
 import com.zephyr.boreal.store.user.StoredToken
 import com.zephyr.boreal.store.user.UserSessionStore
 import com.zephyr.boreal.ui.components.TileVariant
+import com.zephyr.boreal.update.AppUpdateGate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
@@ -66,6 +68,7 @@ class MainViewModelTest {
   private val itemsRepository: ItemsRepository = mock()
   private val partnersRepository: PartnersRepository = mock()
   private val storesRepository: StoresRepository = mock()
+  private val appUpdateGate: AppUpdateGate = mock()
   private val testDispatcher = StandardTestDispatcher()
 
   private val isInternetReachableFlow = MutableStateFlow(true)
@@ -120,6 +123,7 @@ class MainViewModelTest {
     whenever(partnersRepository.getPartners()).thenReturn(partnersFlow)
     whenever(partnersRepository.getPartnerLists()).thenReturn(partnerListsFlow)
     whenever(storesRepository.getStores()).thenReturn(storesFlow)
+    runBlocking { whenever(appUpdateGate.checkForUpdate(any())).thenReturn(false) }
   }
 
   @AfterEach
@@ -140,6 +144,7 @@ class MainViewModelTest {
       itemsRepository,
       partnersRepository,
       storesRepository,
+      appUpdateGate,
     )
 
   private fun buildReceipt(id: Int) =
@@ -919,6 +924,49 @@ class MainViewModelTest {
 
       verify(receiptsStore, never()).resetReceipts()
       verify(userRepository, never()).logout()
+      uiStateJob.cancel()
+    }
+
+  @Test
+  fun `isUpdateAvailable becomes true when the update gate reports an update`() =
+    runTest {
+      whenever(appUpdateGate.checkForUpdate(any())).thenReturn(true)
+
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      assertTrue(viewModel.uiState.value.isUpdateAvailable)
+      uiStateJob.cancel()
+    }
+
+  @Test
+  fun `isUpdateAvailable stays false when the update gate reports no update`() =
+    runTest {
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+
+      assertFalse(viewModel.uiState.value.isUpdateAvailable)
+      uiStateJob.cancel()
+    }
+
+  @Test
+  fun `dismissUpdateAlert clears isUpdateAvailable`() =
+    runTest {
+      whenever(appUpdateGate.checkForUpdate(any())).thenReturn(true)
+
+      val viewModel = createViewModel()
+      val uiStateJob = backgroundScope.launch { viewModel.uiState.collect() }
+      advanceTimeBy(MainViewModel.FONT_WARMUP_DELAY_MS + 100)
+      runCurrent()
+      assertTrue(viewModel.uiState.value.isUpdateAvailable)
+
+      viewModel.dismissUpdateAlert()
+      runCurrent()
+      assertFalse(viewModel.uiState.value.isUpdateAvailable)
       uiStateJob.cancel()
     }
 }

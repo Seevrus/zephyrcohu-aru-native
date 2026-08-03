@@ -76,6 +76,7 @@ class MainScreenTest {
           onNavigateToChangePassword = {},
           onTileClick = {},
           onDismissAlert = {},
+          onDismissUpdateAlert = {},
         )
       }
     }
@@ -117,6 +118,7 @@ class MainScreenTest {
           onNavigateToChangePassword = {},
           onTileClick = {},
           onDismissAlert = {},
+          onDismissUpdateAlert = {},
         )
       }
     }
@@ -156,6 +158,7 @@ class MainScreenTest {
           onNavigateToChangePassword = {},
           onTileClick = { clickedTile = it },
           onDismissAlert = {},
+          onDismissUpdateAlert = {},
         )
       }
     }
@@ -163,5 +166,68 @@ class MainScreenTest {
     composeTestRule.onNodeWithText(loadingTitle).performClick()
 
     assertTrue(clickedTile?.id == MainTileId.STORAGE)
+  }
+
+  @Test
+  fun mainScreen_displaysUpdateAlert_whenUpdateIsAvailable() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    var dismissed = false
+
+    composeTestRule.setContent {
+      BorealTheme {
+        MainScreenContent(
+          uiState = MainScreenUiState(isReady = true, isUpdateAvailable = true),
+          onNavigateToAppLocked = {},
+          onNavigateToSettings = {},
+          onNavigateToLogin = {},
+          onNavigateToChangePassword = {},
+          onTileClick = {},
+          onDismissAlert = {},
+          onDismissUpdateAlert = { dismissed = true },
+        )
+      }
+    }
+
+    val expectedTitle = context.getString(R.string.update_available_title)
+    val expectedMessage = context.getString(R.string.update_available_message)
+    val expectedButton = context.getString(R.string.alert_button_ok)
+
+    composeTestRule.onNodeWithText(expectedTitle).assertIsDisplayed()
+    composeTestRule.onNodeWithText(expectedMessage).assertIsDisplayed()
+    composeTestRule.onNodeWithText(expectedButton).performClick()
+
+    assertTrue(dismissed)
+  }
+
+  @Test
+  fun mainScreen_updateAlert_takesPrecedenceOverTileAlert() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+    composeTestRule.setContent {
+      BorealTheme {
+        MainScreenContent(
+          uiState =
+            MainScreenUiState(
+              isReady = true,
+              isUpdateAvailable = true,
+              alertState =
+                AlertUiState(
+                  titleResId = R.string.alert_title_feature_not_available,
+                  messageResId = R.string.disabled_tile_offline,
+                ),
+            ),
+          onNavigateToAppLocked = {},
+          onNavigateToSettings = {},
+          onNavigateToLogin = {},
+          onNavigateToChangePassword = {},
+          onTileClick = {},
+          onDismissAlert = {},
+          onDismissUpdateAlert = {},
+        )
+      }
+    }
+
+    composeTestRule.onNodeWithText(context.getString(R.string.update_available_title)).assertIsDisplayed()
+    composeTestRule.onNodeWithText(context.getString(R.string.alert_title_feature_not_available)).assertDoesNotExist()
   }
 }

@@ -10,7 +10,9 @@ import com.zephyr.boreal.api.ReceiptApiService
 import com.zephyr.boreal.api.RoundApiService
 import com.zephyr.boreal.api.StoreApiService
 import com.zephyr.boreal.network.AndroidConnectivityObserver
+import com.zephyr.boreal.network.AppUpdateChecker
 import com.zephyr.boreal.network.ConnectivityObserver
+import com.zephyr.boreal.network.PlayAppUpdateChecker
 import com.zephyr.boreal.store.core.ApplicationScope
 import dagger.Module
 import dagger.Provides
@@ -35,6 +37,12 @@ object NetworkModule {
     @ApplicationContext context: Context,
     @ApplicationScope scope: CoroutineScope,
   ): ConnectivityObserver = AndroidConnectivityObserver(context, scope)
+
+  @Provides
+  @Singleton
+  fun provideAppUpdateChecker(
+    @ApplicationContext context: Context,
+  ): AppUpdateChecker = PlayAppUpdateChecker(context)
 
   @Provides
   @Singleton

@@ -127,6 +127,9 @@ dependencies {
   implementation(libs.androidx.camera.view)
   implementation(libs.mlkit.barcode.scanning)
 
+  // Play Core
+  implementation(libs.play.app.update.ktx)
+
   // DataStore
   implementation(libs.androidx.datastore.preferences)
 

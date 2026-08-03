@@ -22,6 +22,7 @@ import com.zephyr.boreal.store.store.StorageSessionStore
 import com.zephyr.boreal.store.store.StoreSessionStore
 import com.zephyr.boreal.store.user.UserSessionStore
 import com.zephyr.boreal.ui.components.TileVariant
+import com.zephyr.boreal.update.AppUpdateGate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -31,6 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -83,6 +85,7 @@ data class MainScreenUiState(
   val tiles: List<TileUiModel<MainTileId>> = emptyList(),
   val alertState: AlertUiState? = null,
   val roundInfo: RoundInfoUiModel? = null,
+  val isUpdateAvailable: Boolean = false,
 )
 
 @HiltViewModel
@@ -101,6 +104,7 @@ class MainViewModel
     private val itemsRepository: ItemsRepository,
     private val partnersRepository: PartnersRepository,
     private val storesRepository: StoresRepository,
+    private val appUpdateGate: AppUpdateGate,
   ) : ViewModel() {
     companion object {
       const val FONT_WARMUP_DELAY_MS = 1000L
@@ -109,6 +113,7 @@ class MainViewModel
 
     private val isReadyFlow = MutableStateFlow(false)
     private val alertStateFlow = MutableStateFlow<AlertUiState?>(null)
+    private val isUpdateAvailableFlow = MutableStateFlow(false)
     private val eventChannel = Channel<MainScreenEvent>()
     val events = eventChannel.receiveAsFlow()
 
@@ -207,6 +212,8 @@ class MainViewModel
           tiles = tiles,
           roundInfo = roundInfo,
         )
+      }.combine(isUpdateAvailableFlow) { state, isUpdateAvailable ->
+        state.copy(isUpdateAvailable = isUpdateAvailable)
       }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -225,6 +232,16 @@ class MainViewModel
           .distinctUntilChanged()
           .collect { (userCtx, deviceCtx) ->
             refreshStateDrivenData(userCtx, deviceCtx)
+          }
+      }
+      viewModelScope.launch {
+        deviceStateFlow
+          .map { it.isOnline }
+          .distinctUntilChanged()
+          .collect { isOnline ->
+            if (appUpdateGate.checkForUpdate(isOnline)) {
+              isUpdateAvailableFlow.value = true
+            }
           }
       }
     }
@@ -457,6 +474,10 @@ class MainViewModel
 
     fun dismissAlert() {
       alertStateFlow.value = null
+    }
+
+    fun dismissUpdateAlert() {
+      isUpdateAvailableFlow.value = false
     }
 
     private suspend fun performGarbageCollection() {

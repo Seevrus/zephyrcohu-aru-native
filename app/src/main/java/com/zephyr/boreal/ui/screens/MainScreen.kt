@@ -68,6 +68,7 @@ fun MainScreen(
     onNavigateToChangePassword = onNavigateToChangePassword,
     onTileClick = viewModel::onTileClick,
     onDismissAlert = viewModel::dismissAlert,
+    onDismissUpdateAlert = viewModel::dismissUpdateAlert,
     modifier = modifier,
   )
 }
@@ -82,6 +83,7 @@ fun MainScreenContent(
   onNavigateToChangePassword: () -> Unit,
   onTileClick: (TileUiModel<MainTileId>) -> Unit,
   onDismissAlert: () -> Unit,
+  onDismissUpdateAlert: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   LaunchedEffect(uiState.isLoggedIn, uiState.canUseApp) {
@@ -110,16 +112,26 @@ fun MainScreenContent(
       innerPadding = innerPadding,
     )
 
-    uiState.alertState?.let { alert ->
+    if (uiState.isUpdateAvailable) {
       BorealAlert(
-        title = stringResource(alert.titleResId),
-        message = alert.messageResId?.let { stringResource(it) },
-        confirmButtonText = alert.confirmTextResId?.let { stringResource(it) },
-        cancelButtonText = alert.cancelButtonTextResId?.let { stringResource(it) },
-        onConfirmClick = alert.onConfirm,
-        onCancelClick = alert.onCancel,
-        onDismissRequest = onDismissAlert,
+        title = stringResource(R.string.update_available_title),
+        message = stringResource(R.string.update_available_message),
+        confirmButtonText = stringResource(R.string.alert_button_ok),
+        onConfirmClick = onDismissUpdateAlert,
+        onDismissRequest = onDismissUpdateAlert,
       )
+    } else {
+      uiState.alertState?.let { alert ->
+        BorealAlert(
+          title = stringResource(alert.titleResId),
+          message = alert.messageResId?.let { stringResource(it) },
+          confirmButtonText = alert.confirmTextResId?.let { stringResource(it) },
+          cancelButtonText = alert.cancelButtonTextResId?.let { stringResource(it) },
+          onConfirmClick = alert.onConfirm,
+          onCancelClick = alert.onCancel,
+          onDismissRequest = onDismissAlert,
+        )
+      }
     }
   }
 }
