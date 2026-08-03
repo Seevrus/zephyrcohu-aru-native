@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.zephyr.boreal.store.core.ApplicationScope
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -26,6 +27,15 @@ class UserSessionStore
       val TOKEN = stringPreferencesKey("token")
       val IS_PASSWORD_EXPIRED = booleanPreferencesKey("is_password_expired")
       val EXPIRES_AT = stringPreferencesKey("expires_at")
+
+      /**
+       * A **record** per the persistence-durability convention (see
+       * `rn-migration-tasks/00-overview.md`): nothing server-side recreates "we printed the
+       * end-errand summary but the app died before the exit/logout sequence finished", so this
+       * flag must survive process death for [MainViewModel][com.zephyr.boreal.ui.screens.MainViewModel]'s
+       * startup crash-recovery consumer to find it.
+       */
+      val IS_PENDING_RESET_AFTER_PRINT = booleanPreferencesKey("is_pending_reset_after_print")
     }
 
     val userState: StateFlow<UserState> =
@@ -88,6 +98,20 @@ class UserSessionStore
         preferences.remove(TOKEN)
         preferences.remove(IS_PASSWORD_EXPIRED)
         preferences.remove(EXPIRES_AT)
+        preferences.remove(IS_PENDING_RESET_AFTER_PRINT)
+      }
+    }
+
+    val isPendingResetAfterPrint: Flow<Boolean> =
+      dataStore.data.map { preferences -> preferences[IS_PENDING_RESET_AFTER_PRINT] == true }
+
+    suspend fun setPendingResetAfterPrint(isPending: Boolean) {
+      dataStore.edit { preferences ->
+        if (isPending) {
+          preferences[IS_PENDING_RESET_AFTER_PRINT] = true
+        } else {
+          preferences.remove(IS_PENDING_RESET_AFTER_PRINT)
+        }
       }
     }
   }

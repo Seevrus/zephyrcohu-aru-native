@@ -106,6 +106,24 @@ Already built and working in the native app:
   overload for the historical branch (reading a fetched `Round`'s own `receipts`/`user` instead of
   the live `ReceiptsStore`/logged-in `User`), sharing all row/totals/footer logic with the live
   branch via an internal `PrintableReceipt` mapping.
+- **Cross-cutting: startup data sync & stale-data refresh parity**: **Task 10** audited
+  `MainViewModel` against RN's `useInitializeApp`/`invalidateOldQueries` and found most behavior
+  already at parity (check-token re-validation, app-locked redirect, general/store-list
+  staleness), closing three real gaps. `MainViewModel.init` now reactively refreshes
+  items/stores (state `LOADING`) or items/otherItems/partners/partnerLists/priceLists (state
+  `ON_ROUND`) whenever logged in, online, and password not expired — mirroring RN's per-state
+  effects but relying on `networkBoundResource`'s own staleness check instead of RN's manual
+  "missing and not loading" guards. The same `ON_ROUND` branch calls a new
+  `ensureStoreSessionPopulated` to repopulate the in-memory `StoreSessionStore` from
+  `storesRepository.getStoreDetails(storeInUseId)` when it's `null` after a process-death
+  relaunch — previously only `SelectItemsViewModel` self-healed this, leaving `ReceiptDetailsViewModel`'s
+  storno button silently disabled until that screen was visited. `UserSessionStore` gained a new
+  persisted `isPendingResetAfterPrint` boolean (a **record**, cleared on `clearSession()` too);
+  `PrintEndErrandViewModel.onPrintSuccess()` sets it and `exit()` clears it, and
+  `MainViewModel.consumePendingResetAfterPrint()` is the crash-recovery consumer this lands for —
+  on startup, if set, it runs the same local resets and clears the flag, then calls
+  `userRepository.logout()` only if `StoredToken.isTokenExpired` is false (skipping the network
+  call on an already-expired token, matching RN).
 
 ## What is still missing (this backlog)
 
@@ -128,10 +146,10 @@ Already built and working in the native app:
 | 08 | Storage · review, save & summary (load + unlock + print) | Storage / Print | 07, 03 | ✅ Done |
 | 08b | Errand · print end-errand summary & close the round | Errand / Print | 03, 03b, 08 | ✅ Done |
 | 09 | Errand history · list rounds & round details | Errand history | frontier | ✅ Done |
-| 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier, 08b | Not started |
+| 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier, 08b | ✅ Done |
 | 11 | Cross-cutting · app-update / version gate | Infra | frontier | Not started |
 
-**Next up:** Task 10 (cross-cutting startup data sync & stale-data refresh parity).
+**Next up:** Task 11 (cross-cutting app-update / version gate).
 
 Tasks 03c–03f were a consolidation batch from the post-03b code review, completed ahead of
 Task 04. They were independent of each other and none added user-facing behavior:

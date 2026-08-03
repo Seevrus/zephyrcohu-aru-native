@@ -5,6 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zephyr.boreal.R
 import com.zephyr.boreal.data.local.dao.CacheMetadataDao
+import com.zephyr.boreal.data.repository.ApiResource
+import com.zephyr.boreal.data.repository.ItemsRepository
+import com.zephyr.boreal.data.repository.PartnersRepository
+import com.zephyr.boreal.data.repository.StoresRepository
 import com.zephyr.boreal.data.repository.UserRepository
 import com.zephyr.boreal.domain.model.User
 import com.zephyr.boreal.domain.model.UserState
@@ -15,6 +19,7 @@ import com.zephyr.boreal.network.ConnectivityObserver
 import com.zephyr.boreal.store.print.PrintSettingsStore
 import com.zephyr.boreal.store.receipts.ReceiptsStore
 import com.zephyr.boreal.store.store.StorageSessionStore
+import com.zephyr.boreal.store.store.StoreSessionStore
 import com.zephyr.boreal.store.user.UserSessionStore
 import com.zephyr.boreal.ui.components.TileVariant
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,6 +30,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -80,6 +86,7 @@ data class MainScreenUiState(
 )
 
 @HiltViewModel
+@Suppress("LongParameterList")
 class MainViewModel
   @Inject
   constructor(
@@ -90,6 +97,10 @@ class MainViewModel
     private val printSettingsStore: PrintSettingsStore,
     private val receiptsStore: ReceiptsStore,
     private val storageSessionStore: StorageSessionStore,
+    private val storeSessionStore: StoreSessionStore,
+    private val itemsRepository: ItemsRepository,
+    private val partnersRepository: PartnersRepository,
+    private val storesRepository: StoresRepository,
   ) : ViewModel() {
     companion object {
       const val FONT_WARMUP_DELAY_MS = 1000L
@@ -207,6 +218,65 @@ class MainViewModel
         performGarbageCollection()
         delay(FONT_WARMUP_DELAY_MS)
         isReadyFlow.value = true
+      }
+      viewModelScope.launch { consumePendingResetAfterPrint() }
+      viewModelScope.launch {
+        combine(userContextFlow, deviceStateFlow) { userCtx, deviceCtx -> userCtx to deviceCtx }
+          .distinctUntilChanged()
+          .collect { (userCtx, deviceCtx) ->
+            refreshStateDrivenData(userCtx, deviceCtx)
+          }
+      }
+    }
+
+    private suspend fun refreshStateDrivenData(
+      userCtx: UserContext,
+      deviceCtx: DeviceState,
+    ) {
+      if (!userCtx.isLoggedIn || userCtx.isPasswordExpired || !deviceCtx.isOnline) {
+        return
+      }
+
+      when (userCtx.user?.state) {
+        UserState.LOADING -> {
+          itemsRepository.getItems().first()
+          storesRepository.getStores().first()
+        }
+        UserState.ON_ROUND -> {
+          itemsRepository.getItems().first()
+          itemsRepository.getOtherItems().first()
+          partnersRepository.getPartnerLists().first()
+          partnersRepository.getPartners().first()
+          itemsRepository.getPriceLists().first()
+          ensureStoreSessionPopulated(userCtx.user.storeInUseId)
+        }
+        else -> {}
+      }
+    }
+
+    private suspend fun ensureStoreSessionPopulated(storeInUseId: Int?) {
+      if (storeInUseId == null || storeSessionStore.selectedStoreCurrentState.value != null) {
+        return
+      }
+
+      val result = storesRepository.getStoreDetails(storeInUseId)
+      if (result is ApiResource.Success) {
+        storeSessionStore.setStore(result.data)
+      }
+    }
+
+    private suspend fun consumePendingResetAfterPrint() {
+      if (!userSessionStore.isPendingResetAfterPrint.first()) {
+        return
+      }
+
+      receiptsStore.resetReceipts()
+      storeSessionStore.resetSelectedStoreCurrentState()
+      userSessionStore.setPendingResetAfterPrint(false)
+
+      val storedToken = userSessionStore.userState.first().storedToken
+      if (storedToken != null && !storedToken.isTokenExpired) {
+        userRepository.logout()
       }
     }
 

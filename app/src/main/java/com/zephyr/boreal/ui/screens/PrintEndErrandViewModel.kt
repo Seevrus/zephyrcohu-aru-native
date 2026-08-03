@@ -8,6 +8,7 @@ import com.zephyr.boreal.domain.utils.DevPrintFileNameBuilder
 import com.zephyr.boreal.domain.utils.PrintEndErrandTextBuilder
 import com.zephyr.boreal.store.receipts.ReceiptsStore
 import com.zephyr.boreal.store.store.StoreSessionStore
+import com.zephyr.boreal.store.user.UserSessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +37,7 @@ class PrintEndErrandViewModel
     private val userRepository: UserRepository,
     private val receiptsStore: ReceiptsStore,
     private val storeSessionStore: StoreSessionStore,
+    private val userSessionStore: UserSessionStore,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
   ) : ViewModel() {
     private val _uiState = MutableStateFlow(PrintEndErrandUiState())
@@ -76,6 +78,7 @@ class PrintEndErrandViewModel
 
     fun onPrintSuccess() {
       _uiState.update { it.copy(isPrinted = true) }
+      viewModelScope.launch { userSessionStore.setPendingResetAfterPrint(true) }
     }
 
     fun onReturnClick(onExit: () -> Unit) {
@@ -115,6 +118,7 @@ class PrintEndErrandViewModel
         _uiState.update { it.copy(isLoading = true) }
         receiptsStore.resetReceipts()
         storeSessionStore.resetSelectedStoreCurrentState()
+        userSessionStore.setPendingResetAfterPrint(false)
         userRepository.logout()
         onExit()
       }

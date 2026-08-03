@@ -14,6 +14,7 @@ import com.zephyr.boreal.domain.model.User
 import com.zephyr.boreal.domain.model.UserState
 import com.zephyr.boreal.store.receipts.ReceiptsStore
 import com.zephyr.boreal.store.store.StoreSessionStore
+import com.zephyr.boreal.store.user.UserSessionStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +43,7 @@ class PrintEndErrandViewModelTest {
   private val userRepository: UserRepository = mock()
   private val receiptsStore: ReceiptsStore = mock()
   private val storeSessionStore: StoreSessionStore = mock()
+  private val userSessionStore: UserSessionStore = mock()
 
   private val testDispatcher = StandardTestDispatcher()
 
@@ -149,7 +151,7 @@ class PrintEndErrandViewModelTest {
   }
 
   private fun createViewModel() =
-    PrintEndErrandViewModel(userRepository, receiptsStore, storeSessionStore, testDispatcher)
+    PrintEndErrandViewModel(userRepository, receiptsStore, storeSessionStore, userSessionStore, testDispatcher)
 
   @Test
   fun `isPrintEnabled is true and text is built when user and lastRound are available`() =
@@ -230,8 +232,10 @@ class PrintEndErrandViewModelTest {
       advanceUntilIdle()
 
       viewModel.onPrintSuccess()
+      advanceUntilIdle()
 
       assertTrue(viewModel.uiState.value.isPrinted)
+      verify(userSessionStore).setPendingResetAfterPrint(true)
       uiStateJob.cancel()
     }
 
@@ -326,6 +330,7 @@ class PrintEndErrandViewModelTest {
       assertFalse(viewModel.uiState.value.showExitConfirm)
       verify(receiptsStore).resetReceipts()
       verify(storeSessionStore).resetSelectedStoreCurrentState()
+      verify(userSessionStore).setPendingResetAfterPrint(false)
       verify(userRepository).logout()
       assertTrue(exited)
       uiStateJob.cancel()
@@ -347,6 +352,7 @@ class PrintEndErrandViewModelTest {
 
       verify(receiptsStore, times(1)).resetReceipts()
       verify(storeSessionStore, times(1)).resetSelectedStoreCurrentState()
+      verify(userSessionStore, times(1)).setPendingResetAfterPrint(false)
       verify(userRepository, times(1)).logout()
       assertEquals(1, exitCount)
       uiStateJob.cancel()
