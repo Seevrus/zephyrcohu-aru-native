@@ -38,6 +38,7 @@ import com.zephyr.boreal.ui.screens.ReviewItemsScreen
 import com.zephyr.boreal.ui.screens.ReviewItemsViewModel
 import com.zephyr.boreal.ui.screens.ReviewStorageChangesScreen
 import com.zephyr.boreal.ui.screens.ReviewStorageChangesViewModel
+import com.zephyr.boreal.ui.screens.RoundsListScreen
 import com.zephyr.boreal.ui.screens.SearchPartnerNavScreen
 import com.zephyr.boreal.ui.screens.SearchPartnerNavViewModel
 import com.zephyr.boreal.ui.screens.SelectItemsFromStoreScreen
@@ -136,6 +137,19 @@ fun BorealNavHost(navController: androidx.navigation.NavHostController) {
     }
     composable("print_end_errand") {
       PrintEndErrandRoute(navController)
+    }
+    composable("errand_history") {
+      RoundsListScreen(
+        onRoundClick = { roundId ->
+          navController.navigate("errand_history/$roundId")
+        },
+      )
+    }
+    composable(
+      "errand_history/{roundId}",
+      arguments = listOf(navArgument("roundId") { type = NavType.IntType }),
+    ) {
+      RoundDetailsRoute()
     }
     composable("select_partner") {
       SelectPartnerRoute(navController)
@@ -341,6 +355,9 @@ private fun ErrandsRoute(navController: androidx.navigation.NavHostController) {
     },
     onNavigateToEndErrand = {
       navController.navigate("end_errand")
+    },
+    onNavigateToErrandHistory = {
+      navController.navigate("errand_history")
     },
   )
 }

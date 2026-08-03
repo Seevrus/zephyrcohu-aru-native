@@ -142,6 +142,18 @@
     <string name="round_info_store">Raktár:</string>
     <string name="round_info_started">Kör kezdete:</string>
 
+    <!-- Errand History (Rounds List / Round Details) -->
+    <string name="screen_rounds_list_title">Körlista</string>
+    <string name="rounds_list_loading">Körök betöltése folyamatban...</string>
+    <string name="rounds_list_item_started">Indítva:</string>
+    <string name="rounds_list_item_finished">Lezárva:</string>
+    <string name="screen_round_details_title">Kör részletek</string>
+    <string name="round_details_loading">Kör betöltése folyamatban...</string>
+    <string name="round_details_store_label">Raktár:</string>
+    <string name="round_details_started_label">Kör kezdete:</string>
+    <string name="round_details_finished_label">Kör vége:</string>
+    <string name="round_details_partner_list_label">Partnerlista:</string>
+
     <!-- Select Store (Storage) -->
     <string name="screen_select_store_title">Raktár kiválasztása</string>
     <string name="select_store_store_label">Raktár</string>

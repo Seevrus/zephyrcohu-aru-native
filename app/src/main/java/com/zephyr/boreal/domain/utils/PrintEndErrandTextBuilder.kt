@@ -3,6 +3,7 @@ package com.zephyr.boreal.domain.utils
 import com.zephyr.boreal.domain.model.InvoiceType
 import com.zephyr.boreal.domain.model.Receipt
 import com.zephyr.boreal.domain.model.Round
+import com.zephyr.boreal.domain.model.RoundReceipt
 import com.zephyr.boreal.domain.model.User
 import java.time.Instant
 import java.time.LocalDate
@@ -11,12 +12,14 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
 /**
- * Ports RN's `createPrintEndErrand.ts` verbatim (the live-round branch only — the historical-round
- * branch used by errand-details is Task 09's concern), including its column widths and literal
- * "átvettem"/"átadtam" handover footer. One deliberate deviation: RN sorts invoice rows
- * lexicographically on the stringified serial number (an artifact of building `{[serial]: line}`
- * objects and sorting on `keys(...)[0]`), so serial 10 prints before serial 9; this port sorts
- * numerically instead, since the column exists to be a numerically ordered invoice list.
+ * Ports RN's `createPrintEndErrand.ts` verbatim, including its column widths and literal
+ * "átvettem"/"átadtam" handover footer, for both of its input branches: the live round (via
+ * [build] with the live `ReceiptsStore`'s [Receipt]s) and a historical round (via the
+ * single-argument [build] reading a fetched [Round]'s own `receipts`/`user`). One deliberate
+ * deviation: RN sorts invoice rows lexicographically on the stringified serial number (an
+ * artifact of building `{[serial]: line}` objects and sorting on `keys(...)[0]`), so serial 10
+ * prints before serial 9; this port sorts numerically instead, since the column exists to be a
+ * numerically ordered invoice list.
  */
 object PrintEndErrandTextBuilder {
   private const val HEADER_ID_WIDTH = 7
@@ -49,9 +52,23 @@ object PrintEndErrandTextBuilder {
     receipts: List<Receipt>,
     round: Round,
     user: User,
+  ): String = build(receipts.map { it.toPrintable() }, round, userName = user.userName, name = user.name)
+
+  /**
+   * The historical-round branch: reads a fetched [Round]'s own `receipts`/`user` instead of the
+   * live `ReceiptsStore`/logged-in `User`, so an errand-history round can be reprinted verbatim.
+   */
+  fun build(round: Round): String =
+    build(round.receipts.map { it.toPrintable() }, round, userName = round.user.userName, name = round.user.name)
+
+  private fun build(
+    receipts: List<PrintableReceipt>,
+    round: Round,
+    userName: String,
+    name: String,
   ): String {
     val totals = computeTotals(receipts)
-    val header = header(round, user)
+    val header = header(round, userName, name)
     val receiptsList = receiptsList(receipts)
     val totalsText = totalsText(totals)
     val footer = footer(totals)
@@ -59,9 +76,48 @@ object PrintEndErrandTextBuilder {
     return "\n$header\n\n$receiptsList$totalsText\n$footer\n"
   }
 
+  private data class PrintableReceipt(
+    val serialNumber: Int,
+    val cancelSerialNumber: Int?,
+    val invoiceType: InvoiceType,
+    val buyerName: String,
+    val buyerVatNumber: String?,
+    val roundedAmount: Double,
+    val quantity: Double,
+    val paymentDays: Int,
+    val isCanceled: Boolean,
+  )
+
+  private fun Receipt.toPrintable() =
+    PrintableReceipt(
+      serialNumber = serialNumber,
+      cancelSerialNumber = cancelSerialNumber,
+      invoiceType = invoiceType,
+      buyerName = buyer.name,
+      buyerVatNumber = buyer.vatNumber,
+      roundedAmount = roundedAmount,
+      quantity = quantity,
+      paymentDays = paymentDays,
+      isCanceled = isCanceled,
+    )
+
+  private fun RoundReceipt.toPrintable() =
+    PrintableReceipt(
+      serialNumber = serialNumber,
+      cancelSerialNumber = cancelSerialNumber,
+      invoiceType = invoiceType,
+      buyerName = buyer.name,
+      buyerVatNumber = buyer.vatNumber,
+      roundedAmount = roundedAmount,
+      quantity = quantity,
+      paymentDays = paymentDays,
+      isCanceled = cancelSerialNumber != null && cancelYearCode != null,
+    )
+
   private fun header(
     round: Round,
-    user: User,
+    userName: String,
+    name: String,
   ): String {
     val today = LocalDate.now().format(headerDateFormatter)
     val roundStarted = parseRoundDate(round.roundStarted).format(rowDateFormatter)
@@ -69,7 +125,7 @@ object PrintEndErrandTextBuilder {
 
     return "{b}KÖRELSZÁMOLÁS | $today{/b}\n" +
       "$HEADER_SEPARATOR\n" +
-      "Üzletkötő: ${padRightSide(user.userName, HEADER_ID_WIDTH)} ${padRightSide(user.name, HEADER_LABEL_WIDTH)}\n" +
+      "Üzletkötő: ${padRightSide(userName, HEADER_ID_WIDTH)} ${padRightSide(name, HEADER_LABEL_WIDTH)}\n" +
       "Raktár   : ${padRightSide(
         round.store.code,
         HEADER_ID_WIDTH,
@@ -90,17 +146,17 @@ object PrintEndErrandTextBuilder {
       LocalDate.parse(value)
     }
 
-  private fun receiptsList(receipts: List<Receipt>): String {
+  private fun receiptsList(receipts: List<PrintableReceipt>): String {
     val rows = mutableListOf<Pair<Int, String>>()
 
     receipts.forEach { receipt ->
       val receiptType = if (receipt.invoiceType == InvoiceType.ELECTRONIC) "Á" else "K"
-      val vatDisplay = receipt.buyer.vatNumber ?: "-"
+      val vatDisplay = receipt.buyerVatNumber ?: "-"
 
       rows +=
         receipt.serialNumber to
         "${padLeftSide(receipt.serialNumber, SERIAL_WIDTH)} $receiptType " +
-        "${padRightSide(vatDisplay, VAT_NUMBER_WIDTH)} ${padRightSide(receipt.buyer.name, BUYER_NAME_WIDTH)} " +
+        "${padRightSide(vatDisplay, VAT_NUMBER_WIDTH)} ${padRightSide(receipt.buyerName, BUYER_NAME_WIDTH)} " +
         "${padLeftSide(receipt.roundedAmount, AMOUNT_WIDTH)}\n"
 
       if (receipt.isCanceled) {
@@ -108,7 +164,7 @@ object PrintEndErrandTextBuilder {
         rows +=
           cancelSerialNumber to
           "${padLeftSide(cancelSerialNumber, SERIAL_WIDTH)} $receiptType " +
-          "${padRightSide(vatDisplay, VAT_NUMBER_WIDTH)} ${padRightSide(receipt.buyer.name, BUYER_NAME_WIDTH)} " +
+          "${padRightSide(vatDisplay, VAT_NUMBER_WIDTH)} ${padRightSide(receipt.buyerName, BUYER_NAME_WIDTH)} " +
           "${padLeftSide(receipt.roundedAmount * -1, AMOUNT_WIDTH, signed = true)}\n"
       }
     }
@@ -128,7 +184,7 @@ object PrintEndErrandTextBuilder {
     val numberOfReceipts: Int,
   )
 
-  private fun computeTotals(receipts: List<Receipt>): Totals =
+  private fun computeTotals(receipts: List<PrintableReceipt>): Totals =
     receipts.fold(Totals(0.0, 0.0, 0.0, 0)) { acc, receipt ->
       val numberOfReceipts = acc.numberOfReceipts + if (receipt.cancelSerialNumber == null) 1 else 2
 

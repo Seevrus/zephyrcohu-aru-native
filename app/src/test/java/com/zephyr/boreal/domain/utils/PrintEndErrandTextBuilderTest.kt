@@ -6,6 +6,8 @@ import com.zephyr.boreal.domain.model.ReceiptBuyer
 import com.zephyr.boreal.domain.model.ReceiptVendor
 import com.zephyr.boreal.domain.model.Round
 import com.zephyr.boreal.domain.model.RoundPartnerList
+import com.zephyr.boreal.domain.model.RoundReceipt
+import com.zephyr.boreal.domain.model.RoundReceiptBuyer
 import com.zephyr.boreal.domain.model.RoundStore
 import com.zephyr.boreal.domain.model.RoundUser
 import com.zephyr.boreal.domain.model.User
@@ -241,5 +243,65 @@ class PrintEndErrandTextBuilderTest {
     assertTrue(text.contains("átvettem"))
     assertTrue(text.contains("átadtam"))
     assertTrue(text.contains("Számlázott készlet összesen:"))
+  }
+
+  private fun buildRoundReceipt(
+    serialNumber: Int,
+    cancelSerialNumber: Int? = null,
+    cancelYearCode: Int? = null,
+    invoiceType: InvoiceType = InvoiceType.PAPER,
+    buyerName: String = "Partner Ltd.",
+    buyerVatNumber: String? = "87654321-1-13",
+    quantity: Double = 1.0,
+    roundedAmount: Double = 1000.0,
+    paymentDays: Int = 0,
+  ) = RoundReceipt(
+    id = serialNumber,
+    serialNumber = serialNumber,
+    yearCode = 26,
+    cancelSerialNumber = cancelSerialNumber,
+    cancelYearCode = cancelYearCode,
+    invoiceType = invoiceType,
+    paymentDays = paymentDays,
+    buyer = RoundReceiptBuyer(name = buyerName, vatNumber = buyerVatNumber),
+    quantity = quantity,
+    netAmount = roundedAmount,
+    vatAmount = 0.0,
+    grossAmount = roundedAmount,
+    roundAmount = 0.0,
+    roundedAmount = roundedAmount,
+  )
+
+  @Test
+  fun `historical build reads the header from the round's own user`() {
+    val historicalRound = round.copy(receipts = emptyList())
+
+    val text = PrintEndErrandTextBuilder.build(historicalRound)
+
+    assertTrue(text.contains("{b}KÖRELSZÁMOLÁS | $today{/b}"))
+    assertTrue(text.contains("Üzletkötő: user1   Kovács Béla"))
+    assertTrue(text.contains("Raktár   : K1      Kamion 1"))
+    assertTrue(text.contains("Kör      : 17      Északi kör"))
+    assertTrue(text.contains("Kördátum : 2026.01.05 .. 2026.01.06"))
+  }
+
+  @Test
+  fun `historical build renders receipts, totals and cancel pairs from the round's own receipts`() {
+    val canceled =
+      buildRoundReceipt(serialNumber = 20, cancelSerialNumber = 21, cancelYearCode = 26, roundedAmount = 700.0)
+    val normal = buildRoundReceipt(serialNumber = 22, roundedAmount = 300.0, quantity = 2.0)
+    val historicalRound = round.copy(receipts = listOf(canceled, normal))
+
+    val text = PrintEndErrandTextBuilder.build(historicalRound)
+
+    assertTrue(text.contains("         20 K 87654321-1-13 Partner Ltd.                        700"))
+    assertTrue(text.contains("         21 K 87654321-1-13 Partner Ltd.                       -700"))
+    assertTrue(text.contains("Összesen (3 db számla)"))
+    assertTrue(
+      text.contains(
+        "Számlázott készlet összesen: ${TextPadding.padLeftSide("2", 15)} karton, " +
+          "${TextPadding.padLeftSide("300", 11)} Ft",
+      ),
+    )
   }
 }

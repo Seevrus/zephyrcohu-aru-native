@@ -96,6 +96,16 @@ Already built and working in the native app:
   `StoreSessionStore.resetSelectedStoreCurrentState()` → `UserRepository.logout()` sequence and
   clears the back stack to `main`. Deliberately does **not** add the `isPendingResetAfterPrint`
   crash-recovery flag; that lands whole with Task 10's startup consumer.
+- **Errand history: list rounds & round details**: **Task 09** adds `RoundsListScreen`/
+  `RoundsListViewModel` (reads `RoundsRepository.getRounds()`, already-finished rounds sorted
+  descending) reachable from the errands hub's "Lezárt körök" tile (previously a `/* TODO */`
+  stub), and `RoundDetailsScreen`/`RoundDetailsViewModel` (finds the round by id out of the same
+  fetched list — no new DAO query, matching RN's `useErrandDetailsData` pattern), showing store,
+  start/finish, and partner list, plus a reprint slot reusing `PrinterConnector` directly (Task
+  08b's pattern) when the round has receipts. `PrintEndErrandTextBuilder` gained a second `build`
+  overload for the historical branch (reading a fetched `Round`'s own `receipts`/`user` instead of
+  the live `ReceiptsStore`/logged-in `User`), sharing all row/totals/footer logic with the live
+  branch via an internal `PrintableReceipt` mapping.
 
 ## What is still missing (this backlog)
 
@@ -117,14 +127,11 @@ Already built and working in the native app:
 | 07 | Storage · select items from store (batches, barcode, quantities) | Storage | 06 | ✅ Done |
 | 08 | Storage · review, save & summary (load + unlock + print) | Storage / Print | 07, 03 | ✅ Done |
 | 08b | Errand · print end-errand summary & close the round | Errand / Print | 03, 03b, 08 | ✅ Done |
-| 09 | Errand history · list rounds & round details | Errand history | frontier | Not started |
+| 09 | Errand history · list rounds & round details | Errand history | frontier | ✅ Done |
 | 10 | Cross-cutting · startup data sync & stale-data refresh parity | Infra | frontier, 08b | Not started |
 | 11 | Cross-cutting · app-update / version gate | Infra | frontier | Not started |
 
-**Next up:** Task 09 (errand history: list rounds & round details). It reuses Task 08b's
-`PrintEndErrandTextBuilder` for the historical-round branch (`createPrintEndErrand.ts`'s other
-input variant, keyed on an explicit `round`/`partnerList`/receipts payload instead of
-`user.lastRound` + the live `ReceiptsStore`) rather than porting the printout logic a second time.
+**Next up:** Task 10 (cross-cutting startup data sync & stale-data refresh parity).
 
 Tasks 03c–03f were a consolidation batch from the post-03b code review, completed ahead of
 Task 04. They were independent of each other and none added user-facing behavior:

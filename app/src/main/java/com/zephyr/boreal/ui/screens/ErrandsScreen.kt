@@ -33,6 +33,7 @@ fun ErrandsScreen(
   onNavigateBack: () -> Unit = {},
   onNavigateToStartErrand: () -> Unit = {},
   onNavigateToEndErrand: () -> Unit = {},
+  onNavigateToErrandHistory: () -> Unit = {},
   viewModel: ErrandsViewModel = hiltViewModel(),
 ) {
   val uiState by viewModel.uiState.collectAsState()
@@ -43,6 +44,7 @@ fun ErrandsScreen(
         ErrandsEvent.NavigateBack -> onNavigateBack()
         ErrandsEvent.NavigateToStartErrand -> onNavigateToStartErrand()
         ErrandsEvent.NavigateToEndErrand -> onNavigateToEndErrand()
+        ErrandsEvent.NavigateToErrandHistory -> onNavigateToErrandHistory()
       }
     }
   }
