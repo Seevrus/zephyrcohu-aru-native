@@ -165,7 +165,7 @@ class SelectItemsViewModel
                     expiresAt = exp.expiresAt,
                     quantity = storeExp?.quantity ?: 0.0,
                   )
-                }
+                }.filter { it.quantity > 0 }
 
             SellItem(
               id = item.id,

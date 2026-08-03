@@ -60,6 +60,16 @@ import java.util.Locale
 
 private const val ANIMATION_DURATION_MS = 300
 
+internal fun selectItemsHeaderColor(
+  inReceipt: Boolean,
+  hasStock: Boolean,
+): Color =
+  when {
+    inReceipt -> BorealColors.Ok
+    hasStock -> BorealColors.Neutral
+    else -> BorealColors.Warning
+  }
+
 @Suppress("LongMethod", "MagicNumber")
 @Composable
 fun SelectItemsScreen(
@@ -247,12 +257,8 @@ fun SelectItemsScreenContent(
           val itemSelected = uiState.selectedItems.containsKey(item.id)
           val itemOrdered = uiState.selectedOrderItems.containsKey(item.id)
 
-          val headerColor =
-            if (itemSelected || itemOrdered) {
-              BorealColors.Ok
-            } else {
-              BorealColors.Neutral
-            }
+          val hasStock = item.expirations.any { it.quantity > 0 }
+          val headerColor = selectItemsHeaderColor(itemSelected || itemOrdered, hasStock)
 
           ItemAccordion(
             item = item,

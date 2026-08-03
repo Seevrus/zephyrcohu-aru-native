@@ -115,6 +115,61 @@ class SelectItemsViewModelTest {
     }
 
   @Test
+  fun `expirations with zero quantity should be excluded from sellItem expirations`() =
+    runTest {
+      val item1 = mock<Item>()
+      whenever(item1.id).thenReturn(1)
+      whenever(item1.name).thenReturn("Item 1")
+      whenever(item1.articleNumber).thenReturn("ART-1")
+      whenever(item1.unitName).thenReturn("kg")
+      whenever(item1.vatRate).thenReturn("27")
+      whenever(item1.cnCode).thenReturn("1234")
+
+      val expWithStock = mock<com.zephyr.boreal.domain.model.Expiration>()
+      whenever(expWithStock.id).thenReturn(10)
+      whenever(expWithStock.expiresAt).thenReturn("2803")
+
+      val expWithoutStock = mock<com.zephyr.boreal.domain.model.Expiration>()
+      whenever(expWithoutStock.id).thenReturn(11)
+      whenever(expWithoutStock.expiresAt).thenReturn("2803")
+
+      whenever(item1.expirations).thenReturn(listOf(expWithStock, expWithoutStock))
+
+      itemsFlow.value = ApiResource.Success(listOf(item1))
+
+      val storeDetails = mock<StoreDetails>()
+      val storeExp1 =
+        StoreDetailsExpiration(
+          itemId = 1,
+          articleNumber = "ART-1",
+          expirationId = 10,
+          expiresAt = "202803",
+          quantity = 5.0,
+        )
+      val storeExp2 =
+        StoreDetailsExpiration(
+          itemId = 1,
+          articleNumber = "ART-1",
+          expirationId = 11,
+          expiresAt = "202803",
+          quantity = 0.0,
+        )
+      whenever(storeDetails.expirations).thenReturn(listOf(storeExp1, storeExp2))
+      storeStateFlow.value = storeDetails
+
+      val viewModel = createViewModel()
+      val job = backgroundScope.launch { viewModel.uiState.collect {} }
+      advanceUntilIdle()
+
+      val sellItem =
+        viewModel.uiState.value.items
+          .first()
+      assertEquals(1, sellItem.expirations.size)
+      assertEquals(10, sellItem.expirations.first().expirationId)
+      job.cancel()
+    }
+
+  @Test
   fun `search query should filter items correctly`() =
     runTest {
       val item1 = mock<Item>()
