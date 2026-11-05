@@ -14,3 +14,7 @@ tmp
 *.aar
 *.jks
 .superpowers/
+
+certificate_for_google.pem
+credentials
+credentials.json
